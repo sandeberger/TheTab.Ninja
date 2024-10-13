@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheTab.Ninja</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        #leftPane, #rightPane {
+            width: 250px;
+            transition: width 0.3s;
+            overflow: hidden;
+        }
+        #leftPane.closed, #rightPane.closed {
+            width: 30px;
+        }
+        #bookmarkManager {
+            flex: 1;
+            margin: 0 20px;
+        }
+        #addCollection {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        #addCollection:hover {
+            background-color: #45a049;
+        }
+        .collection {
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .collection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .collection-title-area {
+            display: flex;
+            align-items: center;
+        }
+        .bookmarks {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            min-height: 50px;
+        }
+        .bookmark {
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 133px;
+            height: 75px;
+            background-color: white;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: 4px;
+            transition: box-shadow 0.3s;
+        }
+        .bookmark:hover {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .bookmark img {
+            max-width: 32px;
+            max-height: 32px;
+            object-fit: contain;
+        }
+        .bookmark h3 {
+            margin: 5px 0;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bookmark p {
+            font-size: 10px;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .bookmark .edit-icon,
+        .bookmark .delete-icon {
+            position: absolute;
+            bottom: 5px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .bookmark .edit-icon {
+            right: 25px;
+        }
+        .bookmark .delete-icon {
+            right: 5px;
+        }
+        .bookmark:hover .edit-icon,
+        .bookmark:hover .delete-icon {
+            opacity: 1;
+        }
+        .drag-handle {
+            cursor: move;
+            padding: 5px 10px;
+            margin-right: 10px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        .collection-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .collection:hover .collection-actions {
+            opacity: 1;
+        }
+        .collection-button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .toggle-collection {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 10px;
+        }
+        .add-bookmark {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .add-bookmark:hover {
+            background-color: #45a049;
+        }
+        .edit-collection {
+            background-color: #555555;
+            color: white;
+        }
+        .edit-collection:hover {
+            background-color: #444444;
+        }
+        .move-collection {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .move-collection:hover {
+            background-color: #e0e0e0;
+        }
+        .delete-collection {
+            background-color: #f44336;
+            color: white;
+        }
+        .delete-collection:hover {
+            background-color: #da190b;
+        }
+        .empty-collection-message {
+            padding: 20px;
+            text-align: center;
+            background-color: #f0f0f0;
+            border: 2px dashed #ccc;
+            margin-top: 10px;
+            width: 100%;
+            border-radius: 4px;
+        }
+        .drag-over {
+            background-color: #e0e0e0;
+            border: 2px dashed #666;
+        }
+        .window-title {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f0f0f0;
+            margin-bottom: 5px;
+            border-radius: 4px;
+        }
+        .tabs-list {
+            display: block;
+        }
+        .tab {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            cursor: move;
+        }
+        .tab img {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+        }
+        .tab-title {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #settings {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .pane-toggle {
+            cursor: pointer;
+            padding: 5px;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        body.dark-mode .collection {
+            background-color: #2a2a2a;
+            border-color: #444;
+        }
+        body.dark-mode .bookmark {
+            background-color: #333;
+            border-color: #555;
+        }
+        body.dark-mode .window-title,
+        body.dark-mode #settings,
+        body.dark-mode .pane-toggle {
+            background-color: #2a2a2a;
+        }
+        body.dark-mode .collection-button {
+            background-color: #444;
+            color: #fff;
+        }
+        body.dark-mode .add-bookmark {
+            background-color: #2e7d32;
+        }
+        body.dark-mode .delete-collection {
+            background-color: #c62828;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #topBar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        #supportButton {
+            background-color: #FF813F;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        #supportButton:hover {
+            background-color: #E56E2E;
+        }
+
+        body.dark-mode #supportButton {
+            background-color: #FF9B5E;
+            color: #1a1a1a;
+        }
+
+        body.dark-mode #supportButton:hover {
+            background-color: #FFB381;
+        }
+
+        .import-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .import-button:hover {
+            background-color: #45a049;
+        }
+
+        body.dark-mode .import-button {
+            background-color: #2e7d32;
+        }
+
+        body.dark-mode .import-button:hover {
+            background-color: #1b5e20;
+        }
+    </style>
+</head>
+<body>
+    <div id="leftPane">
+        <div class="pane-toggle" onclick="togglePane('leftPane')">☰</div>
+        <div id="settings">
+            <label for="importFile" class="import-button">
+                <input type="file" id="importFile" accept=".json" style="display:none;">
+                Import Toby-Bookmarks
+            </label>
+            <br>
+            <label>
+                <input type="checkbox" id="openInNewTab"> Open bookmarks in new tab
+            </label>
+            <br>
+            <label>
+                <input type="checkbox" id="darkMode"> Dark mode
+            </label>
+        </div>
+    </div>
+    <div id="bookmarkManager">
+        <div id="topBar">
+            <button id="addCollection">Add Collection</button>
+            <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton">Support me with a ☕</a>
+        </div>
+        <div id="collections"></div>
+    </div>
+    <div id="rightPane">
+        <div class="pane-toggle" onclick="togglePane('rightPane')">☰</div>        
+        <div id="content"></div>
+    </div>
+    
+    <script src="bm.js"></script>
+</body>
+</html>

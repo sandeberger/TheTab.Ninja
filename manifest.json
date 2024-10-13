@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "TheTab.Ninja",
+  "version": "1.0",
+  "icons": {
+    "128": "128p.png"
+  },
+  "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",
+  "permissions": ["tabs", "windows"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "externally_connectable": {
+    "matches": ["https://kodar.ninja/*"]
+  },
+  "chrome_url_overrides": {
+    "newtab": "bm.html"
+  }
+}
