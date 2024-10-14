@@ -25,12 +25,12 @@
                       };
           
                       if (Array.isArray(list.cards)) {
-                        list.cards.forEach(card => {
+                        list.cards.forEach(async card => {
                           newCollection.bookmarks.push({
                             title: card.customTitle || card.title,
                             url: card.url,
                             description: card.customDescription || '',
-                            icon: getFavicon(card.url) // You might want to fetch icons for these bookmarks
+                            icon: await getFavicon(card.url) // You might want to fetch icons for these bookmarks
                           });
                         });
                       }
@@ -165,12 +165,14 @@
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'collection-actions';
 
-                const addBookmarkButton = createButton('add-bookmark', 'Add Bookmark');
-                const editCollectionButton = createButton('edit-collection', 'Edit');
-                const moveUpButton = createButton('move-collection', '▲');
-                const moveDownButton = createButton('move-collection', '▼');
-                const deleteCollectionButton = createButton('delete-collection', 'Delete');
+                const launchButton = createButton('launch-collection', '🚀', 'Launch collection as a Chrome-group');
+                const addBookmarkButton = createButton('add-bookmark', 'Add Bookmark', 'Manually add a new bookmark');
+                const editCollectionButton = createButton('edit-collection', 'Edit', 'Rename collection');
+                const moveUpButton = createButton('move-collection', '▲', 'Move collection up');
+                const moveDownButton = createButton('move-collection', '▼', 'Move collection down');
+                const deleteCollectionButton = createButton('delete-collection', 'Delete', 'Remove collection');
 
+                actionsContainer.appendChild(launchButton);
                 actionsContainer.appendChild(addBookmarkButton);
                 actionsContainer.appendChild(editCollectionButton);
                 actionsContainer.appendChild(moveUpButton);
@@ -203,6 +205,7 @@
                 collectionElement.appendChild(collectionHeader);
                 collectionElement.appendChild(bookmarksContainer);
 
+                launchButton.addEventListener('click', () => launchCollection(collectionIndex));
                 toggleButton.addEventListener('click', () => toggleCollection(collectionIndex));
                 addBookmarkButton.addEventListener('click', () => addBookmark(collectionIndex));
                 editCollectionButton.addEventListener('click', () => editCollection(collectionIndex));
@@ -222,10 +225,13 @@
             saveToLocalStorage();
         }
 
-        function createButton(className, text) {
+        function createButton(className, text, tooltipText) {
             const button = document.createElement('button');
             button.className = `collection-button ${className}`;
             button.textContent = text;
+            if (tooltipText) {
+                button.title = tooltipText;
+            }
             return button;
         }
 
@@ -282,6 +288,7 @@
             return bookmarkElement;
         }
 
+        
         function findFavicon(url, callback) {
             // Se till att URL:en inte har en avslutande snedstreck
             const baseUrl = url.replace(/\/$/, '');
@@ -330,8 +337,25 @@
             testNext();
         }
         
+        function getFavicon(url) {
+            const extensionId = 'ekincidnpifabcbbchcapcahaoeoccgp'; // Ersätt med ditt extension-ID
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage(extensionId, { action: 'fetchFavicon', url }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        // Hantera eventuella fel från sendMessage
+                        reject(new Error(chrome.runtime.lastError.message));
+                        return;
+                    }
+                    if (response && response.faviconUrl) {
+                        resolve(response.faviconUrl);
+                    } else {
+                        reject(new Error('Ingen favicon URL mottogs från extensionen.'));
+                    }
+                });
+            });
+        }
 
-        function getFavicon(cardUrl) {
+        function getFavicon_old2(cardUrl) {
             try {
                 findFavicon(cardUrl, function(faviconUrl) {
                     if (faviconUrl) {
@@ -425,9 +449,12 @@
             const bookmark = collections[collectionIndex].bookmarks[bookmarkIndex];
             const title = prompt('Edit bookmark title:', bookmark.title);
             const url = prompt('Edit bookmark URL:', bookmark.url);
-            const description = prompt('Edit bookmark description:', bookmark.description);
+            const description = prompt('Edit bookmark description:', bookmark.description);            
             if (title && url) {
                 const icon = await getFavicon(url);
+                if (icon === 'default-icon.png' || icon === null || icon === undefined || icon === '') {
+                    const icon_url = prompt('Edit favicon URL:', bookmark.icon);
+                }
                 collections[collectionIndex].bookmarks[bookmarkIndex] = { ...bookmark, title, url, description, icon };
                 renderCollections();
             }
@@ -447,6 +474,28 @@
             } else {
                 window.location.href = bookmark.url;
             }
+        }
+
+        function launchCollection(index) {
+            const collection = collections[index];
+            const urls = collection.bookmarks.map(bookmark => bookmark.url);
+            const extensionId = 'ekincidnpifabcbbchcapcahaoeoccgp'; // Ersätt med ditt extension-ID
+            
+            chrome.runtime.sendMessage(extensionId, {
+                action: 'launchCollection',
+                urls: urls,
+                collectionName: collection.name
+            }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Error launching collection:', chrome.runtime.lastError);
+                    alert('Error launching collection. Make sure the extension is installed and active.');
+                } else if (response && response.success) {
+                    console.log('Collection launched successfully');
+                } else {
+                    console.error('Failed to launch collection');
+                    alert('Failed to launch collection. Please try again.');
+                }
+            });
         }
 
         function moveCollection(index, direction) {

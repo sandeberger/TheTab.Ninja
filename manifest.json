@@ -6,7 +6,8 @@
     "128": "128p.png"
   },
   "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",
-  "permissions": ["tabs", "windows"],
+  "permissions": ["tabs", "windows", "tabGroups"],
+  "host_permissions": ["https://www.google.com/*","https://*.gstatic.com/*"],
   "action": {
     "default_popup": "popup.html"
   },

@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Titel för att visa/gömma flikarna
       const windowTitle = document.createElement('div');
       windowTitle.className = 'window-title';
-      windowTitle.textContent = `Fönster ID: ${window.id} (${window.tabs.length} flikar)`;
+      windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} flikar)`;
       windowDiv.appendChild(windowTitle);
 
       // Lista med flikar (initialt dold)
