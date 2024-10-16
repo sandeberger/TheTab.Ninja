@@ -68,7 +68,8 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
             // Uppdatera gruppens titel och färg
             chrome.tabGroups.update(groupId, {
               title: collectionName,
-              color: "blue"
+              color: "blue",
+              collapsed: true
             }, () => {
               if (chrome.runtime.lastError) {
                 console.error('Error updating tab group:', chrome.runtime.lastError);

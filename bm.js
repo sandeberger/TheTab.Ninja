@@ -1,3 +1,7 @@
+//const extId = 'ekincidnpifabcbbchcapcahaoeoccgp'; //1.0
+const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.01
+// const extId = 'dfhgdmokjfaccndikpibbgaalffbnbbk' //1.2 Edge
+
         let collections = [];
         let draggedItem = null;
         let openInNewTab = false;
@@ -338,7 +342,7 @@
         }
         
         function getFavicon(url) {
-            const extensionId = 'ekincidnpifabcbbchcapcahaoeoccgp'; // Ersätt med ditt extension-ID
+            const extensionId = extId; // Ersätt med ditt extension-ID
             return new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage(extensionId, { action: 'fetchFavicon', url }, (response) => {
                     if (chrome.runtime.lastError) {
@@ -479,7 +483,7 @@
         function launchCollection(index) {
             const collection = collections[index];
             const urls = collection.bookmarks.map(bookmark => bookmark.url);
-            const extensionId = 'ekincidnpifabcbbchcapcahaoeoccgp'; // Ersätt med ditt extension-ID
+            const extensionId = extId; // Ersätt med ditt extension-ID
             
             chrome.runtime.sendMessage(extensionId, {
                 action: 'launchCollection',
@@ -659,7 +663,7 @@
 
         function fetchChromeTabs() {
             try {
-                const extensionId = "ekincidnpifabcbbchcapcahaoeoccgp";  // Replace with your extension's actual ID
+                const extensionId = extId;  // Replace with your extension's actual ID
                 chrome.runtime.sendMessage(extensionId, { action: "getTabs" }, (response) => {
                     const contentDiv = document.getElementById('content');
                     contentDiv.innerHTML = '';

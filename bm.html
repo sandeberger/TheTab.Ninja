@@ -126,6 +126,12 @@
             margin-right: 10px;
             background-color: #e0e0e0;
             border-radius: 4px;
+            color: #333; /* Mörk färg för ljust läge */
+        }
+
+        body.dark-mode .drag-handle {
+            background-color: #444; /* Mörkare bakgrund för mörkt läge */
+            color: #ddd; /* Ljusare text för mörkt läge */
         }
         .dragging {
             opacity: 0.5;
@@ -148,11 +154,20 @@
             transition: background-color 0.3s, color 0.3s;
         }
         .toggle-collection {
+            color: #333;
             background: none;
             border: none;
             font-size: 18px;
             cursor: pointer;
             padding: 0 10px;
+        }
+        body.dark-mode .toggle-collection {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 10px;
+            color: #fff; /* Ljus färg för mörkt läge */
         }
         .add-bookmark {
             background-color: #4CAF50;
@@ -321,6 +336,26 @@
         body.dark-mode .import-button:hover {
             background-color: #1b5e20;
         }
+
+        a[href="https://kodar.ninja"] {
+            color: #0066cc; /* A standard blue color for links */
+            text-decoration: none; /* Removes the underline */
+            transition: color 0.3s ease; /* Smooth transition for hover effect */
+        }
+
+        a[href="https://kodar.ninja"]:hover {
+            color: #004499; /* Slightly darker blue on hover */
+            text-decoration: underline; /* Adds underline on hover */
+        }
+
+        /* Styles for the link in dark mode */
+        body.dark-mode a[href="https://kodar.ninja"] {
+            color: #66b3ff; /* Light blue color for better visibility in dark mode */
+        }
+
+        body.dark-mode a[href="https://kodar.ninja"]:hover {
+            color: #99ccff; /* Slightly lighter blue on hover in dark mode */
+        }
     </style>
 </head>
 <body>
@@ -329,9 +364,9 @@
         <div id="settings">
             <label for="importFile" class="import-button">
                 <input type="file" id="importFile" accept=".json" style="display:none;">
-                Import Toby-Bookmarks
+                Import a Toby Json-file
             </label>
-            <br>
+            <br><br>
             <label>
                 <input type="checkbox" id="openInNewTab"> Open bookmarks in new tab
             </label>
@@ -339,6 +374,8 @@
             <label>
                 <input type="checkbox" id="darkMode"> Dark mode
             </label>
+            <br><br>
+            <a href="https://kodar.ninja" target="_blank">by Kodar.Ninja</a>
         </div>
     </div>
     <div id="bookmarkManager">
