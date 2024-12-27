@@ -41,13 +41,7 @@
         #addCollection:hover {
             background-color: #45a049;
         }
-        .collection {
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-        }
+        
         .collection-header {
             display: flex;
             justify-content: space-between;
@@ -160,7 +154,17 @@
             font-size: 18px;
             cursor: pointer;
             padding: 0 10px;
+            transition: transform 0.3s ease; /* NY egenskap */
         }
+
+        .collection.is-open .toggle-collection {
+            transform: rotate(0deg);
+        }
+
+        .collection:not(.is-open) .toggle-collection {
+            transform: rotate(180deg);
+        }
+
         body.dark-mode .toggle-collection {
             background: none;
             border: none;
@@ -356,17 +360,181 @@
         body.dark-mode a[href="https://kodar.ninja"]:hover {
             color: #99ccff; /* Slightly lighter blue on hover in dark mode */
         }
+
+        .placeholder {
+            border: 2px dashed #aaa;
+            margin: 10px 0;
+            height: 50px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark-mode .placeholder {
+            border-color: #666;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .collection {
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 8px; /* Uppdaterat från 4px */
+            transition: all 0.3s ease; /* Uppdaterad från ingen transition */
+        }
+
+        .collection.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }   
+        
+        .collection.is-open {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 
+                        0 8px 16px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+            border-color: #bbb;
+        }
+
+        .collection:not(.is-open) {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1),
+                        inset 0 4px 8px rgba(0, 0, 0, 0.05);
+            transform: translateY(1px);
+            background-color: #f0f0f0;
+        }
+
+        .collection:hover {
+            border-color: #999;
+        }
+
+        body.dark-mode .collection.is-open {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 
+                        0 8px 16px rgba(0, 0, 0, 0.2);
+            border-color: #555;
+            background-color: #2a2a2a;
+        }
+
+        body.dark-mode .collection:not(.is-open) {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                        inset 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: #151515;
+        }
+
+        body.dark-mode .collection:hover {
+            border-color: #666;
+        }
+
+        /* GitHub sync styles - lägg till i style-taggen */
+        #githubSettings {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+
+        #githubSettings input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        #syncButton {
+            background-color: #2ea44f;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        #syncButton svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #syncButton.syncing {
+            background-color: #238636;
+            pointer-events: none;
+        }
+
+        #syncButton.syncing svg {
+            animation: rotate 1s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        body.dark-mode #githubSettings {
+            border-color: #444;
+        }
+
+        body.dark-mode #githubSettings input {
+            background-color: #333;
+            border-color: #555;
+            color: white;
+        }
+
+        body.dark-mode #syncButton {
+            background-color: #238636;
+        }
+
+        body.dark-mode #syncButton.syncing {
+            background-color: #1a6127;
+        }
+
+        .help-link-container {
+            margin-bottom: 15px;
+            text-align: right;
+        }
+
+        .help-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #0366d6;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .help-link:hover {
+            text-decoration: underline;
+        }
+
+        .help-link i {
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
     <div id="leftPane">
-        <div class="pane-toggle" onclick="togglePane('leftPane')">⚙️</div>
+        <div class="pane-toggle" id="toggleLeftPane">⚙️</div>
         <div id="settings">
+            <h3>GitHub Sync Settings</h3>
+            <input type="text" id="githubUsername" placeholder="GitHub Username">
+            <input type="text" id="githubRepo" placeholder="Repository Name">
+            <input type="password" id="githubPat" placeholder="Personal Access Token">
+            <div class="help-link-container">
+                <a href="/github-setup-guide.html" target="_blank" class="help-link">
+                    <i class="fas fa-question-circle"></i>
+                   ❓ How do I create a GitHub Personal Access Token?
+                </a>
+            </div>
+            <hr>
+            <h3>Import</h3>
             <label for="importFile" class="import-button">
                 <input type="file" id="importFile" accept=".json" style="display:none;">
                 Import a Toby Json-file
             </label>
             <br><br>
+            <hr>
+            <h3>Settings</h3>
             <label>
                 <input type="checkbox" id="openInNewTab"> Open bookmarks in new tab
             </label>
@@ -380,13 +548,20 @@
     </div>
     <div id="bookmarkManager">
         <div id="topBar">
-            <button id="addCollection">Add Collection</button>
+            <div style="display: flex; align-items: center;">
+                <button id="syncButton" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.4 0 6.3 2.1 7.4 5M22 12c0 4.4-3.6 8-8 8-3.4 0-6.3-2.1-7.4-5"/>
+                    </svg>
+                </button>
+                <button id="addCollection">Add Collection</button>
+            </div>
             <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton">Support me with a ☕</a>
         </div>
         <div id="collections"></div>
     </div>
     <div id="rightPane">
-        <div class="pane-toggle" onclick="togglePane('rightPane')">🗔</div>        
+        <div class="pane-toggle" id="toggleRightPane">🗔</div>        
         <div id="content"></div>
     </div>
     

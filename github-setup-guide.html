@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create GitHub Account - Guide</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f6f8fa;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+
+        h1 {
+            color: #24292e;
+            border-bottom: 1px solid #e1e4e8;
+            padding-bottom: 0.3em;
+        }
+
+        h2 {
+            color: #24292e;
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-size: 1.5em;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .step {
+            margin-bottom: 15px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .step:before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 8px;
+            height: 8px;
+            background: #0366d6;
+            border-radius: 50%;
+        }
+
+        .substep {
+            margin-left: 24px;
+            margin-bottom: 10px;
+        }
+
+        .icon {
+            color: #0366d6;
+            margin-right: 8px;
+        }
+
+        .important {
+            background-color: #fff8c5;
+            border-left: 4px solid #f9c513;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+        }
+
+        .settings-info {
+            background-color: #f6f8fa;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .setting-item {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .setting-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .setting-value {
+            color: #0366d6;
+            margin-left: 8px;
+        }
+
+        .setting-value i {
+            font-style: italic;
+            color: #586069;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fab fa-github icon"></i>Create a GitHub Account</h1>
+
+        <div class="section">
+            <h2><i class="fas fa-user-plus icon"></i>Create GitHub Account</h2>
+            <div class="step">
+                <strong>Go to GitHub:</strong> Visit <a href="https://github.com" target="_blank">github.com</a>
+            </div>
+            <div class="step">
+                <strong>Sign up:</strong>
+                <div class="substep">• Click "Sign up" in the top-right corner</div>
+                <div class="substep">• Enter your email address and follow the instructions to create an account</div>
+            </div>
+            <div class="step">
+                <strong>Verify your account:</strong>
+                <div class="substep">• Check your email for a verification link and click it</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-folder-plus icon"></i>Create a New GitHub Repository</h2>
+            <div class="step">
+                <strong>Log in:</strong> Log in to GitHub with your new account
+            </div>
+            <div class="step">
+                <strong>Create a new repository:</strong>
+                <div class="substep">• Click the "+" in the top-right corner and select "New repository"</div>
+                <div class="substep">• Fill in the following details:</div>
+                <div class="substep">- Repository name: Test4TabNinja (any name goes but we will use this name in the example)</div>
+                <div class="substep">- Description: (optional, e.g., "Repository for TabNinja's datasync")</div>
+                <div class="substep">- Choose whether it should be Public or Private. We will use Private, but public could be used if you want to share the bookmarks with others.</div>
+                <div class="substep">- Check "Add a README file"</div>
+                <div class="substep">• Click "Create repository"</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-key icon"></i>Create a Fine-grained Token</h2>
+            <div class="step">
+                <strong>Go to settings:</strong>
+                <div class="substep">• Click your profile picture in the top-right corner and select "Settings"</div>
+            </div>
+            <div class="step">
+                <strong>Navigate to tokens:</strong>
+                <div class="substep">• In the left-hand menu, go to "Developer settings" > "Personal access tokens" > "Fine-grained tokens"</div>
+            </div>
+            <div class="step">
+                <strong>Generate token:</strong>
+                <div class="substep">• Click "Generate new token"</div>
+                <div class="substep">• Select a repository access: Only select the repository you created above (Test4TabNinja)</div>
+                <div class="substep">• Select the previously created repository (e.g., Test4TabNinja)</div>
+                <div class="substep">• Expiration: Set to "No expiration"</div>
+                <div class="substep">• Select repository permissions:</div>
+                <div class="substep">- Actions: Read, Write</div>
+                <div class="substep">- Commit statuses: Read, Write</div>
+                <div class="substep">- Contents: Read, Write</div>
+                <div class="substep">- Custom properties: Read, Write</div>
+                <div class="substep">- Metadata: Read</div>
+                <div class="substep">- Pull requests: Read, Write</div>
+                <div class="substep">• Click "Generate token"</div>
+            </div>
+            <div class="important">
+                <i class="fas fa-exclamation-triangle icon"></i>
+                <strong>Important:</strong> Copy and save the token securely - it will only be shown once!
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-code icon"></i>Create a Codespace</h2>
+            <div class="step">
+                <strong>Navigate to your repository:</strong>
+                <div class="substep">• Go to the Test4TabNinja repository on GitHub</div>
+            </div>
+            <div class="step">
+                <strong>Start a Codespace:</strong>
+                <div class="substep">• Click "Code" > "Codespaces"</div>
+                <div class="substep">• Click "Create Codespace on main"</div>
+            </div>
+            <div class="step">
+                <strong>Configure the Codespace (optional):</strong>
+                <div class="substep">• Once the Codespace starts, you can install tools and configure the environment as needed</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><i class="fas fa-cog icon"></i>Your Settings for TabNinja</h2>
+            <div class="settings-info">
+                <div class="setting-item">
+                    <strong>GitHub Username:</strong> 
+                    <span class="setting-value"><i>Your GitHub username</i></span>
+                </div>
+                <div class="setting-item">
+                    <strong>Repository Name:</strong> 
+                    <span class="setting-value">Test4TabNinja</span>
+                </div>
+                <div class="setting-item">
+                    <strong>Personal Access Token:</strong> 
+                    <span class="setting-value"><i>Paste your token (fine-grained token)</i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>

@@ -1,7 +1,11 @@
+// This script is used in the popup of a Chrome extension. It adds functionality to create a new tab
+// and displays all open windows and their tabs. Users can click on a tab title to activate the tab
+// and focus the window. The list of tabs in each window can be toggled by clicking on the window title.
+
 document.addEventListener('DOMContentLoaded', () => {
   const newTabButton = document.getElementById('newTabButton');
   newTabButton.addEventListener('click', () => {
-    chrome.tabs.create({ url: "https://kodar.ninja/bm.html" });
+    chrome.tabs.create({ url: "bm.html" });
   });
 
   chrome.windows.getAll({ populate: true }, (windows) => {

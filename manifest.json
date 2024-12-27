@@ -1,23 +1,24 @@
 {
   "manifest_version": 3,
   "name": "TheTab.Ninja",
-  "version": "1.01",
+  "version": "1.02",
   "icons": {
     "128": "128p.png"
   },
-  "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",
-  "permissions": ["tabs", "windows", "tabGroups"],
-  "host_permissions": ["https://www.google.com/*","https://*.gstatic.com/*"],
+  "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",  
+  "host_permissions": ["https://www.google.com/*","https://*.gstatic.com/*", "https://api.github.com/*"],
   "action": {
     "default_popup": "popup.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
-  "externally_connectable": {
-    "matches": ["https://kodar.ninja/*"]
-  },
+  "permissions": ["tabs", "windows", "tabGroups", "scripting", "storage"],
   "chrome_url_overrides": {
     "newtab": "bm.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }
 }
