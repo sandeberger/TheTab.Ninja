@@ -1498,4 +1498,91 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('githubRepo').value = bookmarkManagerData.githubConfig.repo || '';
     document.getElementById('githubPat').value = bookmarkManagerData.githubConfig.pat || '';
     updateSyncButtonVisibility();
+
+
+    const searchBox = document.getElementById('searchBox');    
+    if (searchBox) {
+        setTimeout(() => {
+            console.log('Focusing on search box');
+            searchBox.focus();
+        }, 100); // En fördröjning på 100 millisekunder (justera vid behov)
+    }
+
+    searchBox.addEventListener('input', function() {
+        const searchTerm = searchBox.value.trim().toLowerCase();
+        const collections = document.querySelectorAll('.collection');
+
+        collections.forEach(collectionElement => {
+            const collectionId = collectionElement.dataset.collectionId;
+            const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
+            const bookmarksContainer = collectionElement.querySelector('.bookmarks');
+            const bookmarkElements = bookmarksContainer.querySelectorAll('.bookmark');
+            let showCollection = false;
+            let hasVisibleBookmarks = false; // Lägg till denna variabel
+
+            if (!searchTerm) {
+                collectionElement.classList.remove('hidden');
+                bookmarkElements.forEach(bookmarkElement => bookmarkElement.classList.remove('hidden'));
+                return;
+            }
+
+            if (searchTerm.startsWith('#')) {
+                const collectionSearchTerm = searchTerm.substring(1);
+                showCollection = collectionData.name.toLowerCase().includes(collectionSearchTerm);
+                bookmarkElements.forEach(bookmarkElement => bookmarkElement.classList.toggle('hidden', !showCollection));
+                hasVisibleBookmarks = showCollection; // Om collection matchar, räknas det som att ha synliga bookmarks
+            } else if (searchTerm.startsWith('%')) {
+                const allSearchTerm = searchTerm.substring(1);
+                const collectionMatch = collectionData.name.toLowerCase().includes(allSearchTerm);
+                bookmarkElements.forEach(bookmarkElement => {
+                    const bookmarkId = bookmarkElement.dataset.bookmarkId;
+                    const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
+                    const showBookmark = bookmarkData.title.toLowerCase().includes(allSearchTerm) || bookmarkData.url.toLowerCase().includes(allSearchTerm);
+                    bookmarkElement.classList.toggle('hidden', !showBookmark);
+                    if (showBookmark) hasVisibleBookmarks = true;
+                });
+                showCollection = collectionMatch || hasVisibleBookmarks;
+                if (collectionMatch) {
+                    bookmarkElements.forEach(bookmarkElement => bookmarkElement.classList.remove('hidden'));
+                }
+            } else {
+                const bookmarkSearchTerm = searchTerm;
+                bookmarkElements.forEach(bookmarkElement => {
+                    const bookmarkId = bookmarkElement.dataset.bookmarkId;
+                    const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
+                    const showBookmark = bookmarkData.title.toLowerCase().includes(bookmarkSearchTerm) || bookmarkData.url.toLowerCase().includes(bookmarkSearchTerm);
+                    bookmarkElement.classList.toggle('hidden', !showBookmark);
+                    if (showBookmark) hasVisibleBookmarks = true;
+                });
+                showCollection = hasVisibleBookmarks; // Visa endast om det finns synliga bokmärken
+            }
+
+            // Hantera visning av stängda collections
+            const bookmarksContainerElement = collectionElement.querySelector('.bookmarks');
+            const toggleButton = collectionElement.querySelector('.toggle-collection');
+            if (showCollection && !collectionElement.classList.contains('is-open')) {
+                collectionElement.classList.add('is-open');
+                bookmarksContainerElement.style.display = 'flex';
+                if (toggleButton) {
+                    toggleButton.textContent = '∨';
+                }
+                const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
+                if (collectionData) {
+                    collectionData.isOpen = true;
+                }
+            } else if (!searchTerm) {
+                // Återställ tillstånd om söktermen är tom
+                const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
+                if (collectionData && !collectionData.isOpen) {
+                    collectionElement.classList.remove('is-open');
+                    bookmarksContainerElement.style.display = 'none';
+                    if (toggleButton) {
+                        toggleButton.textContent = '∧';
+                    }
+                }
+            }
+
+            collectionElement.classList.toggle('hidden', !showCollection);
+        });
+    });
 });

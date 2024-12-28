@@ -510,6 +510,21 @@
         .help-link i {
             font-size: 16px;
         }
+
+        #searchBox {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin: 0 10px;
+            flex-grow: 1; /* Låt sökrutan växa och fylla utrymmet */
+            max-width: 300px; /* Begränsa maximal bredd */
+        }
+
+        body.dark-mode #searchBox {
+            background-color: #333;
+            color: white;
+            border-color: #555;
+        }
     </style>
 </head>
 <body>
@@ -555,7 +570,8 @@
                     </svg>
                 </button>
                 <button id="addCollection">Add Collection</button>
-            </div>
+            </div>       
+            <input type="text" id="searchBox" placeholder="Search Collections/Bookmarks (#collections, %all)">
             <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton">Support me with a ☕</a>
         </div>
         <div id="collections"></div>
