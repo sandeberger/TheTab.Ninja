@@ -1123,6 +1123,7 @@ function dragOverBookmark(e) {
 
 // Uppdaterad dropBookmark funktion
 // Updated dropBookmark function with proper position recalculation
+// Uppdaterad dropBookmark funktion
 function dropBookmark(e) {
     e.preventDefault();
     if (draggedItem && draggedItem.type === 'bookmark') {
@@ -1142,7 +1143,7 @@ function dropBookmark(e) {
             if (movedBookmarkIndex !== -1) {
                 const movedBookmark = fromCollection.bookmarks.splice(movedBookmarkIndex, 1)[0];
                 movedBookmark.lastModified = Date.now();
-                movedBookmark.deleted = true;
+                // Removed the line that incorrectly marks the bookmark as deleted
 
                 // Find the position for insertion in destination collection
                 const bookmarksContainer = toBookmarkElement.parentElement;
@@ -1155,19 +1156,19 @@ function dropBookmark(e) {
                 // Recalculate positions for all bookmarks in the destination collection
                 toCollection.bookmarks.forEach((bookmark, index) => {
                     bookmark.position = index;
-                    bookmark.lastModified = Date.now(); // Update lastModified for position changes
+                    bookmark.lastModified = Date.now();
                 });
 
-                // Recalculate positions for all bookmarks in the source collection if it's different
+                // Recalculate positions for source collection if different
                 if (fromCollectionId !== toCollectionId) {
                     fromCollection.bookmarks.forEach((bookmark, index) => {
                         bookmark.position = index;
-                        bookmark.lastModified = Date.now(); // Update lastModified for position changes
+                        bookmark.lastModified = Date.now();
                     });
                     fromCollection.lastModified = Date.now();
                 }
 
-                // Update the destination collection's lastModified timestamp
+                // Update the destination collection's timestamp
                 toCollection.lastModified = Date.now();
 
                 saveToLocalStorage();
@@ -1256,6 +1257,17 @@ function createChromeTabElement(tab, windowId) {
         e.dataTransfer.setData('text/plain', 'chromeTab');
     });
 
+    // Skicka ett meddelande till background.js vid klick
+    tabDiv.addEventListener('click', () => {
+        if (!draggedItem) {
+            chrome.runtime.sendMessage({
+                action: 'switchToTab',
+                tabId: tab.id,
+                windowId: windowId
+            });
+        }
+    });
+
     return tabDiv;
 }
 
@@ -1291,9 +1303,7 @@ function displayFallbackContent(contentDiv) {
 // Uppdaterad fetchChromeTabs funktion
 function fetchChromeTabs() {
     try {
-        const extensionId = extId;  // Ersätt med ditt extension-ID
-        //chrome.runtime.sendMessage(extensionId, { action: "getTabs" }, (response) => {
-            chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+        chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
             const contentDiv = document.getElementById('content');
             contentDiv.innerHTML = '';
 
@@ -1311,13 +1321,20 @@ function fetchChromeTabs() {
                         bookmarkManagerData.chromeWindowStates[window.windowId] : true;
                     tabsList.style.display = isOpen ? 'block' : 'none';
 
-                    window.tabs.forEach((tab) => {
-                        const tabDiv = createChromeTabElement(tab, window.windowId);
+                    window.tabs.forEach((tabData) => {
+                        console.log('Creating tab element with data:', tabData);  // Debug logg
+                        const tabDiv = createChromeTabElement({
+                            id: tabData.tabId,  // Här mappar vi om data
+                            title: tabData.title,
+                            url: tabData.url,
+                            favIconUrl: tabData.favIconUrl
+                        }, window.windowId);
                         tabsList.appendChild(tabDiv);
                     });
                     windowDiv.appendChild(windowTitle);
                     windowDiv.appendChild(tabsList);
                     contentDiv.appendChild(windowDiv);
+                    
                     windowTitle.addEventListener('click', () => {
                         const newState = tabsList.style.display === 'none' ? 'block' : 'none';
                         tabsList.style.display = newState;
@@ -1325,16 +1342,10 @@ function fetchChromeTabs() {
                         saveToLocalStorage();
                     });
                 });
-            } else {
-                console.error('Failed to fetch Chrome tabs');
-                displayFallbackContent(contentDiv);
             }
         });
     } catch(error) {
-        console.error('Error fetching Chrome tabs:', error);
-        const contentDiv = document.getElementById('content');
-        contentDiv.innerHTML = '';
-        displayFallbackContent(contentDiv);
+        console.error('Error:', error);
     }
 }
 

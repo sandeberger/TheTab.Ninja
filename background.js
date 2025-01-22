@@ -26,6 +26,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(result);
     });
     return true;  // Indikerar att svaret sker asynkront
+  } else if (message.action === "activateTab") {
+    chrome.windows.update(message.windowId, { focused: true }, () => {
+      chrome.tabs.update(message.tabId, { active: true }, () => {
+        sendResponse({ success: true });
+      });
+    });
+    return true;
+  } else if (message.action === 'switchToTab') {
+      console.log('Received switchToTab message:', message);
+      chrome.windows.update(parseInt(message.windowId), { focused: true }, () => {
+          console.log('Updating tab:', message.tabId);
+          chrome.tabs.update(parseInt(message.tabId), { active: true }, () => {
+              if (chrome.runtime.lastError) {
+                  console.error("Error updating tab:", chrome.runtime.lastError);
+              }
+          });
+      });
+      return true;
   } else if (message.action === 'fetchFavicon') {
     const { url } = message;
 
