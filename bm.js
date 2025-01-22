@@ -584,6 +584,31 @@ function createBookmarkElement(bookmark, collectionId) {
     
     bookmarkElement.addEventListener('click', () => openBookmark(collectionId, bookmark.id));
 
+    // Lägg till hover-effekter
+    bookmarkElement.addEventListener('dragover', function(e) {
+        this.style.transform = 'scale(1.02)';
+        this.style.zIndex = '1000';
+    });
+
+    bookmarkElement.addEventListener('dragleave', function(e) {
+        this.style.transform = 'scale(1)';
+        this.style.zIndex = 'auto';
+    });
+
+    // Uppdaterad dragstart-effekt
+    bookmarkElement.addEventListener('dragstart', function(e) {
+        this.style.opacity = '0.5';
+        this.style.transform = 'scale(0.95)';
+        // ... resten av befintlig kod ...
+    });
+
+    bookmarkElement.addEventListener('dragend', function(e) {
+        this.style.opacity = '1';
+        this.style.transform = 'scale(1)';
+        this.style.zIndex = 'auto';
+        // ... resten av befintlig kod ...
+    });
+
     return bookmarkElement;
 }
 
@@ -1122,58 +1147,103 @@ function addEmptyMessageListeners(emptyMessage) {
         }
 
 // Uppdaterad dragOverBookmark funktion
+// Uppdaterad dragOverBookmark med bättre hantering av direktöverlappning
 function dragOverBookmark(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    if (draggedItem && draggedItem.type === 'bookmark' && draggedItem.element !== this) {
-        const bookmarkElement = this;
-        const bookmarksContainer = bookmarkElement.parentElement;
+    if (!draggedItem || draggedItem.type !== 'bookmark') return;
 
-        const rect = bookmarkElement.getBoundingClientRect();
-        const midY = rect.top + (rect.height / 2);
+    const targetBookmark = this;
+    const rect = targetBookmark.getBoundingClientRect();
+    const yOffset = e.clientY - rect.top;
+    const isBefore = yOffset < rect.height / 2;
 
-        if (e.clientY < midY) {
-            bookmarksContainer.insertBefore(draggedItem.element, bookmarkElement);
-        } else {
-            bookmarksContainer.insertBefore(draggedItem.element, bookmarkElement.nextSibling);
-        }
+    const container = targetBookmark.parentElement;
+    const allBookmarks = Array.from(container.children).filter(el => el.classList.contains('bookmark'));
+    const targetIndex = allBookmarks.indexOf(targetBookmark);
+
+    // Ta bort befintlig placeholder
+    if (placeholder && placeholder.parentNode === container) {
+        container.removeChild(placeholder);
     }
+
+    // Skapa ny placeholder om det behövs
+    if (!placeholder) {
+        placeholder = document.createElement('div');
+        placeholder.className = 'placeholder';
+        placeholder.style.height = `${rect.height}px`;
+    }
+
+    // Bestäm placering
+    const insertPosition = isBefore ? targetIndex : targetIndex + 1;
+    
+    // Förhindra att placera i samma position
+    if (allBookmarks[insertPosition] === draggedItem.element) return;
+
+    container.insertBefore(placeholder, allBookmarks[insertPosition] || null);
+}
+
+// Förbättrad dropBookmark som hanterar direktöverlappning
+function dropBookmark(e) {
+    e.preventDefault();
+    
+    if (!draggedItem || draggedItem.type !== 'bookmark') return;
+
+    const targetCollection = this.closest('.collection');
+    const fromCollectionId = draggedItem.collectionId;
+    const toCollectionId = targetCollection.dataset.collectionId;
+    
+    const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
+    const toCollection = bookmarkManagerData.collections.find(c => c.id === toCollectionId);
+
+    if (!fromCollection || !toCollection) return;
+
+    const bookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === draggedItem.bookmarkId);
+    if (bookmarkIndex === -1) return;
+
+    const [movedBookmark] = fromCollection.bookmarks.splice(bookmarkIndex, 1);
+    const container = this.parentElement;
+    const allBookmarks = Array.from(container.children).filter(el => el.classList.contains('bookmark'));
+    
+    // Hämta insert-position baserat på placeholder eller musposition
+    let dropIndex = Array.from(container.children).indexOf(placeholder);
+    
+    // Fallback: Beräkna position baserat på muskoordinater
+    if (dropIndex === -1) {
+        const containerRect = container.getBoundingClientRect();
+        const yPos = e.clientY - containerRect.top;
+        dropIndex = Math.floor((yPos / containerRect.height) * toCollection.bookmarks.length);
+    }
+
+    // Begränsa index till giltigt intervall
+    dropIndex = Math.max(0, Math.min(dropIndex, toCollection.bookmarks.length));
+
+    // Uppdatera positioner
+    movedBookmark.parentCollection = toCollectionId;
+    movedBookmark.lastModified = Date.now();
+    
+    toCollection.bookmarks.splice(dropIndex, 0, movedBookmark);
+    toCollection.lastModified = Date.now();
+
+    // Uppdatera alla positioner
+    toCollection.bookmarks.forEach((bookmark, index) => {
+        bookmark.position = index;
+    });
+
+    // Rensa placeholder
+    if (placeholder && placeholder.parentNode) {
+        placeholder.parentNode.removeChild(placeholder);
+        placeholder = null;
+    }
+
+    renderCollections();
+    saveToLocalStorage();
+    draggedItem = null;
 }
 
 // Updated dropBookmark function with proper position recalculation
-function dropBookmark(e) {
-    e.preventDefault();
-    if (draggedItem?.type === 'bookmark') {
-        const { collectionId: fromCollectionId, bookmarkId } = draggedItem;
-        const toCollectionId = this.closest('.collection').dataset.collectionId;
 
-        const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
-        const toCollection = bookmarkManagerData.collections.find(c => c.id === toCollectionId);
-
-        if (fromCollection && toCollection) {
-            const bookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === bookmarkId);
-            if (bookmarkIndex === -1) return;
-
-            const [movedBookmark] = fromCollection.bookmarks.splice(bookmarkIndex, 1);
-            
-            // Uppdatera position
-            const dropIndex = Array.from(this.parentNode.children)
-                .indexOf(this) - 1; 
-
-            // Uppdatera parentCollection
-            movedBookmark.parentCollection = toCollectionId;
-            movedBookmark.lastModified = Date.now();
-            
-            toCollection.bookmarks.splice(dropIndex, 0, movedBookmark);
-            toCollection.lastModified = Date.now();
-
-            renderCollections();
-            saveToLocalStorage();
-        }
-    }
-    draggedItem = null;
-}
 
 // Uppdaterad dropBookmarkContainer funktion
 function dropBookmarkContainer(e) {
