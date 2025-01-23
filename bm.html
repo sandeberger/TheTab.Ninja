@@ -338,8 +338,24 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin: 5px; /* Lägg till marginaler */
         }
 
+        .delete-button {
+            background-color: #f44336; /* Röd färg för delete-knappen */
+        }
+
+        .delete-button:hover {
+            background-color: #d32f2f; /* Mörkare röd vid hover */
+        }
+
+        body.dark-mode .delete-button {
+            background-color: #c62828; /* Mörkare röd i dark mode */
+        }
+
+        body.dark-mode .delete-button:hover {
+            background-color: #b71c1c; /* Ännu mörkare röd vid hover i dark mode */
+        }
         .import-button:hover {
             background-color: #45a049;
         }
@@ -552,11 +568,18 @@
                 </a>
             </div>
             <hr>
-            <h3>Import</h3>
+            <h3>Import/Export</h3>
+            <button id="exportButton" class="import-button">Export Bookmarks</button>
             <label for="importFile" class="import-button">
                 <input type="file" id="importFile" accept=".json" style="display:none;">
-                Import a Toby Json-file
+                Import Bookmarks 
             </label>
+            <label for="importTobyFile" class="import-button">
+                <input type="file" id="importTobyFile" accept=".json" style="display:none;">
+                Import Toby-exported data (JSON-Format)
+            </label>
+
+            <button id="deleteAllButton" class="import-button delete-button">Delete All</button> <!-- Ny knapp -->
             <br><br>
             <hr>
             <h3>Settings</h3>

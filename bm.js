@@ -285,8 +285,63 @@ function generateUUID() {
     });
 }
 
-function importBookmarks() {
-    const fileInput = document.getElementById('importFile');
+function exportBookmarks() {
+    const dataStr = JSON.stringify(bookmarkManagerData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'bookmarks.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function deleteAllCollections() {
+    if (confirm('Are you sure you want to delete ALL collections and bookmarks? This cannot be undone.')) {
+        bookmarkManagerData.collections = []; // Rensa alla collections
+        saveToLocalStorage();
+        renderCollections(); // Uppdatera UI
+        alert('All collections and bookmarks have been deleted.');
+    }
+}
+
+function importBookmarksFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Validera att filen har rätt struktur
+            if (!importedData || !Array.isArray(importedData.collections)) {
+                throw new Error('Invalid file format: Missing collections array');
+            }
+
+            // Berika importerade data
+            const enrichedCollections = importedData.collections.map(enrichCollection);
+
+            // Ersätt befintliga collections med de importerade
+            bookmarkManagerData.collections = enrichedCollections;
+
+            // Uppdatera UI och spara till localStorage
+            renderCollections();
+            saveToLocalStorage();
+            alert('Bookmarks imported successfully!');
+        } catch (error) {
+            console.error('Error importing bookmarks:', error);
+            alert(`Error importing bookmarks: ${error.message}`);
+        }
+    };
+    reader.onerror = function(error) {
+        console.error('File read error:', error);
+        alert('Error reading file. Please try again.');
+    };
+    reader.readAsText(file);
+}
+
+function importTobyBookmarks() {
+    const fileInput = document.getElementById('importTobyFile');
     const file = fileInput.files[0];
   
     if (file) {
@@ -1459,7 +1514,7 @@ function applyPaneStates() {
         });
 
 
-        document.getElementById('importFile').addEventListener('change', importBookmarks);
+        document.getElementById('importTobyFile').addEventListener('change', importTobyBookmarks);
 
 // Funktion för att lägga till drag-and-drop lyssnare på bokmärken
 function addBookmarkDragListeners(bookmarkElement) {
@@ -1541,7 +1596,18 @@ document.addEventListener('DOMContentLoaded', () => {
         saveToLocalStorage();
     });
 
-    document.getElementById('importFile').addEventListener('change', importBookmarks);
+    document.getElementById('importFile').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            importBookmarksFromFile(file);
+        } else {
+            alert('No file selected.');
+        }
+    });
+
+    document.getElementById('exportButton').addEventListener('click', exportBookmarks);
+    document.getElementById('importTobyFile').addEventListener('change', importTobyBookmarks);
+    document.getElementById('deleteAllButton').addEventListener('click', deleteAllCollections);
 
     // GitHub settings event listeners
     document.getElementById('githubUsername').addEventListener('change', (e) => {
