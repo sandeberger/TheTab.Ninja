@@ -44,3 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
           chrome.tabs.update(tab.id, { active: true });
           chrome.windows.update(window.id, { focused: true });
         });
+
+        tabDiv.appendChild(tabTitle);
+        tabsList.appendChild(tabDiv);
+      });
+      windowDiv.appendChild(tabsList);
+      contentDiv.appendChild(windowDiv);
+      // Klickhändelse för att visa/gömma fliklistan
+      windowTitle.addEventListener('click', () => {
+        tabsList.style.display = tabsList.style.display === 'none' ? 'block' : 'none';
+      });
+    });
+  });
+});                          
