@@ -12,11 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const contentDiv = document.getElementById('content');
     contentDiv.innerHTML = ''; // Clear the content
     windows.forEach((window) => {
-      // Create a div for the window
+      // Create div for the window
       const windowDiv = document.createElement('div');
       windowDiv.className = 'window';
 
-      // Title for toggling the tabs
+      // Title to show/hide the tabs
       const windowTitle = document.createElement('div');
       windowTitle.className = 'window-title';
       windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} tabs)`;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabTitle = document.createElement('span');
         tabTitle.className = 'tab-title';
         tabTitle.textContent = tab.title;
-        tabTitle.title = tab.url; // Description shown on hover
+        tabTitle.title = tab.url;  // Description shown when hovering
         tabTitle.addEventListener('click', () => {
           chrome.tabs.update(tab.id, { active: true });
           chrome.windows.update(window.id, { focused: true });
@@ -48,12 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
         tabDiv.appendChild(tabTitle);
         tabsList.appendChild(tabDiv);
       });
+
       windowDiv.appendChild(tabsList);
       contentDiv.appendChild(windowDiv);
-      // Klickhändelse för att visa/gömma fliklistan
+
+      // Click event to show/hide the tab list
       windowTitle.addEventListener('click', () => {
         tabsList.style.display = tabsList.style.display === 'none' ? 'block' : 'none';
       });
     });
   });
-});                          
+});
