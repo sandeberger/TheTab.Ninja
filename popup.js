@@ -10,19 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   chrome.windows.getAll({ populate: true }, (windows) => {
     const contentDiv = document.getElementById('content');
-    contentDiv.innerHTML = ''; // Rensa innehållet
+    contentDiv.innerHTML = ''; // Clear the content
     windows.forEach((window) => {
-      // Skapa div för fönstret
+      // Create a div for the window
       const windowDiv = document.createElement('div');
       windowDiv.className = 'window';
 
-      // Titel för att visa/gömma flikarna
+      // Title for toggling the tabs
       const windowTitle = document.createElement('div');
       windowTitle.className = 'window-title';
-      windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} flikar)`;
+      windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} tabs)`;
       windowDiv.appendChild(windowTitle);
 
-      // Lista med flikar (initialt dold)
+      // List of tabs (initially hidden)
       const tabsList = document.createElement('div');
       tabsList.className = 'tabs-list';
 
@@ -30,32 +30,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const tabDiv = document.createElement('div');
         tabDiv.className = 'tab';
 
-        // Ikon för sidan
+        // Icon for the page
         const tabIcon = document.createElement('img');
         tabIcon.src = tab.favIconUrl || 'https://via.placeholder.com/16';
         tabDiv.appendChild(tabIcon);
 
-        // Titel och beskrivning för sidan
+        // Title and description for the page
         const tabTitle = document.createElement('span');
         tabTitle.className = 'tab-title';
         tabTitle.textContent = tab.title;
-        tabTitle.title = tab.url;  // Beskrivning visas när man hovrar
+        tabTitle.title = tab.url; // Description shown on hover
         tabTitle.addEventListener('click', () => {
           chrome.tabs.update(tab.id, { active: true });
           chrome.windows.update(window.id, { focused: true });
         });
-
-        tabDiv.appendChild(tabTitle);
-        tabsList.appendChild(tabDiv);
-      });
-
-      windowDiv.appendChild(tabsList);
-      contentDiv.appendChild(windowDiv);
-
-      // Klickhändelse för att visa/gömma fliklistan
-      windowTitle.addEventListener('click', () => {
-        tabsList.style.display = tabsList.style.display === 'none' ? 'block' : 'none';
-      });
-    });
-  });
-});
