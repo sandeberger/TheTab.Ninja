@@ -7,6 +7,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-image: url('');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed;
+            background-size: cover; /* Välj 'cover' eller 'contain' */
             margin: 0;
             padding: 20px;
             display: flex;
@@ -20,12 +25,13 @@
         #leftPane.closed, #rightPane.closed {
             width: 30px;
         }
+        
         #bookmarkManager {
             flex: 1;
             margin: 0 20px;
         }
         #addCollection {
-            background-color: #4CAF50;
+            background-color: rgba(76, 297, 80, 0.6);          
             border: none;
             color: white;
             padding: 10px 20px;
@@ -60,17 +66,19 @@
         }
         .bookmark {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 6px;
             width: 133px;
-            height: 75px;
-            background-color: white;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(1px);
             position: relative;
             cursor: pointer;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             border-radius: 4px;
-            transition: box-shadow 0.3s;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            will-change: transform, opacity;
         }
         .bookmark:hover {
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -128,7 +136,8 @@
             color: #ddd; /* Ljusare text för mörkt läge */
         }
         .dragging {
-            opacity: 0.5;
+            opacity: 0.3;
+            transform: scale(0.95);
         }
         .collection-actions {
             display: flex;
@@ -222,7 +231,9 @@
             border-radius: 4px;
         }
         .tabs-list {
-            display: block;
+            display: flex;
+            overflow-x: auto;
+            white-space: nowrap;
         }
         .tab {
             display: flex;
@@ -243,35 +254,46 @@
         #settings {
             margin-bottom: 20px;
             padding: 10px;
-            background-color: #f0f0f0;
+            background-color: rgba(240, 240, 240, 0.3);
+            backdrop-filter: blur(8px);
             border-radius: 5px;
         }
         .pane-toggle {
             cursor: pointer;
             padding: 5px;
-            background-color: #ddd;
+            background-color: rgba(240, 240, 240, 0.3);
             border-radius: 4px;
             margin-bottom: 10px;
         }
+        .bookmark.drag-over {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+        .bookmark.dragging {
+            opacity: 0.5;
+            transform: scale(0.98);
+        }
         body.dark-mode {
-            background-color: #1a1a1a;
+            /*background-color: rgba(26, 26, 26, 0.3);*/
             color: #ffffff;
+            background-color: #333;
         }
         body.dark-mode .collection {
-            background-color: #2a2a2a;
-            border-color: #444;
+            background-color: rgba(42, 42, 42, 0.3);
+            border-color: rgba(4, 4, 4, 0.3);
         }
         body.dark-mode .bookmark {
-            background-color: #333;
-            border-color: #555;
+            background-color: rgba(3, 3, 3, 0.3);
+            border-color: rgba(5, 5, 5, 0.3);
         }
         body.dark-mode .window-title,
         body.dark-mode #settings,
         body.dark-mode .pane-toggle {
-            background-color: #2a2a2a;
+            background-color: rgba(42, 42, 42, 0.6);
         }
         body.dark-mode .collection-button {
-            background-color: #444;
+            background-color: rgba(4, 4, 4, 0.6);
             color: #fff;
         }
         body.dark-mode .add-bookmark {
@@ -291,7 +313,7 @@
         }
 
         #supportButton {
-            background-color: #FF813F;
+            background-color: rgba(255, 129, 63, 0.3);
             color: white;
             border: none;
             padding: 10px 20px;
@@ -310,12 +332,12 @@
         }
 
         body.dark-mode #supportButton {
-            background-color: #FF9B5E;
+            background-color: rgba(255, 155, 94, 0.3);
             color: #1a1a1a;
         }
 
         body.dark-mode #supportButton:hover {
-            background-color: #FFB381;
+            background-color: rgba(255, 179, 129, 0.3);
         }
 
         .import-button {
@@ -327,8 +349,24 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            margin: 5px; /* Lägg till marginaler */
         }
 
+        .delete-button {
+            background-color: #f44336; /* Röd färg för delete-knappen */
+        }
+
+        .delete-button:hover {
+            background-color: #d32f2f; /* Mörkare röd vid hover */
+        }
+
+        body.dark-mode .delete-button {
+            background-color: #c62828; /* Mörkare röd i dark mode */
+        }
+
+        body.dark-mode .delete-button:hover {
+            background-color: #b71c1c; /* Ännu mörkare röd vid hover i dark mode */
+        }
         .import-button:hover {
             background-color: #45a049;
         }
@@ -362,12 +400,11 @@
         }
 
         .placeholder {
-            border: 2px dashed #aaa;
-            margin: 10px 0;
-            height: 50px;
+            background: rgba(100, 100, 100, 0.2);
+            border: 2px dashed #666;
+            margin: 5px 0;
             border-radius: 4px;
-            transition: all 0.2s ease;
-            background-color: rgba(0, 0, 0, 0.05);
+            transition: all 0.15s ease;
         }
 
         body.dark-mode .placeholder {
@@ -379,7 +416,8 @@
             border: 1px solid #ccc;
             margin-bottom: 20px;
             padding: 10px;
-            background-color: #f9f9f9;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(8px);
             border-radius: 8px; /* Uppdaterat från 4px */
             transition: all 0.3s ease; /* Uppdaterad från ingen transition */
         }
@@ -400,7 +438,9 @@
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1),
                         inset 0 4px 8px rgba(0, 0, 0, 0.05);
             transform: translateY(1px);
-            background-color: #f0f0f0;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(1px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
         }
 
         .collection:hover {
@@ -411,17 +451,21 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 
                         0 8px 16px rgba(0, 0, 0, 0.2);
             border-color: #555;
-            background-color: #2a2a2a;
+            transform: translateY(-2px);
+            background: rgba(42, 42, 42, 0.35);
+            /*background-color: #2a2a2a;*/
         }
 
         body.dark-mode .collection:not(.is-open) {
             box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3),
                         inset 0 4px 8px rgba(0, 0, 0, 0.2);
-            background-color: #151515;
+            transform: translateY(-2px);
+            background: rgba(21, 21, 21, 0.35);
+            /*background-color: #151515;*/
         }
 
         body.dark-mode .collection:hover {
-            border-color: #666;
+            border-color: #666;            
         }
 
         /* GitHub sync styles - lägg till i style-taggen */
@@ -440,7 +484,8 @@
         }
 
         #syncButton {
-            background-color: #2ea44f;
+            background-color: rgba(46, 164, 79, 0.35) ;
+            backdrop-filter: blur(8px);
             color: white;
             border: none;
             padding: 10px;
@@ -458,6 +503,9 @@
         }
 
         #syncButton.syncing {
+            background-color: rgba(46, 164, 79, 0.35);
+            backdrop-filter: blur(8px);
+
             background-color: #238636;
             pointer-events: none;
         }
@@ -482,11 +530,13 @@
         }
 
         body.dark-mode #syncButton {
-            background-color: #238636;
+            background-color: rgba(35, 134, 54, 0.35);
+            backdrop-filter: blur(8px);
         }
 
         body.dark-mode #syncButton.syncing {
-            background-color: #1a6127;
+            background-color: rgba(26, 97, 39, 0.35);
+            backdrop-filter: blur(8px);
         }
 
         .help-link-container {
@@ -510,27 +560,65 @@
         .help-link i {
             font-size: 16px;
         }
-
+       
         #searchBox {
             padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            margin: 0 10px;
-            flex-grow: 1; /* Låt sökrutan växa och fylla utrymmet */
-            max-width: 300px; /* Begränsa maximal bredd */
+            width: 300px; 
+            height: 28px; 
+            position: fixed;
+            top: 20px;            /* Avståndet från toppen – justera efter behov */
+            left: 50%;            /* Placera mitt i fönstret horisontellt */
+            transform: translateX(-50%);  /* Justera för att centra elementet exakt */
+            z-index: 1000;        /* Se till att sökrutan ligger över andra element */
+            background-color:rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            width: calc(80% - 800px); /* 120px reserverat för sidorna */
+        }
+
+        @media (max-width: 1024px) {
+            #searchBox {
+                display: none;
+            }
         }
 
         body.dark-mode #searchBox {
-            background-color: #333;
+            background-color:rgba(3, 3, 3, 0.65);
             color: white;
             border-color: #555;
+            backdrop-filter: blur(8px);
+        }
+        #backgroundThumbnails {
+            display: flex; /* Eller 'grid' för mer avancerad layout */
+            flex-wrap: wrap; /* Om miniatyrerna ska radbrytas */
+            gap: 10px; /* Mellanrum mellan miniatyrerna */
+            margin-top: 10px;
+        }
+
+        .background-thumbnail {
+            width: 50px; /* Justera storleken efter behov */
+            height: 50px;
+            border: 2px solid transparent; /* Tunn ram som standard */
+            border-radius: 4px;
+            cursor: pointer;
+            object-fit: cover; /* Se till att bilden täcker miniatyr-ytan */
+            transition: border-color 0.3s; /* Mjuk övergång för border-color */
+        }
+
+        .background-thumbnail:hover,
+        .background-thumbnail.selected {
+            border-color: #007bff; /* Exempel på färg för markerad/hover */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Valfri skuggeffekt */
         }
     </style>
 </head>
 <body>
     <div id="leftPane">
-        <div class="pane-toggle" id="toggleLeftPane">⚙️</div>
-        <div id="settings">
+        <div class="pane-toggle" id="toggleLeftPane" title="Open/Close settings">☰</div>
+        <div id="settings">        
+            <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
+            <br><br>
             <h3>GitHub Sync Settings</h3>
             <input type="text" id="githubUsername" placeholder="GitHub Username">
             <input type="text" id="githubRepo" placeholder="Repository Name">
@@ -542,11 +630,18 @@
                 </a>
             </div>
             <hr>
-            <h3>Import</h3>
+            <h3>Import/Export</h3>
+            <button id="exportButton" class="import-button">Export Bookmarks</button>
             <label for="importFile" class="import-button">
                 <input type="file" id="importFile" accept=".json" style="display:none;">
-                Import a Toby Json-file
+                Import Bookmarks 
             </label>
+            <label for="importTobyFile" class="import-button">
+                <input type="file" id="importTobyFile" accept=".json" style="display:none;">
+                Import Toby data (JSON)
+            </label>
+
+            <button id="deleteAllButton" class="import-button delete-button">Delete All</button> <!-- Ny knapp -->
             <br><br>
             <hr>
             <h3>Settings</h3>
@@ -557,8 +652,14 @@
             <label>
                 <input type="checkbox" id="darkMode"> Dark mode
             </label>
-            <br><br>
-            <a href="https://kodar.ninja" target="_blank">by Kodar.Ninja</a>
+            <br>
+            <div id="mysettings">
+                <h3>Wallpaper</h3>
+                <div id="backgroundThumbnails">                    
+                    <!-- Miniatyrer kommer att genereras här med JavaScript -->
+                </div>
+            </div>
+            </div>            
         </div>
     </div>
     <div id="bookmarkManager">
@@ -571,13 +672,13 @@
                 </button>
                 <button id="addCollection">Add Collection</button>
             </div>       
-            <input type="text" id="searchBox" placeholder="Search Collections/Bookmarks (#collections, %all)">
-            <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton">Support me with a ☕</a>
+            <input type="text" id="searchBox" placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red">
+            <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton">Support dev with a ☕</a>
         </div>
         <div id="collections"></div>
     </div>
     <div id="rightPane">
-        <div class="pane-toggle" id="toggleRightPane">🗔</div>        
+        <div class="pane-toggle" id="toggleRightPane" title="Open/Close Chrome Tabs-list">☰</div>        
         <div id="content"></div>
     </div>
     
