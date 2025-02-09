@@ -929,13 +929,15 @@ function enrichCollection(collection) {
 function addCollection() {
     const name = prompt('Enter collection name:');
     if (name) {
+        bookmarkManagerData.collections.forEach(c => c.position++);
+
         const newCollection = {
             id: generateUUID(),
             name: name,
             isOpen: true,
             lastModified: Date.now(),
             deleted: false,
-            position: bookmarkManagerData.collections.length,
+            position: 0, //bookmarkManagerData.collections.length,
             bookmarks: []
         };
         bookmarkManagerData.collections.push(newCollection);
