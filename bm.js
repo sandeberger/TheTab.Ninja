@@ -929,7 +929,10 @@ function enrichCollection(collection) {
 function addCollection() {
     const name = prompt('Enter collection name:');
     if (name) {
-        bookmarkManagerData.collections.forEach(c => c.position++);
+        bookmarkManagerData.collections.forEach(c => {
+            c.position++;
+            c.lastModified = Date.now();
+        });
 
         const newCollection = {
             id: generateUUID(),
@@ -942,6 +945,7 @@ function addCollection() {
         };
         bookmarkManagerData.collections.push(newCollection);
         renderCollections();
+        saveToLocalStorage();
     }
 }
 
