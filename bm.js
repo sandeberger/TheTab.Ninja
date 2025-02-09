@@ -1,6 +1,6 @@
-//const extId = 'ekincidnpifabcbbchcapcahaoeoccgp'; //1.0
-//const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.01
-const extId = 'ekincidnpifabcbbchcapcahaoeoccgp' //1.02 
+//const extId = 'ekincidnpifabcbbchcapcahaoeoccgp' //test
+const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.06
+//https://wallpapersden.com/
 
 let bookmarkManagerData = {
     collections: [],
@@ -27,6 +27,102 @@ document.getElementById('toggleLeftPane').addEventListener('click', function () 
 document.getElementById('toggleRightPane').addEventListener('click', function () {
     togglePane('rightPane');
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const backgroundSelect = document.getElementById('backgroundSelect');
+    const savedBackground = localStorage.getItem('backgroundImage');
+
+    if (savedBackground) {
+        backgroundSelect.value = savedBackground;
+        setBackground(savedBackground);
+    }
+
+    backgroundSelect.addEventListener('change', (event) => {
+        const selectedBackground = event.target.value;
+        setBackground(selectedBackground);
+        localStorage.setItem('backgroundImage', selectedBackground);
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const backgroundThumbnailsContainer = document.getElementById('backgroundThumbnails');
+    // Lista med filnamn för dina bakgrundsbilder (se till att de finns i 'images/' mappen)
+    const backgroundImages = [
+        'wp_none.png',
+        'wp_img01.png',
+        'wp_img02.png',
+        'wp_img03.png',
+        'wp_img05.png',
+        'wp_img06.png',
+        'wp_img07.png',
+        'wp_img08.png',
+        'wp_img09.png',
+        'wp_img10.png',
+        'wp_img11.png',
+        'wp_img12.png',
+        'wp_img13.png',
+        'wp_img14.png',
+        'wp_img15.png'
+    ];
+    const savedBackground = localStorage.getItem('backgroundImage');
+    let selectedThumbnail = null; // Variabel för att hålla reda på den valda miniatyren
+
+    // Funktion för att sätta bakgrundsbild
+    function setBackground(imageName) {
+        if (imageName === 'wp_none.png') {
+            document.body.style.backgroundImage = 'none'; // Or document.body.style.backgroundImage = '';
+        } else {
+            document.body.style.backgroundImage = `url("large_${imageName}")`;
+        }
+    }
+
+    // Funktion för att markera en miniatyr som vald
+    function selectThumbnail(thumbnailElement) {
+        // Avmarkera tidigare vald miniatyr (om det finns någon)
+        if (selectedThumbnail) {
+            selectedThumbnail.classList.remove('selected');
+        }
+        thumbnailElement.classList.add('selected');
+        selectedThumbnail = thumbnailElement;
+    }
+
+    // Generera miniatyrer och lägg till event listeners
+    backgroundImages.forEach(imageName => {
+        const thumbnailImg = document.createElement('img');
+        thumbnailImg.src = `${imageName}`; // Sökväg till miniatyrbilden
+        thumbnailImg.alt = `Bakgrundsbild ${imageName}`;
+        thumbnailImg.className = 'background-thumbnail';
+        thumbnailImg.dataset.imageName = imageName; // Lagra bildnamnet i data-attributet
+
+        // Markera som vald om det är den sparade bakgrunden
+        if (savedBackground === imageName) {
+            selectThumbnail(thumbnailImg);
+            setBackground(imageName); // Sätt bakgrundsbilden direkt vid start
+        }
+
+        thumbnailImg.addEventListener('click', () => {
+            const imageName = thumbnailImg.dataset.imageName;
+            setBackground(imageName);
+            localStorage.setItem('backgroundImage', imageName);
+            selectThumbnail(thumbnailImg); // Markera den klickade miniatyren som vald
+        });
+
+        backgroundThumbnailsContainer.appendChild(thumbnailImg);
+    });
+
+    // Om ingen sparad bakgrund, välj den första som standard och markera dess thumbnail
+    if (!savedBackground && backgroundImages.length > 0) {
+        const defaultImageName = backgroundImages[0];
+        const defaultThumbnail = backgroundThumbnailsContainer.querySelector(`.background-thumbnail[data-image-name="${defaultImageName}"]`);
+        if (defaultThumbnail) {
+            selectThumbnail(defaultThumbnail);
+            setBackground(defaultImageName);
+            localStorage.setItem('backgroundImage', defaultImageName);
+        }
+    }
+});
+
+
 
 // Funktion för att validera GitHub-konfigurationen
 function isGitHubConfigValid() {
@@ -85,6 +181,8 @@ async function synchronizeWithGitHub(retryCount = 0) {
     isSyncing = true;
 
     try {
+
+        
         // Steg 1: Hämta data från båda källor
         const [localData, rawRemoteData] = await Promise.all([
             loadFromLocalStorage(),
@@ -299,11 +397,13 @@ function exportBookmarks() {
 }
 
 function deleteAllCollections() {
-    if (confirm('Are you sure you want to delete ALL collections and bookmarks? This cannot be undone.')) {
-        bookmarkManagerData.collections = []; // Rensa alla collections
+    if (confirm('Are you sure you want to reset ALL collections to default? This cannot be undone.')) {
+        // Ersätt med standardcollection
+        const defaultCollection = enrichCollection(createDefaultCollection());
+        bookmarkManagerData.collections = [defaultCollection];
         saveToLocalStorage();
-        renderCollections(); // Uppdatera UI
-        alert('All collections and bookmarks have been deleted.');
+        renderCollections();
+        alert('All collections have been reset to default.');
     }
 }
 
@@ -340,43 +440,43 @@ function importBookmarksFromFile(file) {
     reader.readAsText(file);
 }
 
-function importTobyBookmarks() {
+async function importTobyBookmarks() {
     const fileInput = document.getElementById('importTobyFile');
     const file = fileInput.files[0];
   
     if (file) {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             try {
                 const importedData = JSON.parse(e.target.result);
                 
                 if (importedData.version === 3 && Array.isArray(importedData.lists)) {
-                    const newCollections = importedData.lists.map(list => {
+                    const newCollections = await Promise.all(importedData.lists.map(async list => {
                         const newCollection = enrichCollection({
                             name: list.title,
                             isOpen: true,
                             bookmarks: []
                         });
-
+    
                         if (Array.isArray(list.cards)) {
-                            newCollection.bookmarks = list.cards.map(async card => {
+                            newCollection.bookmarks = await Promise.all(list.cards.map(async card => {
                                 return enrichBookmark({
                                     title: card.customTitle || card.title,
                                     url: card.url,
                                     description: card.customDescription || '',
                                     icon: await getFavicon(card.url)
                                 });
-                            });
+                            }));
                         }
-
+    
                         return newCollection;
-                    });
-
+                    }));
+    
                     bookmarkManagerData.collections = [
                         ...bookmarkManagerData.collections,
                         ...newCollections
                     ];
-
+    
                     renderCollections();
                     saveToLocalStorage();
                     alert('Bookmarks imported successfully!');
@@ -391,6 +491,7 @@ function importTobyBookmarks() {
         reader.readAsText(file);
     }
 }
+
 
 // Uppdaterad funktion för att spara till localStorage
 function saveToLocalStorage() {
@@ -409,7 +510,7 @@ function loadFromLocalStorage() {
         let parsedData = null;
 
         if (data) {
-            const parsedData = JSON.parse(data);
+            parsedData = JSON.parse(data);
             
             // Enrich collections and bookmarks
             if (Array.isArray(parsedData.collections)) {
@@ -432,6 +533,11 @@ function loadFromLocalStorage() {
             // Säkerställ att leftPaneOpen och rightPaneOpen har värden
             bookmarkManagerData.leftPaneOpen = parsedData.leftPaneOpen !== undefined ? parsedData.leftPaneOpen : true;
             bookmarkManagerData.rightPaneOpen = parsedData.rightPaneOpen !== undefined ? parsedData.rightPaneOpen : true;
+        }else{
+            // Lägg till standardcollection vid första start
+            const defaultCollection = enrichCollection(createDefaultCollection());
+            bookmarkManagerData.collections.push(defaultCollection);
+            saveToLocalStorage(); 
         }
         
         document.getElementById('openInNewTab').checked = bookmarkManagerData.openInNewTab;
@@ -511,12 +617,12 @@ function renderCollections() {
 
         // Skapa alla knappar
         const buttons = [
-            { className: 'launch-collection', text: '🚀', title: 'Öppna alla flikar', action: () => launchCollection(collection.id) },
-            { className: 'add-bookmark', text: '+', title: 'Lägg till bokmärke', action: () => addBookmark(collection.id) },
-            { className: 'edit-collection', text: '✏️', title: 'Redigera samling', action: () => editCollection(collection.id) },
-            { className: 'move-collection', text: '▲', title: 'Flytta upp', action: () => moveCollection(collection.id, -1) },
-            { className: 'move-collection', text: '▼', title: 'Flytta ner', action: () => moveCollection(collection.id, 1) },
-            { className: 'delete-collection', text: '🗑️', title: 'Radera samling', action: () => deleteCollection(collection.id) }
+            { className: 'launch-collection', text: '🚀', title: 'Open all bookmarks as an Chromegroup', action: () => launchCollection(collection.id) },
+            { className: 'add-bookmark', text: '+', title: 'Add bookmark', action: () => addBookmark(collection.id) },
+            { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
+            { className: 'move-collection', text: '▲', title: 'Move up', action: () => moveCollection(collection.id, -1) },
+            { className: 'move-collection', text: '▼', title: 'Move down', action: () => moveCollection(collection.id, 1) },
+            { className: 'delete-collection', text: '🗑️', title: 'Delete collection', action: () => deleteCollection(collection.id) }
         ];
 
         buttons.forEach(btnConfig => {
@@ -553,7 +659,7 @@ function renderCollections() {
         if (bookmarksContainer.children.length === 0) {
             const emptyMsg = document.createElement('div');
             emptyMsg.className = 'empty-collection-message';
-            emptyMsg.textContent = 'Dra bokmärken hit';
+            emptyMsg.textContent = 'Drag bookmarks here';
             emptyMsg.dataset.collectionId = collection.id;
             addEmptyMessageListeners(emptyMsg);
             bookmarksContainer.appendChild(emptyMsg);
@@ -571,6 +677,13 @@ function renderCollections() {
 
         // Draghanterare för hela collection
         addCollectionDragListeners(collectionElement);
+
+        // Trigger the filter to reapply after rendering
+        const searchBox = document.getElementById('searchBox');
+        if (searchBox) {
+            const event = new Event('input');
+            searchBox.dispatchEvent(event);
+        }
     });
 
     saveToLocalStorage();
@@ -880,28 +993,45 @@ function deleteCollection(collectionId) {
 
 // Uppdaterad funktion för att lägga till ett bokmärke
 async function addBookmark(collectionId) {
-    const title = prompt('Enter bookmark title:');
-    const url = prompt('Enter bookmark URL:');
-    const description = prompt('Enter bookmark description:');
-    if (title && url) {
-        const icon = await getFavicon(url);
-        const newBookmark = {
-            id: generateUUID(),
-            title: title,
-            url: url,
-            description: description,
-            icon: icon,
-            lastModified: Date.now(),
-            deleted: false,
-            position: collection.bookmarks.length
-        };
-        const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-        if (collection) {
-            collection.bookmarks.push(newBookmark);
-            collection.lastModified = Date.now();
-            renderCollections();
+    try {
+        const title = prompt('Enter bookmark title:');
+        const url = prompt('Enter bookmark URL:');
+        const description = prompt('Enter bookmark description:');
+        if (title && url) {
+            const icon = await getFavicon(url);
+            const newBookmark = {
+                id: generateUUID(),
+                title: title,
+                url: url,
+                description: description,
+                icon: icon,
+                lastModified: Date.now(),
+                deleted: false,
+                position: collection.bookmarks.length
+            };
+            const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+            if (collection) {
+                collection.bookmarks.push(newBookmark);
+                collection.lastModified = Date.now();
+                renderCollections();
+            }
         }
+    } catch (error) {
+        handleBookmarkError(error);
     }
+}
+
+function handleBookmarkError(error) {
+    console.error('Bookmark Error:', error);
+    const errorMessage = error.message || 'An unknown error occurred';
+    
+    // Visa felmeddelande i UI
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = `Error: ${errorMessage}`;
+    
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000);
 }
 
 // Uppdaterad funktion för att redigera ett bokmärke
@@ -1490,6 +1620,49 @@ function togglePane(paneId) {
     saveToLocalStorage();
 }
 
+function createDefaultCollection() {
+    return {
+        name: "Kodar.Ninja",
+        isOpen: true,
+        bookmarks: [
+            {
+                title: "ThrustMe!",
+                url: "https://kodarninja.itch.io/thrustme",
+                description: "🚀Thrust Me is a thrilling space adventure with danger and treasure!🌟🕹️",
+                icon: "https://kodarninja.itch.io/favicon.ico",
+                id: "8c3c7744-9e1c-48f5-8e95-251a2effef80",
+                deleted: false,
+                lastModified: 1737456756973,
+                position: 0
+            },
+            {
+                title: "TheFile.Ninja",
+                url: "https://thefile.ninja/",
+                description: "A superfast, future-ready file manager powered by Everything.",
+                icon: "https://thefile.ninja/favicon.ico",
+                id: "2b9eea23-644a-4def-b94a-b4fc8fc6cddb",
+                deleted: false,
+                lastModified: 1737456756973,
+                position: 5
+            },
+            {
+                id: "1b82111d-5f1b-43d0-b188-a5cdaac95ced",
+                title: "kodar.ninja - itch.io",
+                url: "https://kodarninja.itch.io/",
+                description: "",
+                icon: "https://kodarninja.itch.io/favicon.ico",
+                lastModified: 1737456756973,
+                deleted: true,
+                position: 14
+            }
+        ],
+        id: "b7fea125-d5be-4068-84a5-040f57c70637",
+        deleted: false,
+        lastModified: 1737525179502,
+        position: 0
+    };
+}
+
 // Uppdaterad applyPaneStates funktion
 function applyPaneStates() {
     const leftPane = document.getElementById('leftPane');
@@ -1651,81 +1824,105 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100); // En fördröjning på 100 millisekunder (justera vid behov)
     }
 
-    searchBox.addEventListener('input', function() {
-        const searchTerm = searchBox.value.trim().toLowerCase();
-        const collections = document.querySelectorAll('.collection');
+    document.getElementById('searchBox').addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+        applyFilter(searchTerm);
+    });
 
+    function applyFilter(searchTerm) {
+        const collections = document.querySelectorAll('.collection');
+        const isCollectionSearch = searchTerm.startsWith('#');
+        const isGlobalSearch = searchTerm.startsWith('%');
+        
+        // Hantera OR-operatorn
+        let searchTerms = [];
+        if (searchTerm) {
+            const rawTerms = searchTerm.split('|');
+            searchTerms = rawTerms
+                .map(term => term.trim().toLowerCase())
+                .filter(term => term.length > 0);
+        }
+    
         collections.forEach(collectionElement => {
             const collectionId = collectionElement.dataset.collectionId;
             const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
             const bookmarksContainer = collectionElement.querySelector('.bookmarks');
             const bookmarkElements = bookmarksContainer.querySelectorAll('.bookmark');
             let showCollection = false;
-            let hasVisibleBookmarks = false; // Lägg till denna variabel
-
+            let hasVisibleBookmarks = false;
+    
             if (!searchTerm) {
                 collectionElement.classList.remove('hidden');
-                bookmarkElements.forEach(bookmarkElement => bookmarkElement.classList.remove('hidden'));
+                bookmarkElements.forEach(b => b.classList.remove('hidden'));
                 return;
             }
-
-            if (searchTerm.startsWith('#')) {
-                const collectionSearchTerm = searchTerm.substring(1);
-                showCollection = collectionData.name.toLowerCase().includes(collectionSearchTerm);
-                bookmarkElements.forEach(bookmarkElement => bookmarkElement.classList.toggle('hidden', !showCollection));
-                hasVisibleBookmarks = showCollection; // Om collection matchar, räknas det som att ha synliga bookmarks
-            } else if (searchTerm.startsWith('%')) {
-                const allSearchTerm = searchTerm.substring(1);
-                const collectionMatch = collectionData.name.toLowerCase().includes(allSearchTerm);
+    
+            // Dela upp söktermer baserat på söktyp
+            if (isCollectionSearch) {
+                const collectionSearchTerms = searchTerms.map(t => t.replace(/^#/, ''));
+                showCollection = collectionSearchTerms.some(term => 
+                    collectionData.name.toLowerCase().includes(term)
+                );
+                bookmarkElements.forEach(b => b.classList.toggle('hidden', !showCollection));
+                hasVisibleBookmarks = showCollection;
+            } 
+            else if (isGlobalSearch) {
+                const globalSearchTerms = searchTerms.map(t => t.replace(/^%/, ''));
+                const collectionMatch = globalSearchTerms.some(term => 
+                    collectionData.name.toLowerCase().includes(term)
+                );
+                
                 bookmarkElements.forEach(bookmarkElement => {
                     const bookmarkId = bookmarkElement.dataset.bookmarkId;
                     const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
-                    const showBookmark = bookmarkData.title.toLowerCase().includes(allSearchTerm) || bookmarkData.url.toLowerCase().includes(allSearchTerm);
-                    bookmarkElement.classList.toggle('hidden', !showBookmark);
-                    if (showBookmark) hasVisibleBookmarks = true;
+                    const bookmarkMatch = globalSearchTerms.some(term => 
+                        bookmarkData.title.toLowerCase().includes(term) ||
+                        bookmarkData.url.toLowerCase().includes(term)
+                    );
+                    
+                    bookmarkElement.classList.toggle('hidden', !bookmarkMatch);
+                    if (bookmarkMatch) hasVisibleBookmarks = true;
                 });
+                
                 showCollection = collectionMatch || hasVisibleBookmarks;
                 if (collectionMatch) {
-                    bookmarkElements.forEach(bookmarkElement => bookmarkElement.classList.remove('hidden'));
+                    bookmarkElements.forEach(b => b.classList.remove('hidden'));
                 }
-            } else {
-                const bookmarkSearchTerm = searchTerm;
+            } 
+            else {
                 bookmarkElements.forEach(bookmarkElement => {
                     const bookmarkId = bookmarkElement.dataset.bookmarkId;
                     const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
-                    const showBookmark = bookmarkData.title.toLowerCase().includes(bookmarkSearchTerm) || bookmarkData.url.toLowerCase().includes(bookmarkSearchTerm);
-                    bookmarkElement.classList.toggle('hidden', !showBookmark);
-                    if (showBookmark) hasVisibleBookmarks = true;
+                    const bookmarkMatch = searchTerms.some(term => 
+                        bookmarkData.title.toLowerCase().includes(term) ||
+                        bookmarkData.url.toLowerCase().includes(term)
+                    );
+                    
+                    bookmarkElement.classList.toggle('hidden', !bookmarkMatch);
+                    if (bookmarkMatch) hasVisibleBookmarks = true;
                 });
-                showCollection = hasVisibleBookmarks; // Visa endast om det finns synliga bokmärken
+                showCollection = hasVisibleBookmarks;
             }
-
-            // Hantera visning av stängda collections
+    
+            // Hantera visning av collection
             const bookmarksContainerElement = collectionElement.querySelector('.bookmarks');
             const toggleButton = collectionElement.querySelector('.toggle-collection');
+            
             if (showCollection && !collectionElement.classList.contains('is-open')) {
                 collectionElement.classList.add('is-open');
                 bookmarksContainerElement.style.display = 'flex';
-                if (toggleButton) {
-                    toggleButton.textContent = '∨';
-                }
-                const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
-                if (collectionData) {
-                    collectionData.isOpen = true;
-                }
+                if (toggleButton) toggleButton.textContent = '∨';
+                // Removed persistent update: collectionData.isOpen is no longer modified during filtering.
+                // if (collectionData) collectionData.isOpen = true;
             } else if (!searchTerm) {
-                // Återställ tillstånd om söktermen är tom
-                const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
                 if (collectionData && !collectionData.isOpen) {
                     collectionElement.classList.remove('is-open');
                     bookmarksContainerElement.style.display = 'none';
-                    if (toggleButton) {
-                        toggleButton.textContent = '∧';
-                    }
+                    if (toggleButton) toggleButton.textContent = '∧';
                 }
             }
-
+    
             collectionElement.classList.toggle('hidden', !showCollection);
         });
-    });
+    }
 });

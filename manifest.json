@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TheTab.Ninja",
-  "version": "1.02",
+  "version": "1.06",
   "icons": {
     "128": "128p.png"
   },
@@ -21,10 +21,7 @@
   "permissions": [
     "tabs",
     "windows", 
-    "tabGroups",
-    "scripting",
-    "storage",
-    "activeTab"
+    "tabGroups"
   ],
   "chrome_url_overrides": {
     "newtab": "bm.html"
