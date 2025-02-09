@@ -9,7 +9,8 @@
   "host_permissions": [
     "https://www.google.com/*",
     "https://*.gstatic.com/*", 
-    "https://api.github.com/*"
+    "https://api.github.com/*",    
+    "https://raw.githubusercontent.com/*"
   ],
   "action": {
     "default_popup": "popup.html"

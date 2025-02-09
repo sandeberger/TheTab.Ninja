@@ -127,7 +127,7 @@ chrome.tabs.onCreated.addListener((tab) => {
 async function handleGitHubFetch(config) {
   const { username, repo, pat, filepath } = config;
   try {
-    // Test repository access
+    // Testa repository access
     const repoResponse = await fetch(
       `https://api.github.com/repos/${username}/${repo}`,
       {
@@ -137,17 +137,16 @@ async function handleGitHubFetch(config) {
         }
       }
     );
-    
     if (!repoResponse.ok) {
       if (repoResponse.status === 404) {
-        throw new Error(`Repository "${username}/${repo}" not found`);
+        throw new Error(`Repository "${username}/${repo}" hittades inte`);
       } else if (repoResponse.status === 401) {
-        throw new Error('Authentication failed');
+        throw new Error('Autentisering misslyckades');
       }
-      throw new Error(`Failed to access repository: ${repoResponse.statusText}`);
+      throw new Error(`Kunde inte nå repository: ${repoResponse.statusText}`);
     }
 
-    // Fetch file content
+    // Hämta filinnehåll via Contents API:t
     const fileResponse = await fetch(
       `https://api.github.com/repos/${username}/${repo}/contents/${filepath}`,
       {
@@ -158,19 +157,58 @@ async function handleGitHubFetch(config) {
       }
     );
 
-    if (fileResponse.ok) {
-      const fileData = await fileResponse.json();
-      const content = decodeURIComponent(escape(atob(fileData.content)));
-      return { content: JSON.parse(content) };
-    } else if (fileResponse.status === 404) {
-      return { content: null };
+    if (!fileResponse.ok) {
+      if (fileResponse.status === 404) {
+        return { content: null };
+      }
+      throw new Error(`Kunde inte hämta filen: ${fileResponse.statusText}`);
     }
 
-    throw new Error(`Failed to fetch file: ${fileResponse.statusText}`);
+    const fileData = await fileResponse.json();
+
+    // Om filinnehållet finns direkt (filens storlek är under gränsen)
+    if (fileData.content) {
+      const decodedContent = decodeURIComponent(escape(atob(fileData.content)));
+      return { content: JSON.parse(decodedContent) };
+    }
+
+    // Om content saknas men download_url finns (filen är t.ex. över 1 MB)
+    if (fileData.download_url) {
+      // Försök hämta via download_url med Authorization-header
+      let downloadResponse = await fetch(fileData.download_url, {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (downloadResponse.ok) {
+        const rawContent = await downloadResponse.text();
+        return { content: JSON.parse(rawContent) };
+      } else {
+        // Vid 404 eller andra fel – försök hämta via Git Blobs API:t
+        const blobResponse = await fetch(
+          `https://api.github.com/repos/${username}/${repo}/git/blobs/${fileData.sha}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${pat}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          }
+        );
+        if (!blobResponse.ok) {
+          throw new Error(`Misslyckades hämta blob: ${blobResponse.statusText}`);
+        }
+        const blobData = await blobResponse.json();
+        const decodedContent = decodeURIComponent(escape(atob(blobData.content)));
+        return { content: JSON.parse(decodedContent) };
+      }
+    }
+    throw new Error('Filen innehåller varken content eller download_url');
   } catch (error) {
     throw error;
   }
 }
+
 
 async function handleGitHubPush(config, content) {
   const { username, repo, pat, filepath } = config;
