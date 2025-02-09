@@ -994,9 +994,10 @@ function deleteCollection(collectionId) {
 // Uppdaterad funktion för att lägga till ett bokmärke
 async function addBookmark(collectionId) {
     try {
-        const title = prompt('Enter bookmark title:');
-        const url = prompt('Enter bookmark URL:');
+        const title = prompt('Enter bookmark title:');        
+        const url = prompt('Enter bookmark URL:', 'https://');
         const description = prompt('Enter bookmark description:');
+        const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
         if (title && url) {
             const icon = await getFavicon(url);
             const newBookmark = {
@@ -1009,7 +1010,7 @@ async function addBookmark(collectionId) {
                 deleted: false,
                 position: collection.bookmarks.length
             };
-            const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+            
             if (collection) {
                 collection.bookmarks.push(newBookmark);
                 collection.lastModified = Date.now();
@@ -1089,11 +1090,8 @@ function launchCollection(collectionId) {
         const urls = collection.bookmarks.filter(b => !b.deleted).map(bookmark => bookmark.url);
         const extensionId = extId; // Ersätt med ditt extension-ID
     
-        chrome.runtime.sendMessage(extensionId, {
-            action: 'launchCollection',
-            urls: urls,
-            collectionName: collection.name
-        }, (response) => {
+        chrome.runtime.sendMessage({ action: 'launchCollection', urls: urls, collectionName: collection.name },
+        (response) => {
             if (chrome.runtime.lastError) {
                 console.error('Error launching collection:', chrome.runtime.lastError);
                 alert('Error launching collection. Make sure the extension is installed and active.');
