@@ -13,37 +13,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
   } else if (message.action === "getTabs") {
-    chrome.windows.getAll({ populate: true }, (windows) => {
-      const result = windows.map((window) => ({
-        windowId: window.id,
-        tabs: window.tabs.map((tab) => ({
+    chrome.windows.getAll({ populate: true }, async (windows) => {
+      const result = [];
+      // För varje fönster hämtas även tab-grupper
+      for (const window of windows) {
+        const groups = await new Promise((resolve) => {
+          chrome.tabGroups.query({ windowId: window.id }, resolve);
+        });
+        const mappedGroups = groups.map(g => ({
+          groupId: g.id,
+          title: g.title,
+          color: g.color
+        }));
+        const tabs = window.tabs.map(tab => ({
           tabId: tab.id,
           title: tab.title,
           url: tab.url,
-          favIconUrl: tab.favIconUrl
-        }))
-      }));
+          favIconUrl: tab.favIconUrl,
+          groupId: tab.groupId
+        }));
+        result.push({
+          windowId: window.id,
+          tabs: tabs,
+          groups: mappedGroups
+        });
+      }
       sendResponse(result);
     });
-    return true;  // Indikerar att svaret sker asynkront
-  } else if (message.action === "activateTab") {
-    chrome.windows.update(message.windowId, { focused: true }, () => {
-      chrome.tabs.update(message.tabId, { active: true }, () => {
-        sendResponse({ success: true });
-      });
-    });
     return true;
-  } else if (message.action === 'switchToTab') {
-      console.log('Received switchToTab message:', message);
-      chrome.windows.update(parseInt(message.windowId), { focused: true }, () => {
-          console.log('Updating tab:', message.tabId);
-          chrome.tabs.update(parseInt(message.tabId), { active: true }, () => {
-              if (chrome.runtime.lastError) {
-                  console.error("Error updating tab:", chrome.runtime.lastError);
-              }
-          });
-      });
-      return true;
   } else if (message.action === 'fetchFavicon') {
     const { url } = message;
 

@@ -232,8 +232,9 @@
         }
         .tabs-list {
             display: flex;
-            overflow-x: auto;
-            white-space: nowrap;
+            flex-direction: column;
+            overflow-y: auto;
+            white-space: normal;
         }
         .tab {
             display: flex;
@@ -611,6 +612,54 @@
             border-color: #007bff; /* Exempel på färg för markerad/hover */
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Valfri skuggeffekt */
         }
+
+        .tab-group-container {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            backdrop-filter: blur(8px);
+            margin-top: 10px;
+        }
+        .group-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .group-tabs {
+            display: flex;
+            flex-direction: column; /* Varje tabb på en egen rad */
+            white-space: nowrap;
+            gap: 10px;
+        }
+
+        .ungrouped-tabs {
+            display: flex;
+            flex-direction: column; /* Varje tabb på en egen rad */
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .create-collection-btn {
+            display: none;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .group-header:hover .create-collection-btn {
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -659,6 +708,8 @@
                     <!-- Miniatyrer kommer att genereras här med JavaScript -->
                 </div>
             </div>
+            <br>
+            <div id="versionDisplay"></div>
             </div>            
         </div>
     </div>

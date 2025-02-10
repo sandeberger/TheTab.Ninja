@@ -1,5 +1,5 @@
 //const extId = 'ekincidnpifabcbbchcapcahaoeoccgp' //test
-const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.06
+const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.07
 //https://wallpapersden.com/
 
 let bookmarkManagerData = {
@@ -28,11 +28,11 @@ document.getElementById('toggleRightPane').addEventListener('click', function ()
     togglePane('rightPane');
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+/*document.addEventListener('DOMContentLoaded', () => {
     const backgroundSelect = document.getElementById('backgroundSelect');
     const savedBackground = localStorage.getItem('backgroundImage');
 
-    if (savedBackground) {
+    if (savedBackground && backgroundSelect) {
         backgroundSelect.value = savedBackground;
         setBackground(savedBackground);
     }
@@ -42,9 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
         setBackground(selectedBackground);
         localStorage.setItem('backgroundImage', selectedBackground);
     });
-});
+
+    const manifestData = chrome.runtime.getManifest();
+    const version = manifestData.version;
+    const versionDisplay = document.getElementById('versionDisplay');
+    versionDisplay.textContent = `Version: ${version}`;
+});*/
 
 document.addEventListener('DOMContentLoaded', () => {
+    const manifestData = chrome.runtime.getManifest();
+    const version = manifestData.version;
+    const versionDisplay = document.getElementById('versionDisplay');
+    versionDisplay.textContent = `TheTab.ninja version: ${version}`;
+
     const backgroundThumbnailsContainer = document.getElementById('backgroundThumbnails');
     // Lista med filnamn för dina bakgrundsbilder (se till att de finns i 'images/' mappen)
     const backgroundImages = [
@@ -1556,53 +1566,127 @@ function displayFallbackContent(contentDiv) {
 }
 
 // Uppdaterad fetchChromeTabs funktion
-function fetchChromeTabs() {
+async function fetchChromeTabs() {
     try {
         chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
             const contentDiv = document.getElementById('content');
             contentDiv.innerHTML = '';
 
             if (response && response.length > 0) {
-                response.forEach((window) => {
+                response.forEach((windowData) => {
                     const windowDiv = document.createElement('div');
                     windowDiv.className = 'window';
+
                     const windowTitle = document.createElement('div');
                     windowTitle.className = 'window-title';
-                    windowTitle.textContent = `Window ID: ${window.windowId} (${window.tabs.length} tabs)`;
+                    windowTitle.textContent = `Window ID: ${windowData.windowId} (${windowData.tabs.length} tabs)`;
+
                     const tabsList = document.createElement('div');
                     tabsList.className = 'tabs-list';
 
-                    const isOpen = bookmarkManagerData.chromeWindowStates[window.windowId] !== undefined ? 
-                        bookmarkManagerData.chromeWindowStates[window.windowId] : true;
-                    tabsList.style.display = isOpen ? 'block' : 'none';
+                    const groups = windowData.groups || [];
+                    const groupMap = {};
+                    groups.forEach(group => {
+                        groupMap[group.groupId] = group;
+                    });
 
-                    window.tabs.forEach((tabData) => {
-                        console.log('Creating tab element with data:', tabData);  // Debug logg
+                    const groupedTabs = {};
+                    const ungroupedTabs = [];
+
+                    windowData.tabs.forEach(tab => {
+                        if (tab.groupId && tab.groupId !== -1) {
+                            if (!groupedTabs[tab.groupId]) {
+                                groupedTabs[tab.groupId] = [];
+                            }
+                            groupedTabs[tab.groupId].push(tab);
+                        } else {
+                            ungroupedTabs.push(tab);
+                        }
+                    });
+
+                    for (const groupId in groupedTabs) {
+                        const groupTabs = groupedTabs[groupId];
+                        const groupInfo = groupMap[groupId];
+
+                        const groupContainer = document.createElement('div');
+                        groupContainer.className = 'tab-group-container';
+
+                        if (groupInfo && groupInfo.color) {
+                            const colorMapping = {
+                                'blue': 'rgba(66, 133, 244, 0.2)',
+                                'red': 'rgba(219, 68, 55, 0.2)',
+                                'yellow': 'rgba(244, 180, 0, 0.2)',
+                                'green': 'rgba(15, 157, 88, 0.2)',
+                                'pink': 'rgba(234, 67, 53, 0.2)',
+                                'purple': 'rgba(155, 81, 224, 0.2)',
+                                'cyan': 'rgba(0, 188, 212, 0.2)',
+                                'orange': 'rgba(255, 152, 0, 0.2)'
+                            };
+                            const bgColor = colorMapping[groupInfo.color] || 'rgba(0,0,0,0.1)';
+                            groupContainer.style.backgroundColor = bgColor;
+                        } else {
+                            groupContainer.style.backgroundColor = 'rgba(0,0,0,0.1)';
+                        }
+
+                        const groupTitle = document.createElement('div');
+                        groupTitle.className = 'group-title';
+                        groupTitle.textContent = groupInfo && groupInfo.title ? groupInfo.title : 'Tab Group';
+                        groupContainer.appendChild(groupTitle);
+
+                        const groupTabsContainer = document.createElement('div');
+                        groupTabsContainer.className = 'group-tabs';
+
+                        groupTabs.forEach(tabData => {
+                            const tabDiv = createChromeTabElement({
+                                id: tabData.tabId,
+                                title: tabData.title,
+                                url: tabData.url,
+                                favIconUrl: tabData.favIconUrl
+                            }, windowData.windowId);
+                            groupTabsContainer.appendChild(tabDiv);
+                        });
+
+                        groupContainer.appendChild(groupTabsContainer);
+                        tabsList.appendChild(groupContainer);
+
+                        groupTitle.addEventListener('click', () => {
+                            if (groupTabsContainer.style.display === 'none') {
+                                groupTabsContainer.style.display = 'block';
+                            } else {
+                                groupTabsContainer.style.display = 'none';
+                            }
+                        });
+                    }
+
+                    ungroupedTabs.className = 'ungrouped-tabs';
+                    ungroupedTabs.forEach(tabData => {
                         const tabDiv = createChromeTabElement({
-                            id: tabData.tabId,  // Här mappar vi om data
+                            id: tabData.tabId,
                             title: tabData.title,
                             url: tabData.url,
                             favIconUrl: tabData.favIconUrl
-                        }, window.windowId);
+                        }, windowData.windowId);
                         tabsList.appendChild(tabDiv);
                     });
+
                     windowDiv.appendChild(windowTitle);
                     windowDiv.appendChild(tabsList);
                     contentDiv.appendChild(windowDiv);
-                    
+
                     windowTitle.addEventListener('click', () => {
                         const newState = tabsList.style.display === 'none' ? 'block' : 'none';
                         tabsList.style.display = newState;
-                        bookmarkManagerData.chromeWindowStates[window.windowId] = newState === 'block';
+                        bookmarkManagerData.chromeWindowStates[windowData.windowId] = newState === 'block';
                         saveToLocalStorage();
                     });
                 });
             }
         });
-    } catch(error) {
+    } catch (error) {
         console.error('Error:', error);
     }
 }
+
 
 // Uppdaterad togglePane funktion
 function togglePane(paneId) {
