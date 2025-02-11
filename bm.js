@@ -628,6 +628,7 @@ function renderCollections() {
         // Skapa alla knappar
         const buttons = [
             { className: 'launch-collection', text: '🚀', title: 'Open all bookmarks as an Chromegroup', action: () => launchCollection(collection.id) },
+            { className: 'fetch-alltabs', text: '📥', title: 'Fetch all open tabs', action: () => fetchAllTabs(collection.id) },
             { className: 'add-bookmark', text: '+', title: 'Add bookmark', action: () => addBookmark(collection.id) },
             { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
             { className: 'move-collection', text: '▲', title: 'Move up', action: () => moveCollection(collection.id, -1) },
@@ -710,85 +711,122 @@ function renderCollections() {
             return button;
         }
 
-// Uppdaterad createBookmarkElement funktion
-function createBookmarkElement(bookmark, collectionId) {
-    if (bookmark.deleted) return null; // ❌ Filtrera här
-    const bookmarkElement = document.createElement('div');
-    bookmarkElement.className = 'bookmark';
-    bookmarkElement.setAttribute('draggable', 'true');
-    bookmarkElement.dataset.collectionId = collectionId;
-    bookmarkElement.dataset.bookmarkId = bookmark.id;
 
-    const bookmarkIcon = document.createElement('img');
-    bookmarkIcon.src = bookmark.icon || 'default-icon.png';
-    bookmarkIcon.alt = 'Icon';
+        async function fetchAllTabs(collectionId) {
+            try {
+                chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+                    if (response && response.length > 0) {
+                        let allTabs = [];
+                        response.forEach(windowData => {
+                            allTabs = allTabs.concat(windowData.tabs);
+                        });
+                        const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+                        if (!collection) {
+                            console.error("Collection not found:", collectionId);
+                            return;
+                        }
+                        allTabs.forEach(tab => {
+                            const newBookmark = {
+                                id: generateUUID(),
+                                title: tab.title,
+                                url: tab.url,
+                                description: "",
+                                icon: tab.favIconUrl || "default-icon.png",
+                                lastModified: Date.now(),
+                                deleted: false,
+                                position: collection.bookmarks.length
+                            };
+                            collection.bookmarks.push(newBookmark);
+                        });
+                        collection.lastModified = Date.now();
+                        renderCollections();
+                        saveToLocalStorage();
+                    }
+                });
+            } catch (error) {
+                console.error("Error in fetchAllTabs:", error);
+            }
+        }
 
-    const bookmarkTitle = document.createElement('h3');
-    bookmarkTitle.textContent = bookmark.title;
-    bookmarkTitle.title = bookmark.title;
+        // Uppdaterad createBookmarkElement funktion
+        function createBookmarkElement(bookmark, collectionId) {
+            if (bookmark.deleted) return null; // ❌ Filtrera här
+            const bookmarkElement = document.createElement('div');
+            bookmarkElement.className = 'bookmark';
+            bookmarkElement.setAttribute('draggable', 'true');
+            bookmarkElement.dataset.collectionId = collectionId;
+            bookmarkElement.dataset.bookmarkId = bookmark.id;
 
-    const bookmarkDescription = document.createElement('p');
-    bookmarkDescription.textContent = bookmark.description || '';
-    bookmarkDescription.title = bookmark.description || '';
+            const bookmarkIcon = document.createElement('img');
+            bookmarkIcon.src = bookmark.icon || 'default-icon.png';
+            bookmarkIcon.alt = 'Icon';
 
-    const editIcon = document.createElement('span');
-    editIcon.className = 'edit-icon';
-    editIcon.textContent = '✏️';
+            const bookmarkTitle = document.createElement('h3');
+            bookmarkTitle.textContent = bookmark.title;
+            bookmarkTitle.title = bookmark.title;
 
-    const deleteIcon = document.createElement('span');
-    deleteIcon.className = 'delete-icon';
-    deleteIcon.textContent = '🗑️';
+            const bookmarkDescription = document.createElement('p');
+            bookmarkDescription.textContent = bookmark.description || '';
+            bookmarkDescription.title = bookmark.description || '';
 
-    bookmarkElement.appendChild(bookmarkIcon);
-    bookmarkElement.appendChild(bookmarkTitle);
-    bookmarkElement.appendChild(bookmarkDescription);
-    bookmarkElement.appendChild(editIcon);
-    bookmarkElement.appendChild(deleteIcon);
+            const editIcon = document.createElement('span');
+            editIcon.className = 'edit-icon';
+            editIcon.textContent = '✏️';
 
-    bookmarkElement.addEventListener('dragstart', dragStartBookmark);
-    bookmarkElement.addEventListener('dragend', dragEnd);
-    bookmarkElement.addEventListener('dragover', dragOverBookmark);
-    bookmarkElement.addEventListener('drop', dropBookmark);
+            const deleteIcon = document.createElement('span');
+            deleteIcon.className = 'delete-icon';
+            deleteIcon.textContent = '🗑️';
 
-    editIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        editBookmark(collectionId, bookmark.id);
-    });
+            bookmarkElement.appendChild(bookmarkIcon);
+            bookmarkElement.appendChild(bookmarkTitle);
+            bookmarkElement.appendChild(bookmarkDescription);
+            bookmarkElement.appendChild(editIcon);
+            bookmarkElement.appendChild(deleteIcon);
 
-    deleteIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteBookmark(collectionId, bookmark.id);
-    });
-    
-    bookmarkElement.addEventListener('click', () => openBookmark(collectionId, bookmark.id));
+            bookmarkElement.addEventListener('dragstart', dragStartBookmark);
+            bookmarkElement.addEventListener('dragend', dragEnd);
+            bookmarkElement.addEventListener('dragover', dragOverBookmark);
+            bookmarkElement.addEventListener('drop', dropBookmark);
 
-    // Lägg till hover-effekter
-    bookmarkElement.addEventListener('dragover', function(e) {
-        this.style.transform = 'scale(1.02)';
-        this.style.zIndex = '1000';
-    });
+            editIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                editBookmark(collectionId, bookmark.id);
+            });
 
-    bookmarkElement.addEventListener('dragleave', function(e) {
-        this.style.transform = 'scale(1)';
-        this.style.zIndex = 'auto';
-    });
+            deleteIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteBookmark(collectionId, bookmark.id);
+            });
+            
+            bookmarkElement.addEventListener('click', () => openBookmark(collectionId, bookmark.id));
 
-    // Uppdaterad dragstart-effekt
-    bookmarkElement.addEventListener('dragstart', function(e) {
-        this.style.opacity = '0.5';
-        this.style.transform = 'scale(0.95)';
-        // ... resten av befintlig kod ...
-    });
+            // Lägg till hover-effekter
+            bookmarkElement.addEventListener('dragover', function(e) {
+                this.style.transform = 'scale(1.02)';
+                this.style.zIndex = '1000';
+            });
 
-    bookmarkElement.addEventListener('dragend', function(e) {
-        this.style.opacity = '1';
-        this.style.transform = 'scale(1)';
-        this.style.zIndex = 'auto';
-        // ... resten av befintlig kod ...
-    });
+            bookmarkElement.addEventListener('dragleave', function(e) {
+                this.style.transform = 'scale(1)';
+                this.style.zIndex = 'auto';
+            });
 
-    return bookmarkElement;
-}
+            // Uppdaterad dragstart-effekt
+            bookmarkElement.addEventListener('dragstart', function(e) {
+                this.style.opacity = '0.5';
+                this.style.transform = 'scale(0.95)';
+                // ... resten av befintlig kod ...
+            });
+
+            bookmarkElement.addEventListener('dragend', function(e) {
+                this.style.opacity = '1';
+                this.style.transform = 'scale(1)';
+                this.style.zIndex = 'auto';
+                // ... resten av befintlig kod ...
+            });
+
+            return bookmarkElement;
+        }
 
         
         function findFavicon(url, callback) {
@@ -1453,39 +1491,60 @@ function dropBookmarkContainer(e) {
         const collectionId = collectionElement.dataset.collectionId;
         const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
 
-        if (collection) {
-            if (draggedItem.type === 'chromeTab') {
+        if (!collection) return;
+
+        if (draggedItem.type === 'chromeTabGroup') {
+            draggedItem.data.tabs.forEach(tab => {
                 const newBookmark = {
                     id: generateUUID(),
-                    title: draggedItem.data.title,
-                    url: draggedItem.data.url,
-                    description: '',
-                    icon: draggedItem.data.icon || 'default-icon.png',
+                    title: tab.title,
+                    url: tab.url,
+                    description: "",
+                    icon: tab.favIconUrl || 'default-icon.png',
                     lastModified: Date.now(),
-                    deleted: false
+                    deleted: false,
+                    position: collection.bookmarks.length
                 };
                 collection.bookmarks.push(newBookmark);
-                collection.lastModified = Date.now();
-            } else if (draggedItem.type === 'bookmark') {
-                const fromCollectionId = draggedItem.collectionId;
-                const fromBookmarkId = draggedItem.bookmarkId;
-                const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
-                
-                if (fromCollection) {
-                    const movedBookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === fromBookmarkId);
-                    if (movedBookmarkIndex !== -1) {
-                        const movedBookmark = fromCollection.bookmarks.splice(movedBookmarkIndex, 1)[0];
-                        collection.bookmarks.push(movedBookmark);
-                        
-                        fromCollection.lastModified = Date.now();
-                        collection.lastModified = Date.now();
-                    }
+            });
+            collection.lastModified = Date.now();
+            renderCollections();
+            saveToLocalStorage();
+            draggedItem = null;
+            return;
+        }
+
+        if (draggedItem.type === 'chromeTab') {
+            const newBookmark = {
+                id: generateUUID(),
+                title: draggedItem.data.title,
+                url: draggedItem.data.url,
+                description: '',
+                icon: draggedItem.data.icon || 'default-icon.png',
+                lastModified: Date.now(),
+                deleted: false
+            };
+            collection.bookmarks.push(newBookmark);
+            collection.lastModified = Date.now();
+        } else if (draggedItem.type === 'bookmark') {
+            const fromCollectionId = draggedItem.collectionId;
+            const fromBookmarkId = draggedItem.bookmarkId;
+            const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
+            
+            if (fromCollection) {
+                const movedBookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === fromBookmarkId);
+                if (movedBookmarkIndex !== -1) {
+                    const movedBookmark = fromCollection.bookmarks.splice(movedBookmarkIndex, 1)[0];
+                    collection.bookmarks.push(movedBookmark);
+                    
+                    fromCollection.lastModified = Date.now();
+                    collection.lastModified = Date.now();
                 }
             }
-            
-            saveToLocalStorage();
-            renderCollections();
         }
+        
+        saveToLocalStorage();
+        renderCollections();
     }
     draggedItem = null;
 }
@@ -1524,13 +1583,13 @@ function createChromeTabElement(tab, windowId) {
 
     // Skicka ett meddelande till background.js vid klick
     tabDiv.addEventListener('click', () => {
-        if (!draggedItem) {
+        //if (!draggedItem) {
             chrome.runtime.sendMessage({
                 action: 'switchToTab',
                 tabId: tab.id,
                 windowId: windowId
             });
-        }
+        //}
     });
 
     return tabDiv;
@@ -1610,6 +1669,28 @@ async function fetchChromeTabs() {
 
                         const groupContainer = document.createElement('div');
                         groupContainer.className = 'tab-group-container';
+                        
+                        const groupDragHandle = document.createElement('div');
+                        groupDragHandle.className = 'group-drag-handle';
+                        groupDragHandle.textContent = groupInfo && groupInfo.title ? groupInfo.title : 'Tab Group'; // Exempelikon
+                        groupDragHandle.draggable = true;
+
+                        groupDragHandle.addEventListener('dragstart', function(e) {
+                            e.stopPropagation(); // Hindra att händelsen når underliggande element
+                            draggedItem = {
+                              type: 'chromeTabGroup',
+                              data: {
+                                title: groupInfo.title,
+                                tabs: groupTabs
+                              }
+                            };
+                            e.dataTransfer.effectAllowed = 'move';
+                        });
+                    
+                        const groupHeader = document.createElement('div');
+                        groupHeader.className = 'group-header';
+                        groupHeader.appendChild(groupDragHandle);
+                        
 
                         if (groupInfo && groupInfo.color) {
                             const colorMapping = {
@@ -1630,8 +1711,11 @@ async function fetchChromeTabs() {
 
                         const groupTitle = document.createElement('div');
                         groupTitle.className = 'group-title';
-                        groupTitle.textContent = groupInfo && groupInfo.title ? groupInfo.title : 'Tab Group';
-                        groupContainer.appendChild(groupTitle);
+                        //groupTitle.textContent = groupInfo && groupInfo.title ? groupInfo.title : 'Tab Group';
+                        //groupContainer.draggable = true;
+                        groupHeader.appendChild(groupTitle);
+                        groupContainer.appendChild(groupHeader);
+                        
 
                         const groupTabsContainer = document.createElement('div');
                         groupTabsContainer.className = 'group-tabs';

@@ -41,7 +41,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(result);
     });
     return true;
-  } else if (message.action === 'fetchFavicon') {
+  } else if (message.action === 'switchToTab') {
+    chrome.windows.update(parseInt(message.windowId), { focused: true }, () => {
+      chrome.tabs.update(parseInt(message.tabId), { active: true }, () => {
+        if (chrome.runtime.lastError) {
+          console.error("Error updating tab:", chrome.runtime.lastError);
+        }
+        sendResponse({ success: true });
+      });
+    });
+    return true;
+  }else if (message.action === 'fetchFavicon') {
     const { url } = message;
 
     // Asynkron funktion för att hämta favicon från Googles S2-tjänst
