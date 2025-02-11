@@ -43,7 +43,7 @@ Install [TheTab.Ninja](https://chromewebstore.google.com/detail/thetabninja/bnmj
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [CC BY-NC-ND 4.0](LICENSE).
 
 ## Support
 
