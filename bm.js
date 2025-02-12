@@ -583,122 +583,123 @@ function loadFromLocalStorage() {
     }
 }
 
-// Uppdaterad renderCollections funktion
-function renderCollections() {
-    const collectionsContainer = document.getElementById('collections');
-    collectionsContainer.innerHTML = '';
+        // Uppdaterad renderCollections funktion
+        function renderCollections() {
+            const collectionsContainer = document.getElementById('collections');
+            collectionsContainer.innerHTML = '';
 
-    const sortedCollections = bookmarkManagerData.collections
-        .filter(c => !c.deleted)
-        .sort((a, b) => a.position - b.position);
+            const sortedCollections = bookmarkManagerData.collections
+                .filter(c => !c.deleted)
+                .sort((a, b) => a.position - b.position);
 
-    sortedCollections.forEach((collection) => {
-        const collectionElement = document.createElement('div');
-        collectionElement.className = `collection ${collection.isOpen ? 'is-open' : ''}`;
-        collectionElement.setAttribute('draggable', true);
-        collectionElement.dataset.collectionId = collection.id;
+            sortedCollections.forEach((collection) => {
+                const collectionElement = document.createElement('div');
+                collectionElement.className = `collection ${collection.isOpen ? 'is-open' : ''}`;
+                collectionElement.setAttribute('draggable', true);
+                collectionElement.dataset.collectionId = collection.id;
 
-        // Collection Header
-        const header = document.createElement('div');
-        header.className = 'collection-header';
+                // Collection Header
+                const header = document.createElement('div');
+                header.className = 'collection-header';
 
-        // Drag Handle
-        const dragHandle = document.createElement('span');
-        dragHandle.className = 'drag-handle';
-        dragHandle.textContent = '☰';
-        dragHandle.setAttribute('draggable', true);
+                // Drag Handle
+                const dragHandle = document.createElement('span');
+                dragHandle.className = 'drag-handle';
+                dragHandle.textContent = '☰';
+                dragHandle.setAttribute('draggable', true);
 
-        // Title Area
-        const titleArea = document.createElement('div');
-        titleArea.className = 'collection-title-area';
-        
-        // Collection Title
-        const title = document.createElement('h2');
-        title.textContent = collection.name;
+                // Title Area
+                const titleArea = document.createElement('div');
+                titleArea.className = 'collection-title-area';
+                
+                // Collection Title
+                const title = document.createElement('h2');
+                title.textContent = collection.name;
 
-        // Toggle Button
-        const toggleBtn = document.createElement('button');
-        toggleBtn.className = 'toggle-collection';
-        toggleBtn.textContent = collection.isOpen ? '∨' : '∧';
+                // Toggle Button
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'toggle-collection';
+                toggleBtn.textContent = collection.isOpen ? '∨' : '∧';
 
-        // Action Buttons
-        const actions = document.createElement('div');
-        actions.className = 'collection-actions';
+                // Action Buttons
+                const actions = document.createElement('div');
+                actions.className = 'collection-actions';
 
-        // Skapa alla knappar
-        const buttons = [
-            { className: 'launch-collection', text: '🚀', title: 'Open all bookmarks as an Chromegroup', action: () => launchCollection(collection.id) },
-            { className: 'fetch-alltabs', text: '📥', title: 'Fetch all open tabs', action: () => fetchAllTabs(collection.id) },
-            { className: 'add-bookmark', text: '+', title: 'Add bookmark', action: () => addBookmark(collection.id) },
-            { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
-            { className: 'move-collection', text: '▲', title: 'Move up', action: () => moveCollection(collection.id, -1) },
-            { className: 'move-collection', text: '▼', title: 'Move down', action: () => moveCollection(collection.id, 1) },
-            { className: 'delete-collection', text: '🗑️', title: 'Delete collection', action: () => deleteCollection(collection.id) }
-        ];
+                // Skapa alla knappar
+                const buttons = [
+                    { className: 'launch-collection', text: '🚀', title: 'Open bookmarks in a Chrome group', action: () => launchCollection(collection.id) },
+                    { className: 'openall-collection', text: '📤', title: 'Open bookmarks in this collection', action: () => launchAllTabs(collection.id) },
+                    { className: 'fetch-alltabs', text: '📥', title: 'Get all Chrome tabs', action: () => fetchAllTabs(collection.id) },
+                    { className: 'add-bookmark', text: '+', title: 'Create bookmark', action: () => addBookmark(collection.id) },
+                    { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
+                    { className: 'move-collection', text: '▲', title: 'Move collection up', action: () => moveCollection(collection.id, -1) },
+                    { className: 'move-collection', text: '▼', title: 'Move collection down', action: () => moveCollection(collection.id, 1) },
+                    { className: 'delete-collection', text: '🗑️', title: 'Delete collection', action: () => deleteCollection(collection.id) }
+                ];
 
-        buttons.forEach(btnConfig => {
-            const btn = document.createElement('button');
-            btn.className = `collection-button ${btnConfig.className}`;
-            btn.textContent = btnConfig.text;
-            btn.title = btnConfig.title;
-            btn.addEventListener('click', btnConfig.action);
-            actions.appendChild(btn);
-        });
+                buttons.forEach(btnConfig => {
+                    const btn = document.createElement('button');
+                    btn.className = `collection-button ${btnConfig.className}`;
+                    btn.textContent = btnConfig.text;
+                    btn.title = btnConfig.title;
+                    btn.addEventListener('click', btnConfig.action);
+                    actions.appendChild(btn);
+                });
 
-        // Bygg ihop headern
-        titleArea.appendChild(dragHandle);
-        titleArea.appendChild(title);
-        titleArea.appendChild(toggleBtn);
-        header.appendChild(titleArea);
-        header.appendChild(actions);
+                // Bygg ihop headern
+                titleArea.appendChild(dragHandle);
+                titleArea.appendChild(title);
+                titleArea.appendChild(toggleBtn);
+                header.appendChild(titleArea);
+                header.appendChild(actions);
 
-        // Bookmarks Container
-        const bookmarksContainer = document.createElement('div');
-        bookmarksContainer.className = 'bookmarks';
-        bookmarksContainer.style.display = collection.isOpen ? 'flex' : 'none';
+                // Bookmarks Container
+                const bookmarksContainer = document.createElement('div');
+                bookmarksContainer.className = 'bookmarks';
+                bookmarksContainer.style.display = collection.isOpen ? 'flex' : 'none';
 
-        // Lägg till bokmärken (filtrera bort raderade)
-        collection.bookmarks
-            .filter(b => !b.deleted)
-            .sort((a, b) => a.position - b.position)
-            .forEach(bookmark => {
-                const bookmarkElement = createBookmarkElement(bookmark, collection.id);
-                bookmarksContainer.appendChild(bookmarkElement);
+                // Lägg till bokmärken (filtrera bort raderade)
+                collection.bookmarks
+                    .filter(b => !b.deleted)
+                    .sort((a, b) => a.position - b.position)
+                    .forEach(bookmark => {
+                        const bookmarkElement = createBookmarkElement(bookmark, collection.id);
+                        bookmarksContainer.appendChild(bookmarkElement);
+                    });
+
+                // Lägg till "dra hit" om tom
+                if (bookmarksContainer.children.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'empty-collection-message';
+                    emptyMsg.textContent = 'Drag bookmarks here';
+                    emptyMsg.dataset.collectionId = collection.id;
+                    addEmptyMessageListeners(emptyMsg);
+                    bookmarksContainer.appendChild(emptyMsg);
+                }
+
+                // Event Listeners
+                dragHandle.addEventListener('dragstart', dragStartCollection);
+                dragHandle.addEventListener('dragend', dragEnd);
+                toggleBtn.addEventListener('click', () => toggleCollection(collection.id));
+
+                // Sammansätt allt
+                collectionElement.appendChild(header);
+                collectionElement.appendChild(bookmarksContainer);
+                collectionsContainer.appendChild(collectionElement);
+
+                // Draghanterare för hela collection
+                addCollectionDragListeners(collectionElement);
+
+                // Trigger the filter to reapply after rendering
+                const searchBox = document.getElementById('searchBox');
+                if (searchBox) {
+                    const event = new Event('input');
+                    searchBox.dispatchEvent(event);
+                }
             });
 
-        // Lägg till "dra hit" om tom
-        if (bookmarksContainer.children.length === 0) {
-            const emptyMsg = document.createElement('div');
-            emptyMsg.className = 'empty-collection-message';
-            emptyMsg.textContent = 'Drag bookmarks here';
-            emptyMsg.dataset.collectionId = collection.id;
-            addEmptyMessageListeners(emptyMsg);
-            bookmarksContainer.appendChild(emptyMsg);
+            saveToLocalStorage();
         }
-
-        // Event Listeners
-        dragHandle.addEventListener('dragstart', dragStartCollection);
-        dragHandle.addEventListener('dragend', dragEnd);
-        toggleBtn.addEventListener('click', () => toggleCollection(collection.id));
-
-        // Sammansätt allt
-        collectionElement.appendChild(header);
-        collectionElement.appendChild(bookmarksContainer);
-        collectionsContainer.appendChild(collectionElement);
-
-        // Draghanterare för hela collection
-        addCollectionDragListeners(collectionElement);
-
-        // Trigger the filter to reapply after rendering
-        const searchBox = document.getElementById('searchBox');
-        if (searchBox) {
-            const event = new Event('input');
-            searchBox.dispatchEvent(event);
-        }
-    });
-
-    saveToLocalStorage();
-}
 
 
         function createButton(className, text, tooltipText) {
@@ -973,9 +974,17 @@ function enrichCollection(collection) {
     };
 }
 
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Månader är 0-indexerade
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 // Uppdaterad funktion för att lägga till en ny samling        
 function addCollection() {
-    const name = prompt('Enter collection name:');
+    const today = new Date();
+    const name = prompt('Enter collection name:',formatDate(today));
     if (name) {
         bookmarkManagerData.collections.forEach(c => {
             c.position++;
