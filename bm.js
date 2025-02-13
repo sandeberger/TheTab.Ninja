@@ -21,13 +21,7 @@ let bookmarkManagerData = {
 let draggedItem = null;
 let placeholder = null;
 
-document.getElementById('toggleLeftPane').addEventListener('click', function () {
-    togglePane('leftPane');
-});
 
-document.getElementById('toggleRightPane').addEventListener('click', function () {
-    togglePane('rightPane');
-});
 
 /*document.addEventListener('DOMContentLoaded', () => {
     const backgroundSelect = document.getElementById('backgroundSelect');
@@ -55,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const version = manifestData.version;
     const versionDisplay = document.getElementById('versionDisplay');
     versionDisplay.textContent = `TheTab.ninja version: ${version}`;
-
+    
     const backgroundThumbnailsContainer = document.getElementById('backgroundThumbnails');
     // Lista med filnamn för dina bakgrundsbilder (se till att de finns i 'images/' mappen)
     const backgroundImages = [
@@ -77,6 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     const savedBackground = localStorage.getItem('backgroundImage');
     let selectedThumbnail = null; // Variabel för att hålla reda på den valda miniatyren
+
+
+    document.getElementById('toggleLeftPane').addEventListener('click', function () {
+        togglePane('leftPane');
+    });
+    
+    document.getElementById('toggleRightPane').addEventListener('click', function () {
+        togglePane('rightPane');
+    });
 
     // Funktion för att sätta bakgrundsbild
     function setBackground(imageName) {
@@ -703,6 +706,22 @@ function loadFromLocalStorage() {
             saveToLocalStorage();
         }
 
+        function launchAllTabs(collectionId) {
+            const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+            if (collection) {
+              // Filtrera bort raderade bokmärken och samla URL:er
+              const urls = collection.bookmarks
+                .filter(bookmark => !bookmark.deleted)
+                .map(bookmark => bookmark.url);
+          
+              // Öppna varje URL i en ny flik
+              urls.forEach(url => {
+                chrome.tabs.create({ url: url });
+              });
+            } else {
+              console.error(`Collection med id ${collectionId} hittades inte.`);
+            }
+        }
 
         function createButton(className, text, tooltipText) {
             const button = document.createElement('button');

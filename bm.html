@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TheTab.Ninja</title>
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
         body {
             font-family: Arial, sans-serif;
             background-image: url('');
@@ -16,20 +20,47 @@
             padding: 20px;
             display: flex;
             transition: background-color 0.3s, color 0.3s;
+            flex-direction: row;
         }
         #leftPane, #rightPane {
             width: 250px;
+            flex: 0 0 250px;
             transition: width 0.3s;
-            overflow: hidden;
+            overflow-y: auto;            
         }
         #leftPane.closed, #rightPane.closed {
             width: 30px;
-        }
+            flex: 0 0 30px;
+        }        
         
         #bookmarkManager {
             flex: 1;
-            margin: 0 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
+
+        /* För WebKit-baserade webbläsare (Chrome, Safari, Edge) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+        }
+
+        /* Globala inställningar för Firefox (Anv ej nu) */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
+        }
+
         #addCollection {
             background-color: rgba(76, 297, 80, 0.6);          
             border: none;
@@ -312,9 +343,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
+        }        
+        #collections {
+            margin: 10px; /* Lägg till margin runt om */
+            padding: 10px; /* Om du vill ha luft inuti också */
+            box-sizing: border-box;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;            
         }
-
         #supportButton {
             background-color: rgba(255, 129, 63, 0.3);
             color: white;
@@ -670,7 +708,7 @@
         }
     </style>
 </head>
-<body>
+<body>    
     <div id="leftPane">
         <div class="pane-toggle" id="toggleLeftPane" title="Open/Close settings">☰</div>
         <div id="settings">                                
@@ -725,25 +763,27 @@
         </div>
     </div>
     <div id="bookmarkManager">
-        <div id="topBar">
-            <div style="display: flex; align-items: center;">
-                <button id="syncButton" style="display: none;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.4 0 6.3 2.1 7.4 5M22 12c0 4.4-3.6 8-8 8-3.4 0-6.3-2.1-7.4-5"/>
-                    </svg>
-                </button>
-                <button id="addCollection">Add Collection</button>
+        <div id="topBar">            
+            <div style="display: flex; align-items: center;padding-left: 10px;">
+                <button id="syncButton" style="display: none;" title="Sync your collections with GitHub">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.4 0 6.3 2.1 7.4 5M22 12c0 4.4-3.6 8-8 8-3.4 0-6.3-2.1-7.4-5"/>
+                        </svg>
+                 </button>
+                <button id="addCollection" title="Create a new collection for your bookmarks">Add Collection</button>
             </div>       
             <input type="text" id="searchBox" placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red">
-            <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton">Support dev with a ☕</a>
-        </div>
+            <div style="display: flex; align-items: center;padding-right: 10px;">
+                <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton" title="Fuel my code with caffeine – every cup helps me keep developing awesome features!">Buy Me a Coffee</a>            
+            </div>
+        </div>            
         <div id="collections"></div>
     </div>
     <div id="rightPane">
         <div class="pane-toggle" id="toggleRightPane" title="Open/Close Chrome Tabs-list">☰</div>        
         <div id="content"></div>
-    </div>
-    
+    </div>    
+    <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>
     <script src="bm.js"></script>    
 </body>
 </html>
