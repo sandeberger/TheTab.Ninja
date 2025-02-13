@@ -9,6 +9,7 @@ let bookmarkManagerData = {
     darkMode: false,
     leftPaneOpen: true,
     rightPaneOpen: true,
+    closeWhenSaveTab: false,
     githubConfig: {
         username: '',
         repo: '',
@@ -551,6 +552,7 @@ function loadFromLocalStorage() {
         }
         
         document.getElementById('openInNewTab').checked = bookmarkManagerData.openInNewTab;
+        document.getElementById('closeWhenSaveTab').checked = bookmarkManagerData.closeWhenSaveTab;
         document.getElementById('darkMode').checked = bookmarkManagerData.darkMode;
         
         if (bookmarkManagerData.darkMode) {
@@ -715,6 +717,8 @@ function loadFromLocalStorage() {
 
         async function fetchAllTabs(collectionId) {
             try {
+                // Hämta den fullständiga URL:en för bm.html (vår egen sida)
+                const selfUrl = chrome.runtime.getURL("bm.html");
                 chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
                     if (response && response.length > 0) {
                         let allTabs = [];
@@ -727,6 +731,9 @@ function loadFromLocalStorage() {
                             return;
                         }
                         allTabs.forEach(tab => {
+                            // Hoppa över vår egen sida så vi inte stänger den
+                            if (tab.url === selfUrl) return;
+                            
                             const newBookmark = {
                                 id: generateUUID(),
                                 title: tab.title,
@@ -738,6 +745,10 @@ function loadFromLocalStorage() {
                                 position: collection.bookmarks.length
                             };
                             collection.bookmarks.push(newBookmark);
+                            // Stäng fliken om inställningen är aktiv, och om det inte är vår egen sida
+                            if (bookmarkManagerData.closeWhenSaveTab && (tab.tabId || tab.id)) {
+                                chrome.tabs.remove(tab.tabId || tab.id);
+                            }
                         });
                         collection.lastModified = Date.now();
                         renderCollections();
@@ -1078,7 +1089,7 @@ async function addBookmark(collectionId) {
                 collection.bookmarks.push(newBookmark);
                 collection.lastModified = Date.now();
                 renderCollections();
-            }
+            }           
         }
     } catch (error) {
         handleBookmarkError(error);
@@ -1380,17 +1391,20 @@ function addEmptyMessageListeners(emptyMessage) {
     });
 }
 
-        function dragOverBookmarkContainer(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (draggedItem && (draggedItem.type === 'bookmark' || draggedItem.type === 'chromeTab')) {
-                this.classList.add('drag-over');
-            }
-        }
+function dragOverBookmarkContainer(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedItem && 
+        (draggedItem.type === 'bookmark' || 
+         draggedItem.type === 'chromeTab' || 
+         draggedItem.type === 'chromeTabGroup')) {
+        this.classList.add('drag-over');
+    }
+}
 
-        function dragLeaveBookmarkContainer(e) {
-            this.classList.remove('drag-over');
-        }
+function dragLeaveBookmarkContainer(e) {
+    this.classList.remove('drag-over');
+}
 
 // Uppdaterad dragOverBookmark funktion
 // Uppdaterad dragOverBookmark med bättre hantering av direktöverlappning
@@ -1495,15 +1509,20 @@ function dropBookmark(e) {
 function dropBookmarkContainer(e) {
     e.preventDefault();
     this.classList.remove('drag-over');
+    // Hämta vår egen sida för att kunna jämföra
+    const selfUrl = chrome.runtime.getURL("bm.html");
+    
     if (draggedItem) {
         const collectionElement = this.closest('.collection');
         const collectionId = collectionElement.dataset.collectionId;
         const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-
         if (!collection) return;
-
+        
         if (draggedItem.type === 'chromeTabGroup') {
+            // Importera alla tabbar från gruppen som bokmärken
             draggedItem.data.tabs.forEach(tab => {
+                // Hoppa över om fliken är vår egen sida
+                if (tab.url === selfUrl) return;
                 const newBookmark = {
                     id: generateUUID(),
                     title: tab.title,
@@ -1517,13 +1536,26 @@ function dropBookmarkContainer(e) {
                 collection.bookmarks.push(newBookmark);
             });
             collection.lastModified = Date.now();
+            // Stäng alla tabbar i gruppen om inställningen är aktiv och om de inte är vår egen sida
+            if (bookmarkManagerData.closeWhenSaveTab && draggedItem.data.tabs) {
+                draggedItem.data.tabs.forEach(tab => {
+                    if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
+                        chrome.tabs.remove(tab.tabId || tab.id);
+                    }
+                });
+            }
             renderCollections();
             saveToLocalStorage();
             draggedItem = null;
             return;
         }
-
+        
         if (draggedItem.type === 'chromeTab') {
+            // Om den enskilda tabben är vår egen sida, hoppa över att lägga till bokmärke och stängning
+            if (draggedItem.data.url === selfUrl) {
+                draggedItem = null;
+                return;
+            }
             const newBookmark = {
                 id: generateUUID(),
                 title: draggedItem.data.title,
@@ -1531,32 +1563,38 @@ function dropBookmarkContainer(e) {
                 description: '',
                 icon: draggedItem.data.icon || 'default-icon.png',
                 lastModified: Date.now(),
-                deleted: false
+                deleted: false,
+                position: collection.bookmarks.length
             };
             collection.bookmarks.push(newBookmark);
             collection.lastModified = Date.now();
+            // Stäng tabben om inställningen är aktiv och om den inte är vår egen sida
+            if (bookmarkManagerData.closeWhenSaveTab &&
+                (draggedItem.data.tabId || draggedItem.data.id) &&
+                draggedItem.data.url !== selfUrl) {
+                chrome.tabs.remove(draggedItem.data.tabId || draggedItem.data.id);
+            }
         } else if (draggedItem.type === 'bookmark') {
             const fromCollectionId = draggedItem.collectionId;
             const fromBookmarkId = draggedItem.bookmarkId;
             const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
-            
             if (fromCollection) {
                 const movedBookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === fromBookmarkId);
                 if (movedBookmarkIndex !== -1) {
                     const movedBookmark = fromCollection.bookmarks.splice(movedBookmarkIndex, 1)[0];
                     collection.bookmarks.push(movedBookmark);
-                    
                     fromCollection.lastModified = Date.now();
                     collection.lastModified = Date.now();
                 }
             }
         }
-        
         saveToLocalStorage();
         renderCollections();
     }
     draggedItem = null;
 }
+
+
 
 // Ny funktion för att skapa Chrome-flik element
 function createChromeTabElement(tab, windowId) {
@@ -1844,7 +1882,7 @@ function createDefaultCollection() {
     };
 }
 
-// Uppdaterad applyPaneStates funktion
+    // Uppdaterad applyPaneStates funktion
 function applyPaneStates() {
     const leftPane = document.getElementById('leftPane');
     const rightPane = document.getElementById('rightPane');
@@ -1861,14 +1899,18 @@ function applyPaneStates() {
 }
 
 
-        document.getElementById('addCollection').addEventListener('click', addCollection);
-        document.getElementById('openInNewTab').addEventListener('change', (e) => {
-            openInNewTab = e.target.checked;
-            saveToLocalStorage();
-        });
+document.getElementById('addCollection').addEventListener('click', addCollection);
+document.getElementById('openInNewTab').addEventListener('change', (e) => {
+    openInNewTab = e.target.checked;
+    saveToLocalStorage();
+});
 
+document.getElementById('closeWhenSaveTab').addEventListener('change', (e) => {
+    bookmarkManagerData.closeWhenSaveTab = e.target.checked;
+    saveToLocalStorage();
+});
 
-        document.getElementById('importTobyFile').addEventListener('change', importTobyBookmarks);
+document.getElementById('importTobyFile').addEventListener('change', importTobyBookmarks);
 
 // Funktion för att lägga till drag-and-drop lyssnare på bokmärken
 function addBookmarkDragListeners(bookmarkElement) {
