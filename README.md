@@ -11,9 +11,9 @@
 - **GitHub Sync:** Securely sync your data using your own GitHub repository.
 - **Data Import/Export:** Easily import collections from Toby and export your settings for backup or sharing.
 - **Collaboration:** Share repositories with friends or colleagues for seamless collaboration.
-- **Search & Files Function:** Quickly filter your collections and bookmarks to find exactly what you need.
+- **Search & Filter Function:** Quickly filter your collections and bookmarks to find exactly what you need.
 
-## Search & Files Function
+## Search & Filter Function
 
 TheTab.Ninja comes with a powerful search feature designed to help you quickly locate the content you need:
 
