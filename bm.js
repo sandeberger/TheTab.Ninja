@@ -1,5 +1,5 @@
 //const extId = 'ekincidnpifabcbbchcapcahaoeoccgp' //test
-const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.07
+const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.08
 //https://wallpapersden.com/
 
 let bookmarkManagerData = {
@@ -1416,6 +1416,7 @@ function dragOverBookmarkContainer(e) {
     if (draggedItem && 
         (draggedItem.type === 'bookmark' || 
          draggedItem.type === 'chromeTab' || 
+         draggedItem.type === 'chromeWindow' || 
          draggedItem.type === 'chromeTabGroup')) {
         this.classList.add('drag-over');
     }
@@ -1537,9 +1538,10 @@ function dropBookmarkContainer(e) {
         const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
         if (!collection) return;
         
-        if (draggedItem.type === 'chromeTabGroup') {
+        if (draggedItem.type === 'chromeTabGroup' || draggedItem.type === 'chromeWindow') {
             // Importera alla tabbar från gruppen som bokmärken
-            draggedItem.data.tabs.forEach(tab => {
+            let tabsArray = draggedItem.data.tabs || [];
+            tabsArray.forEach(tab => {
                 // Hoppa över om fliken är vår egen sida
                 if (tab.url === selfUrl) return;
                 const newBookmark = {
@@ -1556,8 +1558,8 @@ function dropBookmarkContainer(e) {
             });
             collection.lastModified = Date.now();
             // Stäng alla tabbar i gruppen om inställningen är aktiv och om de inte är vår egen sida
-            if (bookmarkManagerData.closeWhenSaveTab && draggedItem.data.tabs) {
-                draggedItem.data.tabs.forEach(tab => {
+            if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
+                tabsArray.forEach(tab => {
                     if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
                         chrome.tabs.remove(tab.tabId || tab.id);
                     }
@@ -1702,9 +1704,19 @@ async function fetchChromeTabs() {
                     const windowDiv = document.createElement('div');
                     windowDiv.className = 'window';
 
+                    windowDiv.setAttribute('draggable', true);
+                    windowDiv.addEventListener('dragstart', function(e) {
+                        // Sätt draggedItem med typ "chromeWindow" och skicka med fönstrets data
+                        draggedItem = {
+                            type: 'chromeWindow',
+                            data: windowData
+                        };
+                        e.dataTransfer.setData('text/plain', 'chromeWindow');
+                    });
+
                     const windowTitle = document.createElement('div');
                     windowTitle.className = 'window-title';
-                    windowTitle.textContent = `Window ID: ${windowData.windowId} (${windowData.tabs.length} tabs)`;
+                    windowTitle.textContent = `Chrome Window ID: ${windowData.windowId} (${windowData.tabs.length} tabs)`;
 
                     const tabsList = document.createElement('div');
                     tabsList.className = 'tabs-list';
