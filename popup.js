@@ -11,50 +11,63 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.windows.getAll({ populate: true }, (windows) => {
     const contentDiv = document.getElementById('content');
     contentDiv.innerHTML = ''; // Rensa innehållet
-    windows.forEach((window) => {
-      // Skapa div för fönstret
-      const windowDiv = document.createElement('div');
-      windowDiv.className = 'window';
 
-      // Titel för att visa/gömma flikarna
-      const windowTitle = document.createElement('div');
-      windowTitle.className = 'window-title';
-      windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} flikar)`;
-      windowDiv.appendChild(windowTitle);
+    chrome.storage.local.get('windowStates', (data) => {
+      const windowStates = data.windowStates || {}; // Hämta sparat tillstånd
 
-      // Lista med flikar (initialt dold)
-      const tabsList = document.createElement('div');
-      tabsList.className = 'tabs-list';
+      windows.forEach((window) => {
+        // Skapa div för fönstret
+        const windowDiv = document.createElement('div');
+        windowDiv.className = 'window';
 
-      window.tabs.forEach((tab) => {
-        const tabDiv = document.createElement('div');
-        tabDiv.className = 'tab';
+        // Titel för att visa/gömma flikarna
+        const windowTitle = document.createElement('div');
+        windowTitle.className = 'window-title';
+        windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} flikar)`;
+        windowDiv.appendChild(windowTitle);
 
-        // Ikon för sidan
-        const tabIcon = document.createElement('img');
-        tabIcon.src = tab.favIconUrl || 'https://via.placeholder.com/16';
-        tabDiv.appendChild(tabIcon);
+        // Lista med flikar (initialt dold eller synlig enligt sparat tillstånd)
+        const tabsList = document.createElement('div');
+        tabsList.className = 'tabs-list';
+        tabsList.style.display = windowStates[window.id] === 'open' ? 'block' : 'none';
 
-        // Titel och beskrivning för sidan
-        const tabTitle = document.createElement('span');
-        tabTitle.className = 'tab-title';
-        tabTitle.textContent = tab.title;
-        tabTitle.title = tab.url;  // Beskrivning visas när man hovrar
-        tabTitle.addEventListener('click', () => {
-          chrome.tabs.update(tab.id, { active: true });
-          chrome.windows.update(window.id, { focused: true });
+        window.tabs.forEach((tab) => {
+          const tabDiv = document.createElement('div');
+          tabDiv.className = 'tab';
+
+          // Ikon för sidan
+          const tabIcon = document.createElement('img');
+          tabIcon.src = tab.favIconUrl || 'https://via.placeholder.com/16';
+          tabDiv.appendChild(tabIcon);
+
+          // Titel och beskrivning för sidan
+          const tabTitle = document.createElement('span');
+          tabTitle.className = 'tab-title';
+          tabTitle.textContent = tab.title;
+          tabTitle.title = tab.url;  // Beskrivning visas när man hovrar
+          tabTitle.addEventListener('click', () => {
+            chrome.tabs.update(tab.id, { active: true });
+            chrome.windows.update(window.id, { focused: true });
+          });
+
+          tabDiv.appendChild(tabTitle);
+          tabsList.appendChild(tabDiv);
         });
 
-        tabDiv.appendChild(tabTitle);
-        tabsList.appendChild(tabDiv);
-      });
+        windowDiv.appendChild(tabsList);
+        contentDiv.appendChild(windowDiv);
 
-      windowDiv.appendChild(tabsList);
-      contentDiv.appendChild(windowDiv);
+        // Klickhändelse för att visa/gömma fliklistan och spara tillstånd
+        windowTitle.addEventListener('click', () => {
+          const isNowOpen = tabsList.style.display === 'none' ? 'open' : 'closed';
+          tabsList.style.display = isNowOpen === 'open' ? 'block' : 'none';
 
-      // Klickhändelse för att visa/gömma fliklistan
-      windowTitle.addEventListener('click', () => {
-        tabsList.style.display = tabsList.style.display === 'none' ? 'block' : 'none';
+          chrome.storage.local.get('windowStates', (data) => {
+            const updatedStates = data.windowStates || {};
+            updatedStates[window.id] = isNowOpen;
+            chrome.storage.local.set({ windowStates: updatedStates });
+          });
+        });
       });
     });
   });
