@@ -64,11 +64,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (response.ok) {
           sendResponse({ faviconUrl }); // Returnera favicon URL
         } else {
-          sendResponse({ faviconUrl: 'default-icon.png' }); // Om favicon inte hittas
+          sendResponse({ faviconUrl: 'assets/icons/default-icon.png' }); // Om favicon inte hittas
         }
       } catch (error) {
         console.error('Error fetching favicon:', error);
-        sendResponse({ faviconUrl: 'default-icon.png' }); // Vid fel, returnera default favicon
+        sendResponse({ faviconUrl: 'assets/icons/default-icon.png' }); // Vid fel, returnera default favicon
       }
     }
 
@@ -230,11 +230,11 @@ async function handleGitHubPush(config, content) {
         }
       }
     );
-    
+
     if (!refResponse.ok) {
       throw new Error(`Failed to fetch ref: ${refResponse.status} ${refResponse.statusText}`);
     }
-    
+
     const refData = await refResponse.json();
     const latestCommitSha = refData.object.sha;
 
@@ -248,11 +248,11 @@ async function handleGitHubPush(config, content) {
         }
       }
     );
-    
+
     if (!commitResponse.ok) {
       throw new Error(`Failed to fetch commit data: ${commitResponse.status} ${commitResponse.statusText}`);
     }
-    
+
     const commitData = await commitResponse.json();
     const baseTreeSha = commitData.tree.sha;
 

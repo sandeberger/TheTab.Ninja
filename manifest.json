@@ -3,13 +3,13 @@
   "name": "TheTab.Ninja",
   "version": "1.08",
   "icons": {
-    "128": "128p.png"
+  "128": "assets/icons/128p.png"
   },
-  "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",  
+  "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",
   "host_permissions": [
     "https://www.google.com/*",
-    "https://*.gstatic.com/*", 
-    "https://api.github.com/*",    
+    "https://*.gstatic.com/*",
+    "https://api.github.com/*",
     "https://raw.githubusercontent.com/*"
   ],
   "action": {
@@ -21,7 +21,7 @@
   },
   "permissions": [
     "tabs",
-    "windows", 
+    "windows",
     "tabGroups"
   ],
   "chrome_url_overrides": {
