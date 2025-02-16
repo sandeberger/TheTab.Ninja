@@ -10,41 +10,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   chrome.windows.getAll({ populate: true }, (windows) => {
     const contentDiv = document.getElementById('content');
-    contentDiv.innerHTML = ''; // Rensa innehållet
+    contentDiv.innerHTML = ''; // Clear the content
 
     chrome.storage.local.get('windowStates', (data) => {
-      const windowStates = data.windowStates || {}; // Hämta sparat tillstånd
+      const windowStates = data.windowStates || {}; // Get saved states or default empty object
 
       windows.forEach((window) => {
-        // Skapa div för fönstret
+        // Create div for window
         const windowDiv = document.createElement('div');
         windowDiv.className = 'window';
 
-        // Titel för att visa/gömma flikarna
+        // Title to toggle tabs visibility
         const windowTitle = document.createElement('div');
         windowTitle.className = 'window-title';
-        windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} flikar)`;
+        windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} tabs)`;
         windowDiv.appendChild(windowTitle);
 
-        // Lista med flikar (initialt dold eller synlig enligt sparat tillstånd)
+        // Create list of tabs (initially hidden or visible based on saved state)
         const tabsList = document.createElement('div');
         tabsList.className = 'tabs-list';
-        tabsList.style.display = windowStates[window.id] === 'open' ? 'block' : 'none';
+
+        // Set the initial state of the tabs (collapsed or expanded)
+        if (windowStates[window.id] === 'open') {
+          tabsList.style.display = 'block';
+        } else {
+          tabsList.style.display = 'none';
+        }
 
         window.tabs.forEach((tab) => {
           const tabDiv = document.createElement('div');
           tabDiv.className = 'tab';
 
-          // Ikon för sidan
+          // Icon for the tab
           const tabIcon = document.createElement('img');
           tabIcon.src = tab.favIconUrl || 'https://via.placeholder.com/16';
           tabDiv.appendChild(tabIcon);
 
-          // Titel och beskrivning för sidan
+          // Title and description of the tab
           const tabTitle = document.createElement('span');
           tabTitle.className = 'tab-title';
           tabTitle.textContent = tab.title;
-          tabTitle.title = tab.url;  // Beskrivning visas när man hovrar
+          tabTitle.title = tab.url;  // Hover shows URL
           tabTitle.addEventListener('click', () => {
             chrome.tabs.update(tab.id, { active: true });
             chrome.windows.update(window.id, { focused: true });
@@ -57,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
         windowDiv.appendChild(tabsList);
         contentDiv.appendChild(windowDiv);
 
-        // Klickhändelse för att visa/gömma fliklistan och spara tillstånd
+        // Toggle event for showing/hiding the tabs and saving the state
         windowTitle.addEventListener('click', () => {
           const isNowOpen = tabsList.style.display === 'none' ? 'open' : 'closed';
           tabsList.style.display = isNowOpen === 'open' ? 'block' : 'none';
