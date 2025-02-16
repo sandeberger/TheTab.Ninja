@@ -789,7 +789,7 @@ function loadFromLocalStorage() {
             bookmarkElement.dataset.bookmarkId = bookmark.id;
 
             const bookmarkIcon = document.createElement('img');
-            bookmarkIcon.src = bookmark.icon || 'default-icon.png';
+            bookmarkIcon.src = bookmark.icon || 'assets/icons/default-icon.png';
             bookmarkIcon.alt = 'Icon';
 
             const bookmarkTitle = document.createElement('h3');
@@ -975,7 +975,7 @@ function loadFromLocalStorage() {
             } catch (error) {
                 console.error('Error fetching favicon:', error);
             }
-            return 'default-icon.png';
+            return 'assets/icons/default-icon.png';
         }
 // Helper function to enrich a single bookmark
 function enrichBookmark(bookmark) {
@@ -1549,7 +1549,7 @@ function dropBookmarkContainer(e) {
                     title: tab.title,
                     url: tab.url,
                     description: "",
-                    icon: tab.favIconUrl || 'default-icon.png',
+                    icon: tab.favIconUrl || 'assets/icons/default-icon.png',
                     lastModified: Date.now(),
                     deleted: false,
                     position: collection.bookmarks.length
@@ -1582,7 +1582,7 @@ function dropBookmarkContainer(e) {
                 title: draggedItem.data.title,
                 url: draggedItem.data.url,
                 description: '',
-                icon: draggedItem.data.icon || 'default-icon.png',
+                icon: draggedItem.data.icon || 'assets/icons/default-icon.png',
                 lastModified: Date.now(),
                 deleted: false,
                 position: collection.bookmarks.length
@@ -1626,7 +1626,7 @@ function createChromeTabElement(tab, windowId) {
     tabDiv.dataset.tabId = tab.id;
 
     const tabIcon = document.createElement('img');
-    tabIcon.src = tab.favIconUrl || 'default-icon.png';
+    tabIcon.src = tab.favIconUrl || 'assets/icons/default-icon.png';
     tabDiv.appendChild(tabIcon);
 
     const tabTitle = document.createElement('span');
