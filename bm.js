@@ -588,6 +588,26 @@ function loadFromLocalStorage() {
     }
 }
 
+        const svgInbox = `
+        <svg xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 309.197 309.197"
+            xml:space="preserve"
+            style="width: 1em; height: 1em;">
+        <path d="M120.808 10.036h67.581v100.671h36.889l-70.681 100.88-70.681-100.882h36.892z"/>
+        <path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/>
+        </svg>
+        `;
+
+        const svgOutbox = `
+        <svg xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 309.197 309.197"
+            xml:space="preserve"
+            style="width: 1em; height: 1em;">
+        <path d="M120.808 211.587h67.581V110.916h36.889l-70.681-100.88-70.681 100.882h36.892z"/>
+        <path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/>
+        </svg>
+        `;
+
         // Uppdaterad renderCollections funktion
         function renderCollections() {
             const collectionsContainer = document.getElementById('collections');
@@ -633,8 +653,8 @@ function loadFromLocalStorage() {
                 // Skapa alla knappar
                 const buttons = [
                     { className: 'launch-collection', text: '🚀', title: 'Open bookmarks in a Chrome group', action: () => launchCollection(collection.id) },
-                    { className: 'openall-collection', text: '📤', title: 'Open bookmarks in this collection', action: () => launchAllTabs(collection.id) },
-                    { className: 'fetch-alltabs', text: '📥', title: 'Get all Chrome tabs', action: () => fetchAllTabs(collection.id) },
+                    { className: 'openall-collection', icon: 'outbox', title: 'Open bookmarks in this collection', action: () => launchAllTabs(collection.id) },
+                    { className: 'fetch-alltabs', icon: 'inbox', title: 'Get all Chrome tabs', action: () => fetchAllTabs(collection.id) },
                     { className: 'add-bookmark', text: '+', title: 'Create bookmark', action: () => addBookmark(collection.id) },
                     { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
                     { className: 'move-collection', text: '▲', title: 'Move collection up', action: () => moveCollection(collection.id, -1) },
@@ -645,11 +665,21 @@ function loadFromLocalStorage() {
                 buttons.forEach(btnConfig => {
                     const btn = document.createElement('button');
                     btn.className = `collection-button ${btnConfig.className}`;
-                    btn.textContent = btnConfig.text;
                     btn.title = btnConfig.title;
                     btn.addEventListener('click', btnConfig.action);
+                  
+                    // Kolla om vi ska använda SVG i stället för text
+                    if (btnConfig.icon === 'inbox') {
+                      btn.innerHTML = svgInbox;
+                    } else if (btnConfig.icon === 'outbox') {
+                      btn.innerHTML = svgOutbox;
+                    } else {
+                      // Annars använd vanlig text
+                      btn.textContent = btnConfig.text;
+                    }
+                  
                     actions.appendChild(btn);
-                });
+                  });
 
                 // Bygg ihop headern
                 titleArea.appendChild(dragHandle);
@@ -1636,6 +1666,7 @@ function createChromeTabElement(tab, windowId) {
     tabDiv.appendChild(tabTitle);
 
     tabDiv.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
         draggedItem = {
             type: 'chromeTab',
             data: {
@@ -1720,6 +1751,8 @@ async function fetchChromeTabs() {
 
                     const tabsList = document.createElement('div');
                     tabsList.className = 'tabs-list';
+                    const isOpen = (bookmarkManagerData.chromeWindowStates && bookmarkManagerData.chromeWindowStates[windowData.windowId]) !== false; // Standard: öppen
+                    tabsList.style.display = isOpen ? 'block' : 'none';
 
                     const groups = windowData.groups || [];
                     const groupMap = {};
