@@ -1,61 +1,75 @@
-// This script is used in the popup of a Chrome extension. It adds functionality to create a new tab
-// and displays all open windows and their tabs. Users can click on a tab title to activate the tab
-// and focus the window. The list of tabs in each window can be toggled by clicking on the window title.
-
 document.addEventListener('DOMContentLoaded', () => {
-  const newTabButton = document.getElementById('newTabButton');
-  newTabButton.addEventListener('click', () => {
-    chrome.tabs.create({ url: "bm.html" });
+  const collectionInput = document.getElementById('collectionInput');
+  const collectionsList = document.getElementById('collectionsList');
+  const saveTabButton = document.getElementById('saveTabButton');
+
+  let rawData = localStorage.getItem('bookmarkManagerData');
+  if (!rawData) return;
+
+  let bookmarkManagerData;
+  try {
+    bookmarkManagerData = JSON.parse(rawData);
+  } catch {
+    return;
+  }
+
+  const validCollections = (bookmarkManagerData.collections || []).filter(c => !c.deleted);
+
+  validCollections.forEach(collection => {
+    const optionEl = document.createElement('option');
+    optionEl.value = collection.name || "Unnamed";
+    collectionsList.appendChild(optionEl);
   });
 
-  chrome.windows.getAll({ populate: true }, (windows) => {
-    const contentDiv = document.getElementById('content');
-    contentDiv.innerHTML = ''; // Rensa innehållet
-    windows.forEach((window) => {
-      // Skapa div för fönstret
-      const windowDiv = document.createElement('div');
-      windowDiv.className = 'window';
+  saveTabButton.addEventListener('click', () => {
+    const selectedName = collectionInput.value.trim();
+    if (!selectedName) {
+      window.close();
+      return;
+    }
 
-      // Titel för att visa/gömma flikarna
-      const windowTitle = document.createElement('div');
-      windowTitle.className = 'window-title';
-      windowTitle.textContent = `Window ID: ${window.id} (${window.tabs.length} flikar)`;
-      windowDiv.appendChild(windowTitle);
+    const matchedCollection = validCollections.find(c => c.name === selectedName);
+    if (!matchedCollection) {
+      window.close();
+      return;
+    }
 
-      // Lista med flikar (initialt dold)
-      const tabsList = document.createElement('div');
-      tabsList.className = 'tabs-list';
+    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+      if (!tabs || !tabs.length) {
+        window.close();
+        return;
+      }
 
-      window.tabs.forEach((tab) => {
-        const tabDiv = document.createElement('div');
-        tabDiv.className = 'tab';
+      const currentTab = tabs[0];
+      const newBookmark = {
+        id: generateUUID(),
+        title: currentTab.title,
+        url: currentTab.url,
+        description: "",
+        icon: currentTab.favIconUrl || "default-icon.png",
+        lastModified: Date.now(),
+        deleted: false,
+        position: matchedCollection.bookmarks.length
+      };
 
-        // Ikon för sidan
-        const tabIcon = document.createElement('img');
-        tabIcon.src = tab.favIconUrl || 'https://via.placeholder.com/16';
-        tabDiv.appendChild(tabIcon);
+      matchedCollection.bookmarks.push(newBookmark);
+      matchedCollection.lastModified = Date.now();
+      localStorage.setItem('bookmarkManagerData', JSON.stringify(bookmarkManagerData));
 
-        // Titel och beskrivning för sidan
-        const tabTitle = document.createElement('span');
-        tabTitle.className = 'tab-title';
-        tabTitle.textContent = tab.title;
-        tabTitle.title = tab.url;  // Beskrivning visas när man hovrar
-        tabTitle.addEventListener('click', () => {
-          chrome.tabs.update(tab.id, { active: true });
-          chrome.windows.update(window.id, { focused: true });
-        });
-
-        tabDiv.appendChild(tabTitle);
-        tabsList.appendChild(tabDiv);
-      });
-
-      windowDiv.appendChild(tabsList);
-      contentDiv.appendChild(windowDiv);
-
-      // Klickhändelse för att visa/gömma fliklistan
-      windowTitle.addEventListener('click', () => {
-        tabsList.style.display = tabsList.style.display === 'none' ? 'block' : 'none';
-      });
+      if (bookmarkManagerData.closeWhenSaveTab) {
+        chrome.tabs.remove(currentTab.id, () => window.close());
+        alert('Tab moved successfully!\nYou may need to refresh the thefile.ninja webpage to see the change.');
+      } else {
+        window.close();
+        alert('Tab copied successfully!\nYou may need to refresh the thefile.ninja webpage to see the change.');
+      }
     });
   });
 });
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}

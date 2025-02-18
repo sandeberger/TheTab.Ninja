@@ -1,39 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <title>Demo - Samma storlek</title>
   <style>
-    body {
-      width: 300px;
-      font-family: Arial, sans-serif;
+    /* Gör så box-sizing räknar in border och padding i elementets totala storlek */
+    * {
+      box-sizing: border-box;
     }
-    .window { margin-bottom: 20px; }
-    .window-title { font-weight: bold; cursor: pointer; }
-    .tabs-list { margin-left: 20px; display: none; }
-    .tab { display: flex; align-items: center; margin-bottom: 10px; padding: 5px; border-radius: 8px; background-color: #f0f0f0; }
-    .tab img { margin-right: 10px; width: 16px; height: 16px; }
-    .tab:hover { background-color: #e0e0e0; }
-    .tab-title { cursor: pointer; }
-    .tab-title:hover { text-decoration: underline; }
 
-    #newTabButton {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      cursor: pointer;
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      width: 300px;
+      background-color: #f9f9f9;
     }
-    #newTabButton:hover {
+
+    .form-container {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .form-field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    /* GEMENSAM STYLING FÖR INPUT OCH KNAPP */
+    input[type="text"],
+    button {
+      display: block;             /* Helt egna block, tar upp hela bredden */
+      width: 100%;                /* Samma bredd */
+      padding: 10px;              /* Liknande padding */
+      margin: 0;                  /* Ingen extra marginal */
+      font-size: 14px;            /* Samma teckenstorlek */
+      border-radius: 4px;         /* Samma hörnrundning */
+    }
+
+    /* Specifik styling för input-fältet */
+    input[type="text"] {
+      border: 1px solid #ccc;
+      /* Om du vill förstärka fokus, kan du göra:
+         outline: none; 
+         och en box-shadow när fokus är på (se nedan).
+      */
+    }
+    input[type="text"]:focus {
+      border-color: #4CAF50;
+      box-shadow: 0 0 0 1px #4CAF50;
+      outline: none;
+    }
+
+    /* Specifik styling för knappen */
+    button {
+      border: none;
+      background-color: #4CAF50;
+      color: #ffffff;
+      cursor: pointer;
+      margin-top: 4px; /* lite andrum mellan fält och knapp */
+    }
+    button:hover {
       background-color: #45a049;
     }
+
   </style>
 </head>
-<body>  
-  <div id="newTabButton">Create new tab</div>
-  <div id="content">
-    Loading tabs...
+<body>
+  <div class="form-container">
+    <div class="form-field">
+      <label for="collectionInput">Select collection:</label>
+      <input
+        type="text"
+        id="collectionInput"
+        list="collectionsList"
+        placeholder="Enter or select…"
+      />
+      <datalist id="collectionsList"></datalist>
+    </div>
+
+    <button id="saveTabButton">Save current tab</button>
   </div>
   <script src="popup.js"></script>
 </body>

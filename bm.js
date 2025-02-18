@@ -588,25 +588,9 @@ function loadFromLocalStorage() {
     }
 }
 
-        const svgInbox = `
-        <svg xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 309.197 309.197"
-            xml:space="preserve"
-            style="width: 1em; height: 1em;">
-        <path d="M120.808 10.036h67.581v100.671h36.889l-70.681 100.88-70.681-100.882h36.892z"/>
-        <path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/>
-        </svg>
-        `;
+        const svgInbox = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 309.197 309.197" xml:space="preserve" style="width:1em;height:1em" fill="currentColor"><path d="M120.808 10.036h67.581v100.671h54.559l-88.351 100.88-88.351-100.882h54.562z"/><path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/></svg>`;
 
-        const svgOutbox = `
-        <svg xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 309.197 309.197"
-            xml:space="preserve"
-            style="width: 1em; height: 1em;">
-        <path d="M120.808 211.587h67.581V110.916h36.889l-70.681-100.88-70.681 100.882h36.892z"/>
-        <path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/>
-        </svg>
-        `;
+        const svgOutbox = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 309.197 309.197" xml:space="preserve" style="width:1em;height:1em" fill="currentColor"><path d="M120.808 211.587h67.581V110.916h54.559l-88.351-100.88-88.351 100.882h54.562z"/><path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/></svg>`;
 
         // Uppdaterad renderCollections funktion
         function renderCollections() {
