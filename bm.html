@@ -72,8 +72,10 @@
             font-size: 16px;
             margin: 4px 2px;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 16px;
             transition: background-color 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
         }
         #addCollection:hover {
             background-color: #45a049;
@@ -354,32 +356,32 @@
             min-height: 0;            
         }
         #supportButton {
-            background-color: rgba(255, 129, 63, 0.3);
+            background: linear-gradient(45deg, #FF8C00, #FFA500);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
+            padding: 10px 16px;
+            border-radius: 16px;
             text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 4px 2px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 1000;
         }
 
         #supportButton:hover {
-            background-color: #E56E2E;
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
         }
 
-        body.dark-mode #supportButton {
+/*        body.dark-mode #supportButton {
             background-color: rgba(255, 155, 94, 0.3);
             color: #1a1a1a;
         }
 
         body.dark-mode #supportButton:hover {
             background-color: rgba(255, 179, 129, 0.3);
-        }
+        }*/
 
         .import-button {
             display: inline-block;
@@ -714,6 +716,36 @@
         body.dark-theme .collection-button svg {
             color: #fff; /* Ikoner blir vita i mörkt tema */
         }
+
+        .donation-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #FF8C00, #FFA500);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            z-index: 1000;
+        }
+
+        .donation-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .donation-icon {
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+        }
+
     </style>
 </head>
 <body>    
@@ -780,7 +812,12 @@
             </div>       
             <input type="text" id="searchBox" placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red">
             <div style="display: flex; align-items: center;padding-right: 10px;">
-                <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton" title="Fuel Kodar.Ninjas code with caffeine – every cup helps me keep developing awesome features!">Buy Me a Coffee</a>            
+                <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton" title="Fuel my code with caffeine – every cup helps me keep developing awesome features!">
+                    <svg class="donation-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 12H4v4a4 4 0 004 4h5a4 4 0 004-4v-4zm0 0h2a2 2 0 012 2v1a2 2 0 01-2 2h-2m-4-8s1-1 .5-2l-1-2C12 4 13 3 13 3M8.64 9s1-1 .5-2l-1-2c-.5-1 .5-2 .5-2"/>
+                    </svg>
+                    <span class="donation-text">Buy Me a Coffee</span>
+                  </a>            
             </div>
         </div>            
         <div id="collections"></div>
@@ -789,7 +826,7 @@
         <div class="pane-toggle" id="toggleRightPane" title="Open/Close Chrome Tabs-list">☰</div>        
         <div id="content"></div>
     </div>    
-    <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>
+    <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>    
     <script src="bm.js"></script>    
 </body>
 </html>
