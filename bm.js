@@ -2303,7 +2303,7 @@ supportButton.addEventListener('mouseenter', function(e) {
 
   confettiTimeout = setTimeout(() => {
     startConfetti({ particleCount: 100, duration: 3000, origin: origin });
-  }, 2000);
+  }, 1000);
 });
 
 supportButton.addEventListener('mouseleave', function() {

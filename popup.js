@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bookmarkManagerData.closeWhenSaveTab) {
           // Visa meddelande i popupen
           const msgEl = document.createElement('div');
-          msgEl.textContent = "Tab is moved to collection!\nYou may need to refresh the\nthefile.ninja webpage to see the change.'";
+          msgEl.textContent = "Tab is moved to collection!\nYou may need to refresh the\nthetab.ninja webpage to see the change.'";
           msgEl.style.padding = "10px";
           msgEl.style.background = "#e0ffe0";
           msgEl.style.textAlign = "center";
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
       } else {
         const msgEl = document.createElement('div');
-          msgEl.textContent = "Tab copied successfully!\nYou may need to refresh the\nthefile.ninja webpage to see the change.'";
+          msgEl.textContent = "Tab copied successfully!\nYou may need to refresh the\nthetab.ninja webpage to see the change.'";
           msgEl.style.padding = "10px";
           msgEl.style.background = "#e0ffe0";
           msgEl.style.textAlign = "center";
