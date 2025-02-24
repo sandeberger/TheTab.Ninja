@@ -397,6 +397,14 @@
 
         .delete-button {
             background-color: #f44336; /* Röd färg för delete-knappen */
+            display: inline-block;
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px; /* Lägg till marginaler */            
         }
 
         .delete-button:hover {
@@ -783,7 +791,7 @@
                 Import Toby data (JSON)
             </label>
 
-            <button id="deleteAllButton" class="import-button delete-button">Delete All</button> <!-- Ny knapp -->
+            <button id="deleteAllButton" class="delete-button">Delete All</button> <!-- Ny knapp -->
             <br><br>
             <hr>
             <h3>Settings</h3>

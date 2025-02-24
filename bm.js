@@ -44,6 +44,15 @@ let placeholder = null;
     versionDisplay.textContent = `Version: ${version}`;
 });*/
 
+window.addEventListener('storage', (event) => {
+    if (event.key === 'bookmarkManagerData') {
+      // Läs in den nya datan från localStorage
+      const newData = loadFromLocalStorage();
+      bookmarkManagerData = newData;
+      renderCollections();
+    }
+  });
+
 document.addEventListener('DOMContentLoaded', () => {
     const manifestData = chrome.runtime.getManifest();
     const version = manifestData.version;

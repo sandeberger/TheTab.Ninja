@@ -146,11 +146,11 @@ async function handleGitHubFetch(config) {
     );
     if (!repoResponse.ok) {
       if (repoResponse.status === 404) {
-        throw new Error(`Repository "${username}/${repo}" hittades inte`);
+        throw new Error(`Repository "${username}/${repo}" not found`);
       } else if (repoResponse.status === 401) {
-        throw new Error('Autentisering misslyckades');
+        throw new Error('Authentication failed');
       }
-      throw new Error(`Kunde inte nå repository: ${repoResponse.statusText}`);
+      throw new Error(`Could not reach repository: ${repoResponse.statusText}`);
     }
 
     // Hämta filinnehåll via Contents API:t
@@ -168,7 +168,7 @@ async function handleGitHubFetch(config) {
       if (fileResponse.status === 404) {
         return { content: null };
       }
-      throw new Error(`Kunde inte hämta filen: ${fileResponse.statusText}`);
+      throw new Error(`Could not download the file: ${fileResponse.statusText}`);
     }
 
     const fileData = await fileResponse.json();
@@ -203,14 +203,14 @@ async function handleGitHubFetch(config) {
           }
         );
         if (!blobResponse.ok) {
-          throw new Error(`Misslyckades hämta blob: ${blobResponse.statusText}`);
+          throw new Error(`Failed to retrieve blob: ${blobResponse.statusText}`);
         }
         const blobData = await blobResponse.json();
         const decodedContent = decodeURIComponent(escape(atob(blobData.content)));
         return { content: JSON.parse(decodedContent) };
       }
     }
-    throw new Error('Filen innehåller varken content eller download_url');
+    throw new Error('The file contains neither content nor download_url');
   } catch (error) {
     throw error;
   }
