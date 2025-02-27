@@ -762,7 +762,133 @@
             height: 24px;
             margin-right: 8px;
         }
+        /** Stilar för syncbutton \/ **/
+            /* darkmode */
+        .dropdown-menu {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
+        /* Dark mode: ändra bakgrund, textfärg, kantfärg och skugga för menyn */
+        .dark-mode .dropdown-menu {
+            background: #2c2c2c;
+            color: #f1f1f1;
+            border-color: #444;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Dark mode: anpassa dropdown-objektens utseende */
+        .dark-mode .dropdown-menu .dropdown-item,
+        .dark-mode .dropdown-menu .dropdown-add {
+            background: transparent;
+            color: #f1f1f1;
+        }
+
+        /* Dark mode: hover-effekt för objekten */
+        .dark-mode .dropdown-menu .dropdown-item:hover,
+        .dark-mode .dropdown-menu .dropdown-add:hover {
+            background-color: #444;
+        }
+
+
+        /* Givet knapputseende */
+        #syncButton {
+        background-color: rgba(76, 297, 80, 0.6);
+        backdrop-filter: blur(8px);
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        transition: background-color 0.3s;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+        }
+        #syncButton:hover {
+        background-color: #45a049;
+        }
+        #syncButton svg {
+        width: 20px;
+        height: 20px;
+        }
+        #syncButton.syncing {
+        backdrop-filter: blur(8px);
+        background-color: #F66376;
+        pointer-events: none;
+        }
+        #syncButton.syncing svg {
+        animation: rotate 1s linear infinite;
+        }
+        @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+        }
+        
+        /* Dropdown-komponentens stilar */
+        .dropdown-container {
+        position: relative;
+        display: inline-block;
+        }
+        .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border: 1px solid #ccc;
+        min-width: 320px;
+        z-index: 100;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        /* Visa menyn vid hover på container (knapp eller dropdown) */
+        .dropdown-container:hover .dropdown-menu {
+        display: block;
+        }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            position: relative;
+        }
+        .dropdown-item:hover {
+        background-color: #f1f1f1;
+        }
+        .dropdown-item.active {
+        font-weight: bold;
+        background-color: #ddd;
+        }
+        .edit-icon, .delete-icon {
+        visibility: hidden;
+        margin-left: 8px;
+        cursor: pointer;
+        }
+        .dropdown-item:hover .edit-icon
+        {
+            visibility: visible;
+            margin-left: auto;
+        }
+        
+        .dropdown-item:hover .delete-icon {
+            visibility: visible;            
+        }
+        .dropdown-add {
+        padding: 8px 12px;
+        cursor: pointer;
+        text-align: center;
+        font-weight: bold;
+        }
+        .dropdown-add:hover {
+        background-color: #f1f1f1;
+        }
+        .dark-mode .dropdown-menu .dropdown-item.active {
+            background-color: #555; /* En mörkare färg som ger bra kontrast */
+            color: #fff;
+        }
+        /** Stilar för syncbutton /\ **/
     </style>
 </head>
 <body>    
@@ -822,9 +948,10 @@
     <div id="bookmarkManager">
         <div id="topBar">            
             <div style="display: flex; align-items: center;padding-left: 10px;">
-                <button id="syncButton" style="display: none;" title="Sync your collections with GitHub">
+                <div id="dropdownContainer"></div>
+                <!--button id="syncButton" style="display: none;" title="Sync your collections with GitHub"-
                     <svg fill="currentColor" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" transform="matrix(1,0,0,1,0,0)"><path d="M19.91,15.51H15.38a1,1,0,0,0,0,2h2.4A8,8,0,0,1,4,12a1,1,0,0,0-2,0,10,10,0,0,0,16.88,7.23V21a1,1,0,0,0,2,0V16.5A1,1,0,0,0,19.91,15.51ZM12,2A10,10,0,0,0,5.12,4.77V3a1,1,0,0,0-2,0V7.5a1,1,0,0,0,1,1h4.5a1,1,0,0,0,0-2H6.22A8,8,0,0,1,20,12a1,1,0,0,0,2,0A10,10,0,0,0,12,2Z"></path></svg>
-                 </button>
+                 </button-->
                 <button id="addCollection" title="Create a new collection for your bookmarks">Add Collection</button>
             </div>       
             <input type="text" id="searchBox"  placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red" >
@@ -844,6 +971,7 @@
         <div id="content"></div>
     </div>    
     <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>    
+    <script src="syncbutton.js"></script>   
     <script src="bm.js"></script>    
 </body>
 </html>

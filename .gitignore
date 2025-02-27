@@ -1,2 +1,5 @@
 .aider*
 *.env
+generate4LLM.bat
+llm_query_output.md
+tobyclone.py
