@@ -1639,8 +1639,8 @@ function renderCollections() {
 
         // Skapa alla knappar
         const buttons = [
-            { className: 'launch-collection', text: '🚀', title: 'Open all this webpages in a Chrome group', action: () => launchCollection(collection.id) },
-            { className: 'openall-collection', icon: 'outbox', title: 'Open all webpages of this collection', action: () => launchAllTabs(collection.id) },
+            { className: 'launch-collection', text: '🚀', title: 'Open all these webpages in a Chrome tab group', action: () => launchCollection(collection.id) },
+            { className: 'openall-collection', icon: 'outbox', title: 'Open all webpages in this collection', action: () => launchAllTabs(collection.id) },
             { className: 'fetch-alltabs', icon: 'inbox', title: 'Get all Chrome tabs', action: () => fetchAllTabs(collection.id) },
             { className: 'add-bookmark', text: '+', title: 'Create bookmark', action: () => addBookmark(collection.id) },
             { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },

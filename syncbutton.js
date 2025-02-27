@@ -16,10 +16,7 @@ class DropdownMenu {
       this.button = document.createElement('button');
       this.button.id = "syncButton";
       this.button.title = "Sync your collections with GitHub";
-      this.button.innerHTML = `
-        <svg fill="currentColor" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19.91,15.51H15.38a1,1,0,0,0,0,2h2.4A8,8,0,0,1,4,12a1,1,0,0,0-2,0,10,10,0,0,0,16.88,7.23V21a1,1,0,0,0,2,0V16.5A1,1,0,0,0,19.91,15.51Z M12,2A10,10,0,0,0,5.12,4.77V3a1,1,0,0,0-2,0V7.5a1,1,0,0,0,1,1h4.5a1,1,0,0,0,0-2H6.22A8,8,0,0,1,20,12a1,1,0,0,0,2,0A10,10,0,0,0,12,2Z"></path>
-        </svg>`;
+      this.button.innerHTML = `<svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.09 15.51h4.53a1 1 0 0 1 0 2h-2.4A8 8 0 0 0 20 12a1 1 0 0 1 2 0 10 10 0 0 1-16.88 7.23V21a1 1 0 0 1-2 0v-4.5a1 1 0 0 1 .97-.99M12 2a10 10 0 0 1 6.88 2.77V3a1 1 0 0 1 2 0v4.5a1 1 0 0 1-1 1h-4.5a1 1 0 0 1 0-2h2.4A8 8 0 0 0 4 12a1 1 0 0 1-2 0A10 10 0 0 1 12 2"/></svg>`;
       this.button.addEventListener('click', (e) => {
         if (this.options.onButtonClick) {
           this.options.onButtonClick(e);
