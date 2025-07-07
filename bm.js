@@ -466,54 +466,103 @@ function importBookmarksFromFile(file) {
 async function importTobyBookmarks() {
     const fileInput = document.getElementById('importTobyFile');
     const file = fileInput.files[0];
-  
+
     if (file) {
         const reader = new FileReader();
-        reader.onload = async function(e) {
+        reader.onload = async function (e) {
             try {
                 const importedData = JSON.parse(e.target.result);
-                
+                let listsToImport = [];
+
+                // Kontrollera version och extrahera listorna därefter
                 if (importedData.version === 3 && Array.isArray(importedData.lists)) {
-                    const newCollections = await Promise.all(importedData.lists.map(async list => {
-                        const newCollection = enrichCollection({
-                            name: list.title,
-                            isOpen: true,
-                            bookmarks: []
-                        });
-    
-                        if (Array.isArray(list.cards)) {
-                            newCollection.bookmarks = await Promise.all(list.cards.map(async card => {
-                                return enrichBookmark({
-                                    title: card.customTitle || card.title,
-                                    url: card.url,
-                                    description: card.customDescription || '',
-                                    icon: await getFavicon(card.url)
-                                });
-                            }));
+                    // Hantera Version 3 format
+                    listsToImport = importedData.lists;
+                    console.log("Importing Toby v3 format");
+                } else if (importedData.version === 4 && Array.isArray(importedData.groups)) {
+                    // Hantera Version 4 format
+                    // Slå samman listor från alla grupper
+                    importedData.groups.forEach(group => {
+                        if (Array.isArray(group.lists)) {
+                            listsToImport = listsToImport.concat(group.lists);
                         }
-    
-                        return newCollection;
-                    }));
-    
+                    });
+                    console.log("Importing Toby v4 format");
+                } else {
+                    throw new Error('Unsupported file format or version. Expected Toby v3 or v4.');
+                }
+
+                if (listsToImport.length === 0 && importedData.version === 4) {
+                    // Detta kan hända om version 4 filen har en tom groups-array eller grupper utan listor
+                    console.warn("No lists found to import from Toby v4 file.");
+                    // Du kan välja att visa ett meddelande till användaren här eller bara fortsätta utan att importera något
+                }
+
+                // Om inga listor hittades alls efter att ha försökt båda versionerna
+                if (listsToImport.length === 0) {
+                    alert('No bookmark lists found in the imported file.');
+                    return;
+                }
+
+                const newCollections = await Promise.all(listsToImport.map(async list => {
+                    // Säkerställ att 'list' faktiskt är ett objekt och har en 'title'
+                    if (typeof list !== 'object' || list === null || typeof list.title === 'undefined') {
+                        console.warn('Skipping invalid list item:', list);
+                        return null; // Hoppa över ogiltiga listobjekt
+                    }
+
+                    const newCollection = enrichCollection({
+                        name: list.title,
+                        isOpen: true, // Du kan bestämma defaultvärde här
+                        bookmarks: []
+                    });
+
+                    if (Array.isArray(list.cards)) {
+                        newCollection.bookmarks = await Promise.all(list.cards.map(async card => {
+                            // Säkerställ att 'card' är ett objekt
+                            if (typeof card !== 'object' || card === null) {
+                                console.warn('Skipping invalid card item:', card);
+                                return null; // Hoppa över ogiltiga kortobjekt
+                            }
+                            return enrichBookmark({
+                                title: card.customTitle || card.title || 'Untitled Bookmark', // Fallback för titel
+                                url: card.url || '#', // Fallback för URL
+                                description: card.customDescription || card.description || '',
+                                icon: card.favIconUrl || (card.url ? await getFavicon(card.url) : 'default-icon.png') // Använd befintlig favIconUrl om den finns
+                            });
+                        }));
+                        newCollection.bookmarks = newCollection.bookmarks.filter(b => b !== null); // Ta bort null-värden (från överhoppade kort)
+                    }
+                    return newCollection;
+                }));
+
+                const validNewCollections = newCollections.filter(c => c !== null); // Ta bort null-värden (från överhoppade listor)
+
+                if (validNewCollections.length > 0) {
                     bookmarkManagerData.collections = [
                         ...bookmarkManagerData.collections,
-                        ...newCollections
+                        ...validNewCollections
                     ];
-    
+
                     renderCollections();
                     saveToLocalStorage();
                     alert('Bookmarks imported successfully!');
+                } else if (listsToImport.length > 0) { // Om det fanns listor men inga blev giltiga samlingar
+                    alert('Bookmarks imported, but some items might have been invalid and were skipped.');
                 } else {
-                    throw new Error('Invalid file format');
+                    // Detta fall bör redan ha hanterats ovan, men som en extra säkerhet
+                    alert('No valid bookmarks found to import.');
                 }
+
             } catch (error) {
                 console.error('Error importing bookmarks:', error);
-                alert('Error importing bookmarks. Please check the file format.');
+                alert('Error importing bookmarks. Please check the file format. Details: ' + error.message);
             }
         };
         reader.readAsText(file);
     }
 }
+
 
 
 // Uppdaterad funktion för att spara till localStorage
