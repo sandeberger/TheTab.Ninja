@@ -2017,13 +2017,11 @@ async function fetchChromeTabs() {
 function togglePane(paneId) {
     const pane = document.getElementById(paneId);
     const isOpen = !pane.classList.contains('closed');
+    
+    // Toggle the closed class which triggers CSS transitions
     pane.classList.toggle('closed');
     
-    const content = pane.querySelector('#settings, #content');
-    if (content) {
-        content.classList.toggle('hidden', isOpen);
-    }
-
+    // Update the data state
     if (paneId === 'leftPane') {
         bookmarkManagerData.leftPaneOpen = !isOpen;
     } else if (paneId === 'rightPane') {
@@ -2083,12 +2081,10 @@ function applyPaneStates() {
 
     if (!bookmarkManagerData.leftPaneOpen) {
         leftPane.classList.add('closed');
-        leftPane.querySelector('#settings').classList.add('hidden');
     }
 
     if (!bookmarkManagerData.rightPaneOpen) {
         rightPane.classList.add('closed');
-        rightPane.querySelector('#content').classList.add('hidden');
     }
 }
 

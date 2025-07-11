@@ -24,13 +24,20 @@
         }
         #leftPane, #rightPane {
             width: 250px;
-            /*flex: 0 0 250px;*/
-            transition: width 0.3s;
-            overflow-y: auto;            
+            min-width: 250px;
+            max-width: 250px;
+            transition: width 0.3s ease, opacity 0.3s ease, min-width 0.3s ease, max-width 0.3s ease;
+            overflow: hidden;
+            opacity: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
         }
         #leftPane.closed, #rightPane.closed {
             width: 30px;
-            /*flex: 0 0 30px;*/
+            min-width: 30px;
+            max-width: 30px;
+            opacity: 0.5;
         }        
         
         #bookmarkManager {
@@ -342,10 +349,33 @@
         }
         .pane-toggle {
             cursor: pointer;
-            padding: 5px;
+            padding: 8px;
             background-color: rgba(240, 240, 240, 0.3);
             border-radius: 4px;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+        .pane-toggle:hover {
+            background-color: rgba(240, 240, 240, 0.5);
+        }
+        .pane-content {
+            transition: opacity 0.3s ease;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
+        }
+        #leftPane.closed .pane-content,
+        #rightPane.closed .pane-content {
+            opacity: 0;
+            pointer-events: none;
         }
         .bookmark.drag-over {
             transform: scale(1.05);
@@ -373,6 +403,12 @@
         body.dark-mode #settings,
         body.dark-mode .pane-toggle {
             background-color: rgba(42, 42, 42, 0.6);
+        }
+        body.dark-mode .pane-toggle:hover {
+            background-color: rgba(42, 42, 42, 0.8);
+        }
+        body.dark-mode .pane-content {
+            scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
         }
         
         /* Dark mode for new tab styling */
@@ -890,7 +926,8 @@
 <body>    
     <div id="leftPane">
         <div class="pane-toggle" id="toggleLeftPane" title="Open/Close settings">☰</div>
-        <div id="settings">                                
+        <div class="pane-content">
+            <div id="settings">                                
             <h3>GitHub Sync Settings</h3>
             <input type="text" id="githubUsername" placeholder="GitHub Username">
             <input type="text" id="githubRepo" placeholder="Repository Name">
@@ -938,7 +975,8 @@
             <br>
             <div id="versionDisplay"></div>            
             <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
-            </div>            
+            </div>
+        </div>
         </div>
     </div>
     <div id="bookmarkManager">
@@ -963,7 +1001,9 @@
     </div>
     <div id="rightPane">
         <div class="pane-toggle" id="toggleRightPane" title="Open/Close Chrome Tabs-list">☰</div>        
-        <div id="content"></div>
+        <div class="pane-content">
+            <div id="content"></div>
+        </div>
     </div>    
     <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>    
     <script src="bm.js"></script>    
