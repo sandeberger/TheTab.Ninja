@@ -38,6 +38,8 @@
             min-width: 30px;
             max-width: 30px;
             opacity: 0.5;
+            background-color: transparent !important;
+            backdrop-filter: none !important;
         }        
         
         #bookmarkManager {
@@ -361,8 +363,15 @@
             position: relative;
             z-index: 10;
         }
+        #leftPane.closed .pane-toggle, #rightPane.closed .pane-toggle {
+            background-color: transparent !important;
+            backdrop-filter: none !important;
+        }
         .pane-toggle:hover {
             background-color: rgba(240, 240, 240, 0.5);
+        }
+        #leftPane.closed .pane-toggle:hover, #rightPane.closed .pane-toggle:hover {
+            background-color: transparent !important;
         }
         .pane-content {
             transition: opacity 0.3s ease;
@@ -406,6 +415,13 @@
         }
         body.dark-mode .pane-toggle:hover {
             background-color: rgba(42, 42, 42, 0.8);
+        }
+        body.dark-mode #leftPane.closed .pane-toggle, body.dark-mode #rightPane.closed .pane-toggle {
+            background-color: transparent !important;
+            backdrop-filter: none !important;
+        }
+        body.dark-mode #leftPane.closed .pane-toggle:hover, body.dark-mode #rightPane.closed .pane-toggle:hover {
+            background-color: transparent !important;
         }
         body.dark-mode .pane-content {
             scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
