@@ -260,10 +260,30 @@
         }
         .window-title {
             cursor: pointer;
-            padding: 10px;
-            background-color: #f0f0f0;
-            margin-bottom: 5px;
-            border-radius: 4px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(240, 240, 240, 0.9), rgba(230, 230, 230, 0.9));
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 8px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #444;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .window-title:hover {
+            background: linear-gradient(135deg, rgba(240, 240, 240, 1), rgba(220, 220, 220, 1));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: rgba(66, 133, 244, 0.3);
+        }
+        
+        .window-title:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
         .tabs-list {
             display: flex;
@@ -274,18 +294,44 @@
         .tab {
             display: flex;
             align-items: center;
-            padding: 5px;
+            padding: 8px 12px;
             cursor: move;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+        
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: rgba(66, 133, 244, 0.3);
+            transform: translateX(2px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .tab:active {
+            transform: translateX(1px);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
         .tab img {
-            width: 16px;
-            height: 16px;
-            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
+        
         .tab-title {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
         }
         #settings {
             margin-bottom: 20px;
@@ -327,6 +373,54 @@
         body.dark-mode #settings,
         body.dark-mode .pane-toggle {
             background-color: rgba(42, 42, 42, 0.6);
+        }
+        
+        /* Dark mode for new tab styling */
+        body.dark-mode .window-title {
+            background: linear-gradient(135deg, rgba(60, 60, 60, 0.9), rgba(50, 50, 50, 0.9));
+            color: #e0e0e0;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        body.dark-mode .window-title:hover {
+            background: linear-gradient(135deg, rgba(70, 70, 70, 1), rgba(60, 60, 60, 1));
+            border-color: rgba(66, 133, 244, 0.4);
+        }
+        
+        body.dark-mode .tab {
+            background: rgba(60, 60, 60, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .tab:hover {
+            background: rgba(80, 80, 80, 0.95);
+            border-color: rgba(66, 133, 244, 0.4);
+        }
+        
+        body.dark-mode .tab-title {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .tab-group-container {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        body.dark-mode .tab-group-container:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        body.dark-mode .group-drag-handle {
+            background: rgba(80, 80, 80, 0.4);
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .group-drag-handle:hover {
+            background: rgba(100, 100, 100, 0.6);
+        }
+        
+        body.dark-mode .group-title {
+            color: #d0d0d0;
         }
         body.dark-mode .collection-button {
             background-color: rgba(4, 4, 4, 0.6);
@@ -673,35 +767,63 @@
         }
 
         .tab-group-container {
-            padding: 10px;
+            padding: 12px;
             cursor: move;
-            margin-bottom: 10px;
-            border-radius: 8px;
+            margin-bottom: 12px;
+            border-radius: 12px;
             backdrop-filter: blur(8px);
-            margin-top: 10px;
+            margin-top: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-group-container:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
         }
 
         .group-drag-handle{
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: 15px;
+            color: #444;
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(4px);
+            transition: all 0.2s ease;
         }
+        
+        .group-drag-handle:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.02);
+        }
+        
         .group-title {
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
         }
         .group-tabs {
             display: flex;
-            flex-direction: column; /* Varje tabb på en egen rad */
+            flex-direction: column;
             white-space: nowrap;
-            gap: 10px;
+            gap: 6px;
+            padding: 8px 0;
         }
 
         .ungrouped-tabs {
             display: flex;
-            flex-direction: column; /* Varje tabb på en egen rad */
-            gap: 10px;
+            flex-direction: column;
+            gap: 6px;
             overflow-x: auto;
             white-space: nowrap;
+            padding: 4px 0;
         }
 
         .group-header {

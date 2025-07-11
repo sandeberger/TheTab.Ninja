@@ -406,6 +406,94 @@ function generateUUID() {
     });
 }
 
+// Hjälpfunktion för att generera unikt kollektionsnamn
+function generateUniqueCollectionName(baseName) {
+    if (!baseName || baseName.trim() === '') {
+        baseName = 'New Collection';
+    }
+    
+    let name = baseName;
+    let counter = 1;
+    
+    // Kontrollera om namnet redan existerar
+    while (bookmarkManagerData.collections.some(c => !c.deleted && c.name.toLowerCase() === name.toLowerCase())) {
+        name = `${baseName} ${counter}`;
+        counter++;
+    }
+    
+    return name;
+}
+
+// Funktion för att skapa en ny Collection från Tab Group
+function createCollectionFromTabGroup(tabGroupData) {
+    const selfUrl = chrome.runtime.getURL("bm.html");
+    
+    // Säkerställ att vi har valid data
+    if (!tabGroupData) {
+        throw new Error('No tab group data provided');
+    }
+    
+    // Generera unikt namn
+    const baseName = tabGroupData.title && tabGroupData.title.trim() !== '' ? tabGroupData.title : 'Tab Group';
+    const collectionName = generateUniqueCollectionName(baseName);
+    
+    // Skapa nya bokmärken från tabbar
+    const bookmarks = [];
+    if (tabGroupData.tabs && Array.isArray(tabGroupData.tabs)) {
+        let position = 0;
+        tabGroupData.tabs.forEach((tab) => {
+            // Hoppa över vår egen sida och ogiltiga URLs
+            if (tab.url === selfUrl || !tab.url || tab.url.startsWith('chrome://')) return;
+            
+            const newBookmark = {
+                id: generateUUID(),
+                title: tab.title || 'Untitled',
+                url: tab.url,
+                description: "",
+                icon: tab.favIconUrl || 'default-icon.png',
+                lastModified: Date.now(),
+                deleted: false,
+                position: position++
+            };
+            bookmarks.push(newBookmark);
+        });
+    }
+    
+    // Kontrollera att vi faktiskt har några bokmärken att lägga till
+    if (bookmarks.length === 0) {
+        console.warn('No valid tabs found in tab group, creating empty collection');
+    }
+    
+    // Skapa ny Collection
+    const newCollection = {
+        id: generateUUID(),
+        name: collectionName,
+        isOpen: true,
+        lastModified: Date.now(),
+        deleted: false,
+        position: bookmarkManagerData.collections.length,
+        bookmarks: bookmarks
+    };
+    
+    // Lägg till i collections array
+    bookmarkManagerData.collections.push(newCollection);
+    
+    // Stäng tabbar om inställningen är aktiv
+    if (bookmarkManagerData.closeWhenSaveTab && tabGroupData.tabs) {
+        tabGroupData.tabs.forEach(tab => {
+            if ((tab.tabId || tab.id) && tab.url !== selfUrl && tab.url && !tab.url.startsWith('chrome://')) {
+                try {
+                    chrome.tabs.remove(tab.tabId || tab.id);
+                } catch (error) {
+                    console.warn('Could not close tab:', error);
+                }
+            }
+        });
+    }
+    
+    return newCollection;
+}
+
 function exportBookmarks() {
     const dataStr = JSON.stringify(bookmarkManagerData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -2254,6 +2342,58 @@ document.addEventListener('DOMContentLoaded', () => {
             collectionElement.classList.toggle('hidden', !showCollection);
         });
     }
+
+    // Global drop-hanterare för att skapa nya Collections från Tab Groups
+    document.addEventListener('dragover', (e) => {
+        // Förhindra standard drop-beteende för att möjliggöra custom drop
+        if (draggedItem && (draggedItem.type === 'chromeTabGroup' || draggedItem.type === 'chromeWindow')) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        }
+    });
+
+    document.addEventListener('drop', (e) => {
+        // Kontrollera om det är en Tab Group som droppas
+        if (draggedItem && (draggedItem.type === 'chromeTabGroup' || draggedItem.type === 'chromeWindow')) {
+            // Kontrollera om droppet skedde utanför en Collection
+            const closestCollection = e.target.closest('.collection');
+            const closestBookmarksContainer = e.target.closest('.bookmarks');
+            
+            // Om vi inte är över en Collection eller bookmarks container, skapa ny Collection
+            if (!closestCollection && !closestBookmarksContainer) {
+                e.preventDefault();
+                
+                try {
+                    // Skapa ny Collection från Tab Group data
+                    const newCollection = createCollectionFromTabGroup(draggedItem.data);
+                    
+                    // Uppdatera UI
+                    renderCollections();
+                    saveToLocalStorage();
+                    
+                    console.log('Created new collection from tab group:', newCollection.name);
+                    
+                    // Visuell feedback - blink den nya kollektionen
+                    setTimeout(() => {
+                        const newCollectionElement = document.querySelector(`[data-collection-id="${newCollection.id}"]`);
+                        if (newCollectionElement) {
+                            newCollectionElement.style.transition = 'background-color 0.3s ease';
+                            newCollectionElement.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                            setTimeout(() => {
+                                newCollectionElement.style.backgroundColor = '';
+                            }, 1000);
+                        }
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('Error creating collection from tab group:', error);
+                }
+                
+                // Rensa draggedItem
+                draggedItem = null;
+            }
+        }
+    });
 });
 
 // Funktion som startar konfetti-animationen
