@@ -22,6 +22,17 @@ let bookmarkManagerData = {
 let draggedItem = null;
 let placeholder = null;
 
+// Global funktion för att sätta bakgrundsbild
+function setBackground(imageName, type = 'predefined') {
+    if (type === 'custom') {
+        // För anpassade bilder, imageName är redan en data URL
+        document.body.style.backgroundImage = `url("${imageName}")`;
+    } else if (imageName === 'wp_none.png') {
+        document.body.style.backgroundImage = 'none';
+    } else {
+        document.body.style.backgroundImage = `url("large_${imageName}")`;
+    }
+}
 
 
 /*document.addEventListener('DOMContentLoaded', () => {
@@ -91,14 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePane('rightPane');
     });
 
-    // Funktion för att sätta bakgrundsbild
-    function setBackground(imageName) {
-        if (imageName === 'wp_none.png') {
-            document.body.style.backgroundImage = 'none'; // Or document.body.style.backgroundImage = '';
-        } else {
-            document.body.style.backgroundImage = `url("large_${imageName}")`;
-        }
-    }
 
     // Funktion för att markera en miniatyr som vald
     function selectThumbnail(thumbnailElement) {
@@ -144,7 +147,330 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('backgroundImage', defaultImageName);
         }
     }
+
+    // Initiera anpassade bakgrundsbilder
+    initCustomBackgrounds();
 });
+
+// Datastruktur och funktioner för anpassade bakgrundsbilder
+function loadCustomBackgrounds() {
+    const stored = localStorage.getItem('customBackgroundImages');
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch (e) {
+            console.error('Error parsing custom backgrounds:', e);
+        }
+    }
+    
+    return {
+        activeBackground: 'predefined',
+        activeImageId: null,
+        customImages: {}
+    };
+}
+
+function saveCustomBackgrounds(data) {
+    localStorage.setItem('customBackgroundImages', JSON.stringify(data));
+}
+
+function initCustomBackgrounds() {
+    const customData = loadCustomBackgrounds();
+    renderCustomBackgroundThumbnails();
+    
+    // Kontrollera om en anpassad bakgrund ska användas
+    if (customData.activeBackground === 'custom' && customData.activeImageId) {
+        const customImage = customData.customImages[customData.activeImageId];
+        if (customImage) {
+            setBackground(customImage.dataUrl, 'custom');
+        }
+    }
+}
+
+function renderCustomBackgroundThumbnails() {
+    const customData = loadCustomBackgrounds();
+    const container = document.getElementById('customBackgroundThumbnails');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    // Lägg till uppladdningsknapp
+    const uploadButton = document.createElement('div');
+    uploadButton.className = 'custom-upload-button';
+    uploadButton.innerHTML = `
+        <div class="upload-icon">+</div>
+        <div class="upload-text">Lägg till</div>
+        <input type="file" id="customBackgroundUpload" accept="image/jpeg,image/png" style="display: none;">
+    `;
+    
+    uploadButton.addEventListener('click', () => {
+        document.getElementById('customBackgroundUpload').click();
+    });
+
+    const fileInput = uploadButton.querySelector('#customBackgroundUpload');
+    fileInput.addEventListener('change', handleCustomBackgroundUpload);
+    
+    container.appendChild(uploadButton);
+
+    // Rendera befintliga anpassade bilder
+    Object.values(customData.customImages).forEach(image => {
+        const thumbnail = createCustomThumbnail(image);
+        container.appendChild(thumbnail);
+    });
+}
+
+function createCustomThumbnail(image) {
+    const thumbnail = document.createElement('div');
+    thumbnail.className = 'background-thumbnail custom-thumbnail';
+    thumbnail.dataset.imageId = image.id;
+    
+    thumbnail.innerHTML = `
+        <img src="${image.dataUrl}" alt="${image.name}">
+        <div class="custom-thumbnail-overlay">
+            <button class="remove-custom-bg" title="Ta bort">×</button>
+        </div>
+    `;
+
+    // Event listener för att sätta bakgrund (klick på bilden)
+    thumbnail.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('remove-custom-bg')) {
+            console.log('Klickade på anpassad bakgrund:', image.id);
+            setCustomBackground(image.id);
+        }
+    });
+
+    // Event listener för att ta bort bild (klick på X)
+    const removeButton = thumbnail.querySelector('.remove-custom-bg');
+    if (removeButton) {
+        removeButton.addEventListener('click', (e) => {
+            console.log('Klickade på ta bort knapp:', image.id);
+            e.stopPropagation();
+            removeCustomBackground(image.id);
+        });
+    }
+
+    return thumbnail;
+}
+
+async function handleCustomBackgroundUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validera filtyp
+    if (!file.type.match(/image\/(jpeg|png)/)) {
+        alert('Endast JPEG och PNG-filer är tillåtna.');
+        return;
+    }
+
+    // Validera filstorlek (max 5MB innan komprimering)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Filen är för stor. Maximal storlek är 5MB.');
+        return;
+    }
+
+    try {
+        // Komprimera och konvertera bilden
+        const compressedDataUrl = await compressImage(file);
+        
+        // Kontrollera slutlig storlek (max 500KB efter komprimering)
+        const sizeInBytes = compressedDataUrl.length * 0.75; // approximation för base64
+        if (sizeInBytes > 500 * 1024) {
+            alert('Bilden är för stor efter komprimering. Prova med en mindre bild.');
+            return;
+        }
+
+        // Spara den anpassade bakgrundsbilden
+        const customData = loadCustomBackgrounds();
+        
+        // Kontrollera max antal bilder (5)
+        if (Object.keys(customData.customImages).length >= 5) {
+            alert('Du kan ha max 5 anpassade bakgrundsbilder. Ta bort en befintlig först.');
+            return;
+        }
+
+        const imageId = 'custom_' + Date.now();
+        const imageName = file.name.replace(/\.[^/.]+$/, ''); // Ta bort filändelsen
+
+        customData.customImages[imageId] = {
+            id: imageId,
+            name: imageName,
+            dataUrl: compressedDataUrl,
+            uploadDate: Date.now()
+        };
+
+        saveCustomBackgrounds(customData);
+        renderCustomBackgroundThumbnails();
+        
+        // Återställ file input
+        event.target.value = '';
+        
+        console.log('Anpassad bakgrundsbild uppladdad:', imageName);
+    } catch (error) {
+        console.error('Fel vid bilduppladdning:', error);
+        alert('Ett fel uppstod vid bilduppladdning. Försök igen.');
+    }
+}
+
+function compressImage(file, maxWidth = 800, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        img.onload = function() {
+            // Beräkna nya dimensioner
+            let { width, height } = img;
+            
+            if (width > maxWidth) {
+                height = (height * maxWidth) / width;
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Rita bilden på canvas
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Konvertera till data URL med komprimering
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            resolve(dataUrl);
+        };
+
+        img.onerror = function() {
+            reject(new Error('Kunde inte ladda bilden'));
+        };
+
+        // Läs filen som data URL
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+        };
+        reader.onerror = function() {
+            reject(new Error('Kunde inte läsa filen'));
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function setCustomBackground(imageId) {
+    console.log('setCustomBackground called for:', imageId);
+    const customData = loadCustomBackgrounds();
+    const image = customData.customImages[imageId];
+    
+    if (!image) {
+        console.error('Anpassad bakgrundsbild hittades inte:', imageId);
+        return;
+    }
+
+    // Uppdatera aktiv bakgrund
+    customData.activeBackground = 'custom';
+    customData.activeImageId = imageId;
+    saveCustomBackgrounds(customData);
+
+    // Sätt bakgrundsbilden
+    setBackground(image.dataUrl, 'custom');
+    
+    // Uppdatera localStorage för kompatibilitet
+    localStorage.setItem('backgroundImage', 'custom_' + imageId);
+    
+    // Markera thumbnail som vald - avmarkera alla först
+    document.querySelectorAll('.background-thumbnail').forEach(thumb => {
+        thumb.classList.remove('selected');
+    });
+    
+    // Markera den valda anpassade thumbnail
+    const customThumbnail = document.querySelector(`[data-image-id="${imageId}"]`);
+    if (customThumbnail) {
+        customThumbnail.classList.add('selected');
+        console.log('Markerade anpassad thumbnail som vald:', imageId);
+    } else {
+        console.warn('Kunde inte hitta thumbnail för:', imageId);
+    }
+}
+
+function removeCustomBackground(imageId) {
+    console.log('removeCustomBackground called for:', imageId);
+    
+    if (!confirm('Är du säker på att du vill ta bort denna bakgrundsbild?')) {
+        console.log('User cancelled removal');
+        return;
+    }
+
+    try {
+        const customData = loadCustomBackgrounds();
+        
+        // Kontrollera att bilden finns
+        if (!customData.customImages[imageId]) {
+            console.error('Bilden hittades inte:', imageId);
+            alert('Bilden kunde inte hittas.');
+            return;
+        }
+        
+        // Ta bort bilden
+        delete customData.customImages[imageId];
+        console.log('Bild borttagen från data:', imageId);
+        
+        // Om detta var den aktiva bakgrundsbilden, växla till standard
+        if (customData.activeBackground === 'custom' && customData.activeImageId === imageId) {
+            customData.activeBackground = 'predefined';
+            customData.activeImageId = null;
+            
+            // Sätt första fördefinierade bakgrundsbilden som standard
+            const backgroundImages = [
+                'wp_none.png',
+                'wp_img01.png',
+                'wp_img02.png',
+                'wp_img03.png',
+                'wp_img05.png',
+                'wp_img06.png',
+                'wp_img07.png',
+                'wp_img08.png',
+                'wp_img09.png',
+                'wp_img10.png',
+                'wp_img11.png',
+                'wp_img12.png',
+                'wp_img13.png',
+                'wp_img14.png',
+                'wp_img15.png'
+            ];
+            
+            if (backgroundImages.length > 0) {
+                setBackground(backgroundImages[0]);
+                localStorage.setItem('backgroundImage', backgroundImages[0]);
+            }
+            console.log('Bytte till standard bakgrundsbild');
+        }
+        
+        saveCustomBackgrounds(customData);
+        renderCustomBackgroundThumbnails();
+        
+        console.log('Anpassad bakgrundsbild borttagen framgångsrikt:', imageId);
+    } catch (error) {
+        console.error('Fel vid borttagning av bakgrundsbild:', error);
+        alert('Ett fel uppstod vid borttagning av bakgrundsbilden.');
+    }
+}
+
+function updateThumbnailSelection(imageId, type) {
+    // Avmarkera alla thumbnails
+    document.querySelectorAll('.background-thumbnail').forEach(thumb => {
+        thumb.classList.remove('selected');
+    });
+
+    // Markera rätt thumbnail
+    if (type === 'custom') {
+        const customThumbnail = document.querySelector(`[data-image-id="${imageId}"]`);
+        if (customThumbnail) {
+            customThumbnail.classList.add('selected');
+        }
+    } else {
+        const predefinedThumbnail = document.querySelector(`[data-image-name="${imageId}"]`);
+        if (predefinedThumbnail) {
+            predefinedThumbnail.classList.add('selected');
+        }
+    }
+}
 
 
 

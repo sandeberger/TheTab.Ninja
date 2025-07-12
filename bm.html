@@ -818,6 +818,131 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Valfri skuggeffekt */
         }
 
+        /* Stilar för anpassade bakgrundsbilder */
+        .wallpaper-section {
+            margin-bottom: 20px;
+        }
+
+        .wallpaper-section h4 {
+            margin: 10px 0 8px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        body.dark-mode .wallpaper-section h4 {
+            color: #ccc;
+        }
+
+        #customBackgroundThumbnails {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .custom-upload-button {
+            width: 50px;
+            height: 50px;
+            border: 2px dashed #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 123, 255, 0.1);
+            transition: all 0.3s;
+        }
+
+        .custom-upload-button:hover {
+            background: rgba(0, 123, 255, 0.2);
+            border-color: #0056b3;
+        }
+
+        .upload-icon {
+            font-size: 20px;
+            color: #007bff;
+            line-height: 1;
+        }
+
+        .upload-text {
+            font-size: 8px;
+            color: #007bff;
+            margin-top: 2px;
+        }
+
+        .custom-thumbnail {
+            position: relative;
+        }
+
+        .custom-thumbnail img {
+            width: 50px;
+            height: 50px;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            object-fit: cover;
+            transition: border-color 0.3s;
+        }
+
+        .custom-thumbnail-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .custom-thumbnail:hover .custom-thumbnail-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .custom-thumbnail:hover {
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .remove-custom-bg {
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translate(50%, -50%);
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .remove-custom-bg:hover {
+            background: rgba(244, 67, 54, 1);
+        }
+
+        /* Dark mode för anpassade bakgrundsbilder */
+        body.dark-mode .custom-upload-button {
+            border-color: #4fc3f7;
+            background: rgba(79, 195, 247, 0.1);
+        }
+
+        body.dark-mode .custom-upload-button:hover {
+            background: rgba(79, 195, 247, 0.2);
+            border-color: #29b6f6;
+        }
+
+        body.dark-mode .upload-icon,
+        body.dark-mode .upload-text {
+            color: #4fc3f7;
+        }
+
         .tab-group-container {
             padding: 12px;
             cursor: move;
@@ -1116,8 +1241,17 @@
             <br>
             <div id="mysettings">
                 <h3>Wallpaper</h3>
-                <div id="backgroundThumbnails">                    
-                    <!-- Miniatyrer kommer att genereras här med JavaScript -->
+                <div class="wallpaper-section">
+                    <h4>Anpassade bakgrundsbilder</h4>
+                    <div id="customBackgroundThumbnails">
+                        <!-- Anpassade miniatyrer kommer att genereras här med JavaScript -->
+                    </div>
+                </div>
+                <div class="wallpaper-section">
+                    <h4>Fördefinierade bakgrundsbilder</h4>
+                    <div id="backgroundThumbnails">                    
+                        <!-- Miniatyrer kommer att genereras här med JavaScript -->
+                    </div>
                 </div>
             </div>
             <br>
