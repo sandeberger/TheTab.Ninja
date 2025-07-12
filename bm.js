@@ -2123,13 +2123,23 @@ function createDefaultCollection() {
                 position: 5
             },
             {
+                title: "Labs.Kodar.Ninja",
+                url: "https://labs.kodar.ninja/",
+                description: "All my projects and experiments at one place.",
+                icon: "https://thefile.ninja/favicon.ico",
+                id: "2b9eea24-144a-4dff-b94a-b4fc8fc6cddb",
+                deleted: false,
+                lastModified: 1737456756973,
+                position: 6
+            },
+            {
                 id: "1b82111d-5f1b-43d0-b188-a5cdaac95ced",
                 title: "kodar.ninja - itch.io",
                 url: "https://kodarninja.itch.io/",
                 description: "",
                 icon: "https://kodarninja.itch.io/favicon.ico",
                 lastModified: 1737456756973,
-                deleted: true,
+                deleted: false,
                 position: 14
             }
         ],
