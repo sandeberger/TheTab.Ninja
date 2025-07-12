@@ -10,6 +10,7 @@ let bookmarkManagerData = {
     leftPaneOpen: true,
     rightPaneOpen: true,
     closeWhenSaveTab: false,
+    activeLeftTab: 'spaces',
     githubConfig: {
         username: '',
         repo: '',
@@ -413,11 +414,11 @@ function generateUniqueCollectionName(baseName) {
     }
     
     let name = baseName;
-    let counter = 1;
+    let counter = 2;
     
     // Kontrollera om namnet redan existerar
     while (bookmarkManagerData.collections.some(c => !c.deleted && c.name.toLowerCase() === name.toLowerCase())) {
-        name = `${baseName} ${counter}`;
+        name = `${baseName}${counter}`;
         counter++;
     }
     
@@ -433,8 +434,17 @@ function createCollectionFromTabGroup(tabGroupData) {
         throw new Error('No tab group data provided');
     }
     
-    // Generera unikt namn
-    const baseName = tabGroupData.title && tabGroupData.title.trim() !== '' ? tabGroupData.title : 'Tab Group';
+    // Generera unikt namn baserat på datatyp
+    let baseName;
+    if (tabGroupData.title && tabGroupData.title.trim() !== '') {
+        // Chrome Group data har title-fältet
+        baseName = tabGroupData.title;
+    } else if (tabGroupData.windowId) {
+        // Chrome Window data har windowId men inte title
+        baseName = `Chrome Window ${tabGroupData.windowId}`;
+    } else {
+        baseName = 'Tab Group';
+    }
     const collectionName = generateUniqueCollectionName(baseName);
     
     // Skapa nya bokmärken från tabbar
@@ -1431,13 +1441,25 @@ function dragEnd(e) {
 
 // Uppdaterad dragOverCollection funktion
 function dragOverCollection(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-
-    // Kontrollera om vi har en collection som dras
-    if (!draggedItem || draggedItem.type !== 'collection') {
+    if (!draggedItem) {
         return;
     }
+    
+    // Låt Chrome Groups och Windows bubbla vidare till rätt handler
+    if (draggedItem.type === 'chromeTabGroup' || 
+        draggedItem.type === 'chromeWindow' || 
+        draggedItem.type === 'chromeTab') {
+            e.stopPropagation();
+        //e.preventDefault(); // Tillåt drop av tab-grupper
+        return;
+    }
+    
+    if (draggedItem.type !== 'collection') {
+        return;
+    }
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
 
     // Hitta collections container
     const collectionsContainer = document.getElementById('collections');
@@ -1589,10 +1611,20 @@ function dragLeaveBookmarkContainer(e) {
 // Uppdaterad dragOverBookmark funktion
 // Uppdaterad dragOverBookmark med bättre hantering av direktöverlappning
 function dragOverBookmark(e) {
+    if (!draggedItem) return;
+    
+    // Låt Chrome Groups och Windows bubbla vidare till rätt handler
+    if (draggedItem.type === 'chromeTabGroup' || 
+        draggedItem.type === 'chromeWindow' || 
+        draggedItem.type === 'chromeTab') {
+        e.preventDefault(); // Tillåt drop av tab-grupper
+        return;
+    }
+    
+    if (draggedItem.type !== 'bookmark') return;
+    
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-
-    if (!draggedItem || draggedItem.type !== 'bookmark') return;
 
     const targetBookmark = this;
     const rect = targetBookmark.getBoundingClientRect();
@@ -1698,8 +1730,8 @@ function dropBookmarkContainer(e) {
         const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
         if (!collection) return;
         
-        if (draggedItem.type === 'chromeTabGroup' || draggedItem.type === 'chromeWindow') {
-            // Importera alla tabbar från gruppen som bokmärken
+        if (draggedItem.type === 'chromeTabGroup') {
+            // Importera tabbar från Chrome Group som bokmärken
             let tabsArray = draggedItem.data.tabs || [];
             tabsArray.forEach(tab => {
                 // Hoppa över om fliken är vår egen sida
@@ -1718,6 +1750,37 @@ function dropBookmarkContainer(e) {
             });
             collection.lastModified = Date.now();
             // Stäng alla tabbar i gruppen om inställningen är aktiv och om de inte är vår egen sida
+            if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
+                tabsArray.forEach(tab => {
+                    if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
+                        chrome.tabs.remove(tab.tabId || tab.id);
+                    }
+                });
+            }
+            renderCollections();
+            saveToLocalStorage();
+            draggedItem = null;
+            return;
+        } else if (draggedItem.type === 'chromeWindow') {
+            // Importera alla tabbar från Chrome Window som bokmärken
+            let tabsArray = draggedItem.data.tabs || [];
+            tabsArray.forEach(tab => {
+                // Hoppa över om fliken är vår egen sida
+                if (tab.url === selfUrl) return;
+                const newBookmark = {
+                    id: generateUUID(),
+                    title: tab.title,
+                    url: tab.url,
+                    description: "",
+                    icon: tab.favIconUrl || 'default-icon.png',
+                    lastModified: Date.now(),
+                    deleted: false,
+                    position: collection.bookmarks.length
+                };
+                collection.bookmarks.push(newBookmark);
+            });
+            collection.lastModified = Date.now();
+            // Stäng alla tabbar i fönstret om inställningen är aktiv och om de inte är vår egen sida
             if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
                 tabsArray.forEach(tab => {
                     if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
@@ -1910,13 +1973,13 @@ async function fetchChromeTabs() {
 
                         const groupContainer = document.createElement('div');
                         groupContainer.className = 'tab-group-container';
+                        groupContainer.draggable = true;
                         
                         const groupDragHandle = document.createElement('div');
                         groupDragHandle.className = 'group-drag-handle';
                         groupDragHandle.textContent = groupInfo && groupInfo.title ? groupInfo.title : 'Tab Group'; // Exempelikon
-                        groupDragHandle.draggable = true;
 
-                        groupDragHandle.addEventListener('dragstart', function(e) {
+                        groupContainer.addEventListener('dragstart', function(e) {
                             e.stopPropagation(); // Hindra att händelsen når underliggande element
                             draggedItem = {
                               type: 'chromeTabGroup',
@@ -1926,7 +1989,10 @@ async function fetchChromeTabs() {
                               }
                             };
                             e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', 'chromeTabGroup');
                         });
+                        
+                        groupContainer.addEventListener('dragend', dragEnd);
                     
                         const groupHeader = document.createElement('div');
                         groupHeader.className = 'group-header';
@@ -2216,6 +2282,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('syncButton').addEventListener('click', synchronizeWithGitHub);
 
+    // Left pane tabs functionality
+    initializeLeftPaneTabs();
+
     // Funktion för att uppdatera sync-knappens synlighet
     function updateSyncButtonVisibility() {
         const syncButton = document.getElementById('syncButton');
@@ -2342,9 +2411,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global drop-hanterare för att skapa nya Collections från Tab Groups
     document.addEventListener('dragover', (e) => {
         // Förhindra standard drop-beteende för att möjliggöra custom drop
-        if (draggedItem && (draggedItem.type === 'chromeTabGroup' || draggedItem.type === 'chromeWindow')) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
+        const creatableTypes = ['chromeTabGroup', 'chromeWindow'];
+    
+        if (draggedItem && creatableTypes.includes(draggedItem.type)) {
+            // Hitta den närmaste collectionen. Om det inte finns någon (dvs. vi är över den tomma ytan),
+            // eller om vi är över en annan del av sidan som inte är en specifik släppzon,
+            // så tillåter vi släppet här.
+            const closestCollection = e.target.closest('.collection');
+            
+            // Om muspekaren INTE är över en befintlig collection,
+            // betyder det att vi är över "arbetsytan".
+            if (!closestCollection) {
+                // TALA OM FÖR WEBLÄSAREN ATT SLÄPP ÄR TILLÅTET
+                e.preventDefault();
+                
+                // Ge visuell feedback (valfritt men bra UX)
+                e.dataTransfer.dropEffect = 'copy'; 
+            }
+            // Om vi ÄR över en collection, gör vi ingenting här.
+            // Då kommer den specifika lyssnaren på .collection att hantera det,
+            // tack vare `stopPropagation()` som vi lade till tidigare.
         }
     });
 
@@ -2388,9 +2474,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Rensa draggedItem
                 draggedItem = null;
             }
+            // Om droppet skedde över en Collection eller bookmarks container, 
+            // låt event:et bubblande upp till den specifika drop-handleren
+            // (dvs. gör inget här, dropBookmarkContainer kommer att hantera det)
         }
     });
 });
+
+// Left pane tabs functionality
+function initializeLeftPaneTabs() {
+    // Load active tab from localStorage
+    if (bookmarkManagerData.activeLeftTab) {
+        switchLeftTab(bookmarkManagerData.activeLeftTab);
+    }
+    
+    // Add event listeners for tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchLeftTab(tabName);
+        });
+    });
+}
+
+function switchLeftTab(tabName) {
+    // Update active tab in data
+    bookmarkManagerData.activeLeftTab = tabName;
+    saveToLocalStorage();
+    
+    // Remove active class from all tabs and panes
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    
+    // Add active class to selected tab and pane
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// Add activeLeftTab to the data structure
+if (!bookmarkManagerData.activeLeftTab) {
+    bookmarkManagerData.activeLeftTab = 'spaces';
+}
 
 // Funktion som startar konfetti-animationen
 function startConfetti(options = {}) {
@@ -2503,3 +2627,38 @@ supportButton.addEventListener('mouseenter', function(e) {
 supportButton.addEventListener('mouseleave', function() {
   clearTimeout(confettiTimeout);
 });
+
+// Left pane tabs functionality
+function initializeLeftPaneTabs() {
+    // Load active tab from localStorage
+    if (bookmarkManagerData.activeLeftTab) {
+        switchLeftTab(bookmarkManagerData.activeLeftTab);
+    }
+    
+    // Add event listeners for tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchLeftTab(tabName);
+        });
+    });
+}
+
+function switchLeftTab(tabName) {
+    // Update active tab in data
+    bookmarkManagerData.activeLeftTab = tabName;
+    saveToLocalStorage();
+    
+    // Remove active class from all tabs and panes
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    
+    // Add active class to selected tab and pane
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+}
+
+// Add activeLeftTab to the data structure
+if (!bookmarkManagerData.activeLeftTab) {
+    bookmarkManagerData.activeLeftTab = 'spaces';
+}

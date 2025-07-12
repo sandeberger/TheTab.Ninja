@@ -937,14 +937,146 @@
             margin-right: 8px;
         }
 
+        /* Left pane tabs styling */
+        .left-pane-tabs {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .tab-nav {
+            display: flex;
+            background: rgba(240, 240, 240, 0.3);
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 10px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px 15px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-button.active {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            color: #333;
+        }
+
+        .tab-button:not(.active):hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
+        }
+
+        .tab-pane {
+            display: none;
+            height: 100%;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .spaces-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .space-item {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .space-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .space-item.active {
+            background: rgba(76, 175, 80, 0.6);
+            color: white;
+            border-color: rgba(76, 175, 80, 0.8);
+        }
+
+        /* Dark mode styles for tabs */
+        body.dark-mode .tab-nav {
+            background: rgba(42, 42, 42, 0.6);
+        }
+
+        body.dark-mode .tab-button {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .tab-button.active {
+            background: rgba(60, 60, 60, 0.8);
+            color: #fff;
+        }
+
+        body.dark-mode .tab-button:not(.active):hover {
+            background: rgba(60, 60, 60, 0.4);
+        }
+
+        body.dark-mode .space-item {
+            background: rgba(60, 60, 60, 0.6);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .space-item:hover {
+            background: rgba(80, 80, 80, 0.8);
+        }
+
+        body.dark-mode .space-item.active {
+            background: rgba(76, 175, 80, 0.6);
+            color: white;
+            border-color: rgba(76, 175, 80, 0.8);
+        }
+
     </style>
 </head>
 <body>    
     <div id="leftPane">
         <div class="pane-toggle" id="toggleLeftPane" title="Open/Close settings">☰</div>
         <div class="pane-content">
-            <div id="settings">                                
-            <h3>GitHub Sync Settings</h3>
+            <div class="left-pane-tabs">
+                <div class="tab-nav">
+                    <button class="tab-button active" data-tab="spaces">Spaces</button>
+                    <button class="tab-button" data-tab="settings">Settings</button>
+                </div>
+                <div class="tab-content">
+                    <div id="spaces-tab" class="tab-pane active">
+                        <h3>Spaces</h3>
+                        <div class="spaces-list">
+                            <div class="space-item">Private</div>
+                            <div class="space-item">Work</div>
+                            <div class="space-item">AI</div>
+                            <div class="space-item">Tools</div>
+                            <div class="space-item">Internet</div>
+                        </div>
+                    </div>
+                    <div id="settings-tab" class="tab-pane">
+                        <div id="settings">                                
+                        <h3>GitHub Sync Settings</h3>
             <input type="text" id="githubUsername" placeholder="GitHub Username">
             <input type="text" id="githubRepo" placeholder="Repository Name">
             <input type="password" id="githubPat" placeholder="Personal Access Token">
@@ -991,8 +1123,10 @@
             <br>
             <div id="versionDisplay"></div>            
             <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
         </div>
     </div>
     <div id="bookmarkManager">
