@@ -1450,7 +1450,7 @@ function dragOverCollection(e) {
         draggedItem.type === 'chromeWindow' || 
         draggedItem.type === 'chromeTab') {
             e.stopPropagation();
-        //e.preventDefault(); // Tillåt drop av tab-grupper
+        e.preventDefault(); // Tillåt drop av tab-grupper
         return;
     }
     
