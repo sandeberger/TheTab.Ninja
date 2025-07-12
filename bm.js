@@ -199,7 +199,7 @@ function renderCustomBackgroundThumbnails() {
     uploadButton.className = 'custom-upload-button';
     uploadButton.innerHTML = `
         <div class="upload-icon">+</div>
-        <div class="upload-text">Lägg till</div>
+        <div class="upload-text">Add</div>
         <input type="file" id="customBackgroundUpload" accept="image/jpeg,image/png" style="display: none;">
     `;
     
