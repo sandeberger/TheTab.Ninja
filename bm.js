@@ -1589,31 +1589,49 @@ function editCollectionSpaces(collectionId) {
     const availableSpaces = bookmarkManagerData.spaces || ['Everything'];
     const currentSpaces = collection.spaces || ['Everything'];
     
+    // Kontrollera om dark mode är aktivt för labels
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const labelColor = isDarkMode ? '#e0e0e0' : '#333';
+    
     const spacesHtml = availableSpaces.map(space => {
         const checked = currentSpaces.includes(space) ? 'checked' : '';
         const disabled = space === 'Everything' ? 'disabled' : '';
         return `
-            <label style="display: block; margin: 5px 0;">
-                <input type="checkbox" value="${space}" ${checked} ${disabled}>
+            <label style="display: block; margin: 5px 0; color: ${labelColor}; cursor: pointer;">
+                <input type="checkbox" value="${space}" ${checked} ${disabled} style="margin-right: 8px;">
                 ${space}
                 ${space === 'Everything' ? ' (always included)' : ''}
             </label>
         `;
     }).join('');
     
+    // Använd samma isDarkMode variabel för dialog
+    const dialogBg = isDarkMode ? '#2a2a2a' : 'white';
+    const textColor = isDarkMode ? '#e0e0e0' : '#333';
+    const cancelBg = isDarkMode ? '#444' : '#f0f0f0';
+    const cancelTextColor = isDarkMode ? '#e0e0e0' : '#333';
+    
     const dialogHtml = `
         <div id="spacesDialog" style="
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: 10000; min-width: 300px; max-height: 400px; overflow-y: auto;
+            background: ${dialogBg}; color: ${textColor}; padding: 20px; border-radius: 8px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; min-width: 300px; 
+            max-height: 400px; overflow-y: auto; border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
         ">
-            <h3>Select Spaces for "${collection.name}"</h3>
+            <h3 style="color: ${textColor}; margin-top: 0;">Select Spaces for "${collection.name}"</h3>
             <div style="margin: 15px 0;">
                 ${spacesHtml}
             </div>
             <div style="margin-top: 20px; text-align: right;">
-                <button id="cancelSpaces" style="margin-right: 10px; padding: 8px 16px;">Cancel</button>
-                <button id="saveSpaces" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px;">Save</button>
+                <button id="cancelSpaces" style="
+                    margin-right: 10px; padding: 8px 16px; background: ${cancelBg}; 
+                    color: ${cancelTextColor}; border: 1px solid ${isDarkMode ? '#666' : '#ccc'}; 
+                    border-radius: 4px; cursor: pointer;
+                ">Cancel</button>
+                <button id="saveSpaces" style="
+                    padding: 8px 16px; background: #4CAF50; color: white; 
+                    border: none; border-radius: 4px; cursor: pointer;
+                ">Save</button>
             </div>
         </div>
         <div id="spacesOverlay" style="
@@ -1623,6 +1641,24 @@ function editCollectionSpaces(collectionId) {
     `;
     
     document.body.insertAdjacentHTML('beforeend', dialogHtml);
+    
+    // Add hover effects for buttons
+    const cancelBtn = document.getElementById('cancelSpaces');
+    const saveBtn = document.getElementById('saveSpaces');
+    
+    cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.backgroundColor = isDarkMode ? '#555' : '#e0e0e0';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.backgroundColor = cancelBg;
+    });
+    
+    saveBtn.addEventListener('mouseenter', () => {
+        saveBtn.style.backgroundColor = '#45a049';
+    });
+    saveBtn.addEventListener('mouseleave', () => {
+        saveBtn.style.backgroundColor = '#4CAF50';
+    });
     
     // Add event listeners
     document.getElementById('saveSpaces').addEventListener('click', () => {
@@ -1839,8 +1875,13 @@ function dragStartCollection(e) {
             collectionId: collectionId
         };
         setTimeout(() => collectionElement.classList.add('dragging'), 0);
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.effectAllowed = 'copyMove'; // Tillåt både copy och move för spaces drop
         e.dataTransfer.setData('text/plain', collectionId);
+        e.dataTransfer.setData('application/json', JSON.stringify({type: 'collection', id: collectionId}));
+        
+        // Visa drop-zones för spaces om spaces-fliken är aktiv
+        console.log('Starting collection drag, calling showSpaceDropZones'); // Debug log
+        showSpaceDropZones();
     } else {
         console.warn('Collection element not found for drag start');
     }
@@ -1873,6 +1914,10 @@ function dragEnd(e) {
         placeholder.parentNode.removeChild(placeholder);
         placeholder = null;
     }
+    
+    // Dölj space drop-zones
+    hideSpaceDropZones();
+    
     draggedItem = null;
     console.log('Drag ended, draggedItem reset');
 }
@@ -3290,6 +3335,152 @@ function initializeSpaces() {
     
     // Render spaces
     renderSpaces();
+}
+
+// Collection to Space Drag & Drop Functions
+function showSpaceDropZones() {
+    // Kontrollera om spaces-fliken är aktiv
+    const spacesTab = document.getElementById('spaces-tab');
+    if (!spacesTab || !spacesTab.classList.contains('active')) {
+        return; // Visa bara drop-zones om spaces-fliken är aktiv
+    }
+    
+    console.log('Showing space drop zones'); // Debug log
+    
+    const spaceItems = document.querySelectorAll('.space-item');
+    console.log('Found space items:', spaceItems.length); // Debug log
+    
+    spaceItems.forEach(spaceItem => {
+        // Lägg till drop-zone indikator och event listeners
+        spaceItem.classList.add('drop-zone-active');
+        spaceItem.addEventListener('dragenter', spaceDragEnter);
+        spaceItem.addEventListener('dragover', spaceDragOver);
+        spaceItem.addEventListener('drop', spaceDropHandler);
+        spaceItem.addEventListener('dragleave', spaceDragLeave);
+    });
+}
+
+function hideSpaceDropZones() {
+    console.log('Hiding space drop zones'); // Debug log
+    
+    const spaceItems = document.querySelectorAll('.space-item');
+    spaceItems.forEach(spaceItem => {
+        spaceItem.classList.remove('drop-zone-active', 'drag-over');
+        spaceItem.removeEventListener('dragenter', spaceDragEnter);
+        spaceItem.removeEventListener('dragover', spaceDragOver);
+        spaceItem.removeEventListener('drop', spaceDropHandler);
+        spaceItem.removeEventListener('dragleave', spaceDragLeave);
+    });
+}
+
+function spaceDragEnter(e) {
+    if (draggedItem && draggedItem.type === 'collection') {
+        e.preventDefault();
+        console.log('Drag enter on space:', this.textContent); // Debug log
+    }
+}
+
+function spaceDragOver(e) {
+    console.log('Drag over space - effectAllowed:', e.dataTransfer.effectAllowed); // Debug log
+    
+    if (draggedItem && draggedItem.type === 'collection') {
+        e.preventDefault();
+        e.stopPropagation(); // Förhindra event bubbling
+        e.dataTransfer.dropEffect = 'copy'; // Matchar nu copyMove effectAllowed
+        this.classList.add('drag-over');
+        console.log('✅ Drop allowed - dropEffect set to copy, target:', this.textContent.trim()); // Debug log
+        return false; // Extra säkerhet för att indikera att drop är tillåtet
+    } else {
+        e.dataTransfer.dropEffect = 'none'; // Förhindra drop om det inte är en collection
+        console.log('❌ Drop not allowed - wrong drag type'); // Debug log
+    }
+}
+
+function spaceDragLeave(e) {
+    // Kontrollera att vi verkligen lämnar elementet och inte bara ett child-element
+    if (!this.contains(e.relatedTarget)) {
+        this.classList.remove('drag-over');
+    }
+}
+
+function spaceDropHandler(e) {
+    console.log('Drop handler called!'); // Debug log
+    e.preventDefault();
+    e.stopPropagation();
+    this.classList.remove('drag-over');
+    
+    if (!draggedItem || draggedItem.type !== 'collection') {
+        console.log('Invalid drop - no draggedItem or wrong type'); // Debug log
+        return;
+    }
+    
+    // Hitta vilket space som collection droppades på
+    const spaceNameElement = this.querySelector('.space-name');
+    if (!spaceNameElement) return;
+    
+    const targetSpaceName = spaceNameElement.textContent.trim();
+    const collectionId = draggedItem.collectionId;
+    
+    // Hitta collection och lägg till space om det inte redan finns
+    const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+    if (collection) {
+        if (!collection.spaces) {
+            collection.spaces = ['Everything'];
+        }
+        
+        if (!collection.spaces.includes(targetSpaceName)) {
+            collection.spaces.push(targetSpaceName);
+            collection.lastModified = Date.now();
+            saveToLocalStorage();
+            renderCollections();
+            
+            // Visa bekräftelse
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                z-index: 10000;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            feedback.textContent = `"${collection.name}" added to "${targetSpaceName}"`;
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 3000);
+        } else {
+            // Visa att space redan finns
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #FF9800;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                z-index: 10000;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            feedback.textContent = `"${collection.name}" already in "${targetSpaceName}"`;
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                if (feedback.parentNode) {
+                    feedback.parentNode.removeChild(feedback);
+                }
+            }, 2000);
+        }
+    }
 }
 
 // Zen Mode Functions

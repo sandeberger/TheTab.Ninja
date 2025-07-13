@@ -1286,6 +1286,12 @@
             transform: scale(1.1);
         }
 
+        /* Förhindra att child elements blockerar drop events */
+        .space-item.drop-zone-active .delete-space-btn,
+        .space-item.drop-zone-active .space-name {
+            pointer-events: none;
+        }
+
         /* Dark mode för spaces */
         body.dark-mode #newSpaceName {
             background: rgba(60, 60, 60, 0.6);
@@ -1300,6 +1306,43 @@
 
         body.dark-mode .add-space-btn:disabled {
             background: rgba(80, 80, 80, 0.6);
+        }
+
+        /* Drag and drop styles for spaces */
+        .space-item.drop-zone-active {
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: copy !important; /* Tvinga copy cursor för drop-zones */
+        }
+
+        .space-item.drop-zone-active:before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            border: 2px dashed transparent;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .space-item.drag-over {
+            background: rgba(76, 175, 80, 0.2) !important;
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .space-item.drag-over:before {
+            border-color: rgba(76, 175, 80, 0.8);
+            border-style: solid;
+        }
+
+        /* Dark mode för drag and drop */
+        body.dark-mode .space-item.drag-over {
+            background: rgba(76, 175, 80, 0.3) !important;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
         }
 
         /* ZEN MODE STYLES */
