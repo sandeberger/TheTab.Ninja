@@ -528,14 +528,31 @@ async function fetchFromGitHub() {
 
 // Funktion för att pusha till GitHub via background.js
 async function pushToGitHub(content) {
-    // Skicka all data inklusive raderade bokmärken/collections
+    // Skicka data inklusive raderade bokmärken/collections (exkluderar PAT för säkerhet)
     const response = await chrome.runtime.sendMessage({
         action: 'pushToGitHub',
         config: bookmarkManagerData.githubConfig,
-        content: content // ✅ Inkludera allt
+        content: content // ✅ Inkludera data (PAT exkluderad via sanitizeDataForSync)
     });
     
     return response.success;
+}
+
+// Funktion för att rensa data för säker synkronisering (exkludera PAT)
+function sanitizeDataForSync(data) {
+    const sanitized = { ...data };
+    
+    // Ta bort PAT från githubConfig om den finns
+    if (sanitized.githubConfig) {
+        sanitized.githubConfig = {
+            ...sanitized.githubConfig,
+            pat: undefined // Exkludera PAT från synkronisering
+        };
+        // Ta bort undefined properties
+        delete sanitized.githubConfig.pat;
+    }
+    
+    return sanitized;
 }
 
 // Variabel för att spåra om synkronisering pågår
@@ -566,7 +583,7 @@ async function synchronizeWithGitHub(retryCount = 0) {
             fetchFromGitHub().catch(async error => {
                 if (error.message.includes('404') && retryCount === 0) {
                     console.log('Creating initial remote file');
-                    await pushToGitHub(bookmarkManagerData);
+                    await pushToGitHub(sanitizeDataForSync(bookmarkManagerData));
                     return null;
                 }
                 throw error;
@@ -594,25 +611,47 @@ async function synchronizeWithGitHub(retryCount = 0) {
             (remoteData?.collections || [])
         );
 
+        // Steg 4.5: Merga spaces
+        const localSpaces = localData?.spaces || ['Everything'];
+        const remoteSpaces = remoteData?.spaces || ['Everything'];
+        const mergedSpaces = mergeSpaces(localSpaces, remoteSpaces);
+        
+        // Säkerställ att currentSpace fortfarande är giltig
+        const localCurrentSpace = localData?.currentSpace || 'Everything';
+        const remoteCurrentSpace = remoteData?.currentSpace || 'Everything';
+        let mergedCurrentSpace = localCurrentSpace;
+        
+        // Om lokalt currentSpace inte finns i merged spaces, använd remote eller fallback
+        if (!mergedSpaces.includes(localCurrentSpace)) {
+            if (mergedSpaces.includes(remoteCurrentSpace)) {
+                mergedCurrentSpace = remoteCurrentSpace;
+            } else {
+                mergedCurrentSpace = 'Everything';
+            }
+        }
+
         // Steg 5: Uppdatera lokalt tillstånd
         const newData = {
             ...bookmarkManagerData,
             collections: mergedCollections,
+            spaces: mergedSpaces,
+            currentSpace: mergedCurrentSpace,
             lastSynced: Date.now()
         };
 
-        // Steg 6: Pusha mergad data till GitHub (inkl. raderade)
-        await pushToGitHub({
+        // Steg 6: Pusha mergad data till GitHub (inkl. raderade, exkl. PAT)
+        await pushToGitHub(sanitizeDataForSync({
             ...newData,
             collections: newData.collections.map(collection => ({
                 ...collection,
                 bookmarks: collection.bookmarks
             }))
-        });
+        }));
 
         // Steg 7: Uppdatera UI och lagring
         bookmarkManagerData = newData;
         renderCollections();
+        renderSpaces(); // Uppdatera spaces-listan efter sync
         saveToLocalStorage();
 
     } catch (error) {
@@ -716,6 +755,18 @@ function mergeBookmarkVersions(local, remote) {
     // 2. Annars, använd senaste icke-raderade versionen
     return local.lastModified > remote.lastModified ? local : remote;
   }
+
+function mergeSpaces(localSpaces, remoteSpaces) {
+    // Kombinera och deduplicera spaces från båda källor
+    const allSpaces = [...localSpaces, ...remoteSpaces];
+    const uniqueSpaces = [...new Set(allSpaces)];
+    
+    // Säkerställ att 'Everything' alltid finns och är först
+    const mergedSpaces = uniqueSpaces.filter(space => space !== 'Everything');
+    mergedSpaces.unshift('Everything');
+    
+    return mergedSpaces;
+}
 
 function validateDataStructure(data) {
     if (!data || data === null) return true;
