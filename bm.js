@@ -3025,6 +3025,8 @@ if (!bookmarkManagerData.activeLeftTab) {
 let zenDateTimeInterval = null;
 let zenScrollListener = null;
 let zenSearchListener = null;
+let zenKeyboardListener = null;
+let zenClickListener = null;
 let zenUserHasScrolled = false;  // Flagga för att spåra manuell scroll
 
 function startZenMode() {
@@ -3044,11 +3046,54 @@ function startZenMode() {
     const searchBox = document.getElementById('searchBox');
     if (searchBox) {
         searchBox.addEventListener('input', zenSearchListener);
-        // Auto focus på sökfältet i zen mode efter kort delay
-        setTimeout(() => {
-            searchBox.focus();
-        }, 100);
     }
+    
+    // Add input listener for zen search box - transfer to main search and exit zen
+    const zenSearchBox = document.getElementById('zenSearchBox');
+    if (zenSearchBox) {
+        zenSearchBox.addEventListener('input', function(event) {
+            const searchValue = event.target.value;
+            const mainSearchBox = document.getElementById('searchBox');
+            
+            console.log("Zen search input:", searchValue);
+            
+            // Transfer text to main search box
+            mainSearchBox.value = searchValue;
+            
+            // If user typed something, immediately exit zen mode
+            if (searchValue.trim().length > 0) {
+                console.log("Exiting zen mode and transferring to main search");
+                
+                // Exit zen mode completely
+                document.body.classList.remove('zen-mode');
+                stopZenMode();
+                
+                // Trigger search in main search box
+                mainSearchBox.dispatchEvent(new Event("input", { bubbles: true }));
+                
+                // Focus main search box
+                setTimeout(() => {
+                    mainSearchBox.focus();
+                    mainSearchBox.setSelectionRange(searchValue.length, searchValue.length);
+                    console.log("Focused main search box");
+                }, 100);
+            }
+        });
+        
+        // Auto focus on zen search box initially
+        setTimeout(() => {
+            zenSearchBox.focus();
+            console.log("Zen search box focused");
+        }, 200);
+    }
+
+    // Add global keyboard handler for zen mode
+    zenKeyboardListener = handleZenKeyboard;
+    document.addEventListener('keydown', zenKeyboardListener);
+    
+    // Add click handler for auto-refocus
+    zenClickListener = handleZenClick;
+    document.addEventListener('click', zenClickListener);
     
     // Show the zen date/time display
     const zenDateTime = document.getElementById('zenDateTime');
@@ -3079,7 +3124,25 @@ function stopZenMode() {
         if (searchBox) {
             searchBox.removeEventListener('input', zenSearchListener);
         }
+        
+        const zenSearchBox = document.getElementById('zenSearchBox');
+        if (zenSearchBox) {
+            zenSearchBox.removeEventListener('input', zenSearchListener);
+        }
+        
         zenSearchListener = null;
+    }
+    
+    // Remove keyboard listener
+    if (zenKeyboardListener) {
+        document.removeEventListener('keydown', zenKeyboardListener);
+        zenKeyboardListener = null;
+    }
+    
+    // Remove click listener
+    if (zenClickListener) {
+        document.removeEventListener('click', zenClickListener);
+        zenClickListener = null;
     }
     
     // Hide the zen date/time display
@@ -3148,19 +3211,44 @@ function handleZenScroll() {
 }
 
 function handleZenSearch(event) {
+    console.log('handleZenSearch called with value:', event.target.value);
     const searchValue = event.target.value.trim();
     const collections = document.getElementById('collections');
+    const mainSearchBox = document.getElementById('searchBox');
     
     if (searchValue.length > 0) {
+        // Transfer search value to main search box
+        if (mainSearchBox) {
+            mainSearchBox.value = searchValue;
+        }
+        
+        // Apply the actual filter
+        applyFilter(searchValue);
+        
         // User is searching, remove the offset and add searching class
         if (collections) {
             collections.style.marginTop = '0';
         }
         document.body.classList.add('searching');
+        
+        // Focus main search box and hide zen search box
+        if (mainSearchBox) {
+            setTimeout(() => {
+                mainSearchBox.focus();
+            }, 100);
+        }
     } else {
         // Search is empty, restore offset if zen mode is active and user is at top
         const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
         document.body.classList.remove('searching');
+        
+        // Clear main search box too
+        if (mainSearchBox) {
+            mainSearchBox.value = '';
+        }
+        
+        // Apply empty filter
+        applyFilter('');
         
         // Only restore zen offset if user never scrolled AND they're at the top
         if (document.body.classList.contains('zen-mode') && scrollPosition <= 50 && collections && !zenUserHasScrolled) {
@@ -3183,3 +3271,105 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
+// Global keyboard handler for zen mode
+function handleZenKeyboard(event) {
+    // Only handle in zen mode
+    if (!document.body.classList.contains('zen-mode')) return;
+    
+    // Skip if user is typing in an input field or other interactive element
+    const activeElement = document.activeElement;
+    const isInInput = activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        activeElement.isContentEditable
+    );
+    
+    // Handle Escape key - clear search and focus
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        clearZenSearch();
+        return;
+    }
+    
+    // Handle alphanumeric keys - auto focus search box
+    const isAlphanumeric = /^[a-zA-Z0-9 #%|]$/.test(event.key);
+    if (isAlphanumeric && !isInInput) {
+        event.preventDefault();
+        const searchBox = getActiveZenSearchBox();
+        if (searchBox) {
+            searchBox.focus();
+            // Insert the typed character
+            searchBox.value = event.key;
+            // Trigger input event to apply filter
+            searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+}
+
+// Click handler for zen mode auto-refocus
+function handleZenClick(event) {
+    // Only handle in zen mode
+    if (!document.body.classList.contains('zen-mode')) return;
+    
+    const target = event.target;
+    
+    // List of interactive elements that should keep focus
+    const interactiveElements = [
+        'INPUT', 'TEXTAREA', 'BUTTON', 'A', 'SELECT', 'OPTION'
+    ];
+    
+    // Check if clicked element or its parents are interactive
+    let element = target;
+    let isInteractive = false;
+    
+    while (element && element !== document.body) {
+        if (interactiveElements.includes(element.tagName) || 
+            element.isContentEditable ||
+            element.classList.contains('pane-toggle') ||
+            element.classList.contains('collection-button')) {
+            isInteractive = true;
+            break;
+        }
+        element = element.parentElement;
+    }
+    
+    // If clicked on non-interactive element, refocus search box
+    if (!isInteractive) {
+        setTimeout(() => {
+            const searchBox = getActiveZenSearchBox();
+            if (searchBox) {
+                searchBox.focus();
+            }
+        }, 10);
+    }
+}
+
+// Helper function to get the appropriate search box for current zen state
+function getActiveZenSearchBox() {
+    const isScrolled = document.body.classList.contains('scrolled') || 
+                      document.body.classList.contains('searching');
+    
+    if (isScrolled) {
+        // User has scrolled/searched, use main search box
+        return document.getElementById('searchBox');
+    } else {
+        // User is on initial zen screen, use zen search box
+        return document.getElementById('zenSearchBox');
+    }
+}
+
+// Helper function to clear search and maintain focus
+function clearZenSearch() {
+    const searchBox = getActiveZenSearchBox();
+    if (searchBox) {
+        searchBox.value = '';
+        searchBox.focus();
+        // Trigger input event to clear filters
+        searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    
+    // Remove searching class
+    document.body.classList.remove('searching');
+}
+

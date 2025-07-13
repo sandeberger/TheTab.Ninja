@@ -91,7 +91,9 @@
             border-radius: 16px;
             transition: background-color 0.3s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            z-index: 1002;
         }
         #addCollection:hover {
             background-color: #45a049;
@@ -368,7 +370,7 @@
             font-size: 16px;
             transition: background-color 0.3s ease;
             position: relative;
-            z-index: 10;
+            z-index: 1002;
         }
         #leftPane.closed .pane-toggle, #rightPane.closed .pane-toggle {
             background-color: transparent !important;
@@ -499,6 +501,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
+            position: relative;
+            z-index: 1002;
         }        
         #collections {
             margin: 10px; /* Lägg till margin runt om */
@@ -519,7 +523,8 @@
             align-items: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             transition: transform 0.2s, box-shadow 0.2s;
-            z-index: 1000;
+            position: relative;
+            z-index: 1002;
         }
 
         #supportButton:hover {
@@ -700,10 +705,11 @@
             align-items: center;
             justify-content: center;
             margin-right: 10px;
-
             transition: background-color 0.3s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            z-index: 1002;
         }
 
         #syncButton:hover {
@@ -1289,6 +1295,87 @@
             transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Zen search container */
+        #zenSearchContainer {
+            display: none;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 900;
+            width: 100%;
+            text-align: center;
+        }
+
+        body.zen-mode #zenSearchContainer {
+            display: block;
+        }
+
+        /* Hide zen search when user is searching or has scrolled */
+        body.zen-mode.searching #zenSearchContainer,
+        body.zen-mode.scrolled #zenSearchContainer {
+            display: none;
+        }
+
+        /* Zen initial search box */
+        #zenSearchBox {
+            padding: 12px 16px;
+            width: min(500px, calc(100vw - 80px));
+            height: 44px;
+            background-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            outline: none;
+            font-size: 16px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            color: rgba(0, 0, 0, 0.8);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        #zenSearchBox::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        #zenSearchBox:focus {
+            background-color: rgba(255, 255, 255, 0.35);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            transform: scale(1.02);
+        }
+
+        /* Visually indicate zen search is "always ready" */
+        body.zen-mode #zenSearchBox {
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), 
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Dark mode för zen search box */
+        body.dark-mode #zenSearchBox {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode #zenSearchBox::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        body.dark-mode #zenSearchBox:focus {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        body.dark-mode.zen-mode #zenSearchBox {
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1), 
+                        0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
     </style>
 </head>
 <body>    
@@ -1392,6 +1479,9 @@
                     <span class="donation-text">Buy Me a Coffee</span>
                   </a>            
             </div>
+        </div>
+        <div id="zenSearchContainer">
+            <input type="text" id="zenSearchBox" placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red" >
         </div>
         <div id="zenDateTime" class="zen-datetime-display">
             <div class="zen-time"></div>
