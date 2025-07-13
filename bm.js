@@ -11,6 +11,7 @@ let bookmarkManagerData = {
     rightPaneOpen: true,
     closeWhenSaveTab: false,
     activeLeftTab: 'spaces',
+    zenMode: false,
     githubConfig: {
         username: '',
         repo: '',
@@ -2584,6 +2585,26 @@ document.addEventListener('DOMContentLoaded', () => {
         saveToLocalStorage();
     });
 
+    // Zen mode event listener
+    document.getElementById('zenMode').addEventListener('change', (e) => {
+        bookmarkManagerData.zenMode = e.target.checked;
+        if (e.target.checked) {
+            document.body.classList.add('zen-mode');
+            startZenMode();
+        } else {
+            document.body.classList.remove('zen-mode');
+            stopZenMode();
+        }
+        saveToLocalStorage();
+    });
+
+    // Initialize zen mode if enabled
+    if (bookmarkManagerData.zenMode) {
+        document.getElementById('zenMode').checked = true;
+        document.body.classList.add('zen-mode');
+        startZenMode();
+    }
+
     document.getElementById('importFile').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -2997,4 +3018,168 @@ function switchLeftTab(tabName) {
 // Add activeLeftTab to the data structure
 if (!bookmarkManagerData.activeLeftTab) {
     bookmarkManagerData.activeLeftTab = 'spaces';
+}
+
+
+// Zen Mode Functions
+let zenDateTimeInterval = null;
+let zenScrollListener = null;
+let zenSearchListener = null;
+let zenUserHasScrolled = false;  // Flagga för att spåra manuell scroll
+
+function startZenMode() {
+    // Reset scroll flag
+    zenUserHasScrolled = false;
+    
+    // Start the date/time update
+    updateZenDateTime();
+    zenDateTimeInterval = setInterval(updateZenDateTime, 1000);
+    
+    // Add scroll listener with debouncing
+    zenScrollListener = debounce(handleZenScroll, 50);
+    window.addEventListener('scroll', zenScrollListener, { passive: true });
+    
+    // Add search listener
+    zenSearchListener = handleZenSearch;
+    const searchBox = document.getElementById('searchBox');
+    if (searchBox) {
+        searchBox.addEventListener('input', zenSearchListener);
+        // Auto focus på sökfältet i zen mode efter kort delay
+        setTimeout(() => {
+            searchBox.focus();
+        }, 100);
+    }
+    
+    // Show the zen date/time display
+    const zenDateTime = document.getElementById('zenDateTime');
+    if (zenDateTime) {
+        zenDateTime.style.display = 'flex';
+    }
+}
+
+function stopZenMode() {
+    // Reset scroll flag
+    zenUserHasScrolled = false;
+    
+    // Clear the date/time interval
+    if (zenDateTimeInterval) {
+        clearInterval(zenDateTimeInterval);
+        zenDateTimeInterval = null;
+    }
+    
+    // Remove scroll listener
+    if (zenScrollListener) {
+        window.removeEventListener('scroll', zenScrollListener);
+        zenScrollListener = null;
+    }
+    
+    // Remove search listener
+    if (zenSearchListener) {
+        const searchBox = document.getElementById('searchBox');
+        if (searchBox) {
+            searchBox.removeEventListener('input', zenSearchListener);
+        }
+        zenSearchListener = null;
+    }
+    
+    // Hide the zen date/time display
+    const zenDateTime = document.getElementById('zenDateTime');
+    if (zenDateTime) {
+        zenDateTime.style.display = 'none';
+    }
+    
+    // Reset collections margin and classes
+    const collections = document.getElementById('collections');
+    if (collections) {
+        collections.style.marginTop = '';
+    }
+    document.body.classList.remove('scrolled', 'searching');
+}
+
+function updateZenDateTime() {
+    const now = new Date();
+    const timeElement = document.querySelector('.zen-time');
+    const dateElement = document.querySelector('.zen-date');
+    
+    if (timeElement && dateElement) {
+        const timeOptions = { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+        };
+        const dateOptions = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+        
+        timeElement.textContent = now.toLocaleTimeString('sv-SE', timeOptions);
+        dateElement.textContent = now.toLocaleDateString('sv-SE', dateOptions);
+    }
+}
+
+function handleZenScroll() {
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    const collections = document.getElementById('collections');
+    
+    if (scrollPosition > 50) {
+        // User has scrolled, set flag and remove offset
+        zenUserHasScrolled = true;
+        if (collections) {
+            collections.style.marginTop = '0';
+        }
+        document.body.classList.add('scrolled');
+    } else {
+        // User is near top
+        const searchBox = document.getElementById('searchBox');
+        const isSearching = searchBox && searchBox.value.trim().length > 0;
+        
+        // Only restore offset if not searching and user hasn't manually scrolled
+        if (document.body.classList.contains('zen-mode') && collections && !isSearching && !zenUserHasScrolled) {
+            collections.style.marginTop = '100vh';
+        }
+        
+        // Keep 'scrolled' class if user has manually scrolled (to keep clock hidden)
+        if (!zenUserHasScrolled) {
+            document.body.classList.remove('scrolled');
+        }
+    }
+}
+
+function handleZenSearch(event) {
+    const searchValue = event.target.value.trim();
+    const collections = document.getElementById('collections');
+    
+    if (searchValue.length > 0) {
+        // User is searching, remove the offset and add searching class
+        if (collections) {
+            collections.style.marginTop = '0';
+        }
+        document.body.classList.add('searching');
+    } else {
+        // Search is empty, restore offset if zen mode is active and user is at top
+        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+        document.body.classList.remove('searching');
+        
+        // Only restore zen offset if user never scrolled AND they're at the top
+        if (document.body.classList.contains('zen-mode') && scrollPosition <= 50 && collections && !zenUserHasScrolled) {
+            collections.style.marginTop = '100vh';
+            // Remove scrolled class only if user never manually scrolled
+            document.body.classList.remove('scrolled');
+        }
+    }
+}
+
+// Debounce function för att förhindra för många scroll events
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
 }

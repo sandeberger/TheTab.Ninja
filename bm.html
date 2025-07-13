@@ -17,10 +17,17 @@
             background-attachment: fixed;
             background-size: cover; /* Välj 'cover' eller 'contain' */
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             transition: background-color 0.3s, color 0.3s;
             flex-direction: row;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* I zen mode behöver vi kunna scrolla */
+        body.zen-mode {
+            overflow-y: auto;
         }
         #leftPane, #rightPane {
             width: 250px;
@@ -785,7 +792,9 @@
 
         @media (max-width: 1024px) {
             #searchBox {
-                display: none;
+                width: calc(100% - 40px);
+                left: 20px;
+                transform: none;
             }
         }
 
@@ -1177,6 +1186,106 @@
             border-color: rgba(76, 175, 80, 0.8);
         }
 
+        /* ZEN MODE STYLES */
+        .zen-datetime-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        body.zen-mode .zen-datetime-display {
+            opacity: 1;
+        }
+
+        body.zen-mode.scrolled .zen-datetime-display,
+        body.zen-mode.searching .zen-datetime-display {
+            opacity: 0;
+            transform: translate(-50%, -60%);
+        }
+
+        .zen-time {
+            font-size: 4.5rem;
+            font-weight: 200;
+            letter-spacing: 0.05em;
+            color: rgba(0, 0, 0, 0.6);
+            margin-bottom: 0.5rem;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .zen-date {
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            color: rgba(0, 0, 0, 0.4);
+            text-transform: uppercase;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Dark mode för Zen */
+        body.dark-mode .zen-time {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode .zen-date {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Zen mode offset för collections */
+        body.zen-mode #collections {
+            margin-top: 100vh;
+            transition: margin-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.zen-mode.scrolled #collections,
+        body.zen-mode.searching #collections {
+            margin-top: 20px; /* Återgå till normal margin */
+            padding-top: 74px; /* 20px (searchBox top) + 28px (searchBox height) + 16px (padding 8px*2) + 10px (space below) = 74px */
+        }
+
+        /* Zen mode för topBar */
+        body.zen-mode #topBar {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        body.zen-mode.scrolled #topBar,
+        body.zen-mode.searching #topBar {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Zen mode för searchBox - alltid synlig */
+        body.zen-mode #searchBox {
+            opacity: 0.8;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body.zen-mode.searching #searchBox,
+        body.zen-mode.scrolled #searchBox,
+        body.zen-mode #searchBox:focus,
+        body.zen-mode #searchBox:hover {
+            opacity: 1;
+        }
+
+        /* Smooth scroll behavior för bättre Zen upplevelse - disabled för att förhindra auto-hopp */
+        html.zen-smooth-scroll {
+            scroll-behavior: smooth;
+        }
+
+        /* Zen mode aktivering animation */
+        body.zen-mode {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
     </style>
 </head>
 <body>    
@@ -1235,6 +1344,10 @@
                 <input type="checkbox" id="darkMode"> Dark mode
             </label>
             <br>
+            <label>
+                <input type="checkbox" id="zenMode"> Zen mode
+            </label>
+            <br>
             <div id="mysettings">
                 <h3>Wallpaper</h3>
                 <div class="wallpaper-section">
@@ -1276,6 +1389,10 @@
                     <span class="donation-text">Buy Me a Coffee</span>
                   </a>            
             </div>
+        </div>
+        <div id="zenDateTime" class="zen-datetime-display">
+            <div class="zen-time"></div>
+            <div class="zen-date"></div>
         </div>            
         <div id="collections"></div>
     </div>
