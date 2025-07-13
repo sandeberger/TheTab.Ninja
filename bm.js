@@ -128,13 +128,31 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savedBackground === imageName) {
             selectThumbnail(thumbnailImg);
             setBackground(imageName); // Sätt bakgrundsbilden direkt vid start
+            
+            // Uppdatera custom background data för att markera att predefined är aktivt
+            const customData = loadCustomBackgrounds();
+            customData.activeBackground = 'predefined';
+            customData.activeImageId = null;
+            saveCustomBackgrounds(customData);
         }
 
         thumbnailImg.addEventListener('click', () => {
             const imageName = thumbnailImg.dataset.imageName;
             setBackground(imageName);
             localStorage.setItem('backgroundImage', imageName);
+            
+            // Uppdatera custom background data för att markera att predefined är aktivt
+            const customData = loadCustomBackgrounds();
+            customData.activeBackground = 'predefined';
+            customData.activeImageId = null;
+            saveCustomBackgrounds(customData);
+            
             selectThumbnail(thumbnailImg); // Markera den klickade miniatyren som vald
+            
+            // Avmarkera alla custom thumbnails
+            document.querySelectorAll('.custom-background-thumbnail').forEach(thumb => {
+                thumb.classList.remove('selected');
+            });
         });
 
         backgroundThumbnailsContainer.appendChild(thumbnailImg);
@@ -148,6 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
             selectThumbnail(defaultThumbnail);
             setBackground(defaultImageName);
             localStorage.setItem('backgroundImage', defaultImageName);
+            
+            // Sätt även custom background data till predefined
+            const customData = loadCustomBackgrounds();
+            customData.activeBackground = 'predefined';
+            customData.activeImageId = null;
+            saveCustomBackgrounds(customData);
         }
     }
 
