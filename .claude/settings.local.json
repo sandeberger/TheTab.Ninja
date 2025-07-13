@@ -5,7 +5,8 @@
       "Bash(grep:*)",
       "Bash(node:*)",
       "Bash(sed:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

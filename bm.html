@@ -9,6 +9,12 @@
             height: 100%;
             margin: 0;
         }
+        
+        /* Fix for mobile viewport issues */
+        html {
+            height: -webkit-fill-available;
+        }
+        
         body {
             font-family: Arial, sans-serif;
             background-image: url('');
@@ -21,10 +27,219 @@
             display: flex;
             transition: background-color 0.3s, color 0.3s;
             flex-direction: row;
-            height: 100vh;
+            /* Use min-height instead of height for better mobile support */
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
             overflow: hidden;
         }
+        
+        /* Mobile viewport fix */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                min-height: -webkit-fill-available;
+            }
+        }
+        
+        /* Mobile responsiveness improvements */
+        @media only screen and (max-width: 768px) {
+            /* Force full height on mobile */
+            html, body {
+                height: 100%;
+                height: -webkit-fill-available;
+                min-height: 100%;
+                min-height: -webkit-fill-available;
+            }
+            
+            body {
+                flex-direction: column;
+            }
+            
+            /* Completely hide panes on mobile */
+            #leftPane, #rightPane {
+                display: none !important;
+            }
+            
+            /* When panes are opened on mobile, show as overlay */
+            #leftPane.open, #rightPane.open {
+                display: flex !important;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                height: -webkit-fill-available;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                z-index: 9999;
+            }
+            
+            /* Mobile bookmark manager takes full space */
+            #bookmarkManager {
+                flex: 1;
+                min-height: 0;
+                height: 100vh;
+                height: -webkit-fill-available;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* Ensure collections area uses available space */
+            #collections {
+                flex: 1;
+                overflow-y: auto;
+                height: auto;
+                min-height: 0;
+                width: 100%;
+                padding: 10px;
+                box-sizing: border-box;
+                margin: 0;
+            }
+            
+            /* Make bookmarks more mobile-friendly */
+            .bookmark {
+                width: calc(50% - 10px);
+                height: 90px;
+            }
+            
+            
+            /* Fix topBar layout on mobile - single row */
+            #topBar {
+                flex-direction: row;
+                gap: 8px;
+                padding: 8px;
+                align-items: center;
+                flex-shrink: 0;
+                min-height: auto;
+            }
+            
+            #topBar > div {
+                display: flex;
+                align-items: center;
+            }
+            
+            /* Make collections take more space on mobile */
+            #bookmarkManager {
+                padding: 0;
+                width: 100%;
+            }
+            
+            /* Make sure search box doesn't take too much space */
+            #searchBox {
+                margin: 0 8px;
+                height: 36px;
+                font-size: 14px;
+                flex: 1;
+                min-width: 0;
+            }
+            
+            /* Show mobile pane toggles only on mobile */
+            .mobile-pane-toggle {
+                display: flex !important;
+            }
+            
+            /* Icon-only buttons on mobile */
+            #addCollection {
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                border-radius: 50%;
+                font-size: 20px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0;
+            }
+            
+            #addCollection::before {
+                content: "+";
+            }
+            
+            /* Hide text in Add Collection button on mobile */
+            #addCollection {
+                text-indent: -9999px;
+                overflow: hidden;
+            }
+            
+            #supportButton {
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                border-radius: 50%;
+                margin: 0;
+                text-decoration: none;
+            }
+            
+            #supportButton .donation-text {
+                display: none;
+            }
+            
+            #supportButton .donation-icon {
+                width: 20px;
+                height: 20px;
+                margin: 0;
+            }
+            
+            /* Mobile pane toggle buttons */
+            .mobile-pane-toggle {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: rgba(240, 240, 240, 0.8);
+                border: none;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+                margin: 0 4px;
+                backdrop-filter: blur(8px);
+                transition: all 0.3s ease;
+            }
+            
+            .mobile-pane-toggle:hover {
+                background: rgba(240, 240, 240, 1);
+                transform: scale(1.1);
+            }
+            
+            /* Dark mode for mobile toggle buttons */
+            body.dark-mode .mobile-pane-toggle {
+                background: rgba(60, 60, 60, 0.8);
+                color: #e0e0e0;
+            }
+            
+            body.dark-mode .mobile-pane-toggle:hover {
+                background: rgba(80, 80, 80, 1);
+            }
+            
+            /* Ensure collections get maximum available height */
+            #collections {
+                flex: 1;
+                min-height: 0;
+                overflow-y: auto;
+                padding: 5px;
+                margin: 0;
+            }
+        }
+        
+        /* Specific fix for iOS Safari */
+        @media only screen and (max-width: 768px) and (-webkit-min-device-pixel-ratio: 1) {
+            body {
+                height: 100vh;
+                height: -webkit-fill-available;
+            }
+            
+            #bookmarkManager {
+                height: 100vh;
+                height: -webkit-fill-available;
+            }
+        }
 
+        /* Hide mobile pane toggles on desktop */
+        .mobile-pane-toggle {
+            display: none;
+        }
+        
         /* I zen mode behöver vi kunna scrolla */
         body.zen-mode {
             overflow-y: auto;
@@ -512,6 +727,14 @@
             flex: 1 1 auto;
             overflow-y: auto;
             min-height: 0;            
+        }
+        
+        /* Override collections margin on mobile */
+        @media only screen and (max-width: 768px) {
+            #collections {
+                margin: 0 !important;
+                padding: 10px !important;
+            }
         }
         #supportButton {
             background: linear-gradient(45deg, #FF8C00, #FFA500);
@@ -1619,6 +1842,7 @@
     <div id="bookmarkManager">
         <div id="topBar">            
             <div style="display: flex; align-items: center;padding-left: 10px;">
+                <button class="mobile-pane-toggle" id="mobileLeftPaneToggle" title="Open Settings">⚙️</button>
                 <button id="syncButton" style="display: none;" title="Sync your collections with GitHub">
                     <svg fill="currentColor" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" transform="matrix(1,0,0,1,0,0)"><path d="M19.91,15.51H15.38a1,1,0,0,0,0,2h2.4A8,8,0,0,1,4,12a1,1,0,0,0-2,0,10,10,0,0,0,16.88,7.23V21a1,1,0,0,0,2,0V16.5A1,1,0,0,0,19.91,15.51ZM12,2A10,10,0,0,0,5.12,4.77V3a1,1,0,0,0-2,0V7.5a1,1,0,0,0,1,1h4.5a1,1,0,0,0,0-2H6.22A8,8,0,0,1,20,12a1,1,0,0,0,2,0A10,10,0,0,0,12,2Z"></path></svg>
                  </button>
@@ -1626,6 +1850,7 @@
             </div>       
             <input type="text" id="searchBox"  placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red. ?google, !chatgpt" >
             <div style="display: flex; align-items: center;padding-right: 10px;">
+                <button class="mobile-pane-toggle" id="mobileRightPaneToggle" title="Open Tabs">📋</button>
                 <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton" title="Fuel my code with caffeine – every cup helps me keep developing awesome features!">
                     <svg class="donation-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 12H4v4a4 4 0 004 4h5a4 4 0 004-4v-4zm0 0h2a2 2 0 012 2v1a2 2 0 01-2 2h-2m-4-8s1-1 .5-2l-1-2C12 4 13 3 13 3M8.64 9s1-1 .5-2l-1-2c-.5-1 .5-2 .5-2"/>

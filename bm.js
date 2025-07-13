@@ -105,6 +105,44 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePane('rightPane');
     });
 
+    // Mobile pane toggle functionality
+    const mobileLeftToggle = document.getElementById('mobileLeftPaneToggle');
+    const mobileRightToggle = document.getElementById('mobileRightPaneToggle');
+    
+    if (mobileLeftToggle) {
+        mobileLeftToggle.addEventListener('click', function () {
+            const leftPane = document.getElementById('leftPane');
+            leftPane.classList.toggle('open');
+        });
+    }
+    
+    if (mobileRightToggle) {
+        mobileRightToggle.addEventListener('click', function () {
+            const rightPane = document.getElementById('rightPane');
+            rightPane.classList.toggle('open');
+        });
+    }
+    
+    // Close mobile panes when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 768) {
+            const leftPane = document.getElementById('leftPane');
+            const rightPane = document.getElementById('rightPane');
+            
+            if (leftPane.classList.contains('open') && 
+                !leftPane.contains(e.target) && 
+                !mobileLeftToggle.contains(e.target)) {
+                leftPane.classList.remove('open');
+            }
+            
+            if (rightPane.classList.contains('open') && 
+                !rightPane.contains(e.target) && 
+                !mobileRightToggle.contains(e.target)) {
+                rightPane.classList.remove('open');
+            }
+        }
+    });
+
 
     // Funktion för att markera en miniatyr som vald
     function selectThumbnail(thumbnailElement) {
