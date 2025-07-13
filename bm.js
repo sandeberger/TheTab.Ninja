@@ -3316,6 +3316,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const searchTerm = this.value.trim();
         applyFilter(searchTerm);
     });
+    
+    // Add keydown listener for Google search functionality
+    document.getElementById('searchBox').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            const searchTerm = this.value.trim();
+            if (searchTerm.startsWith('?') && searchTerm.length > 1) {
+                const googleQuery = searchTerm.substring(1); // Remove the ?
+                const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(googleQuery)}`;
+                
+                if (bookmarkManagerData.openInNewTab) {
+                    window.open(googleUrl, '_blank');
+                } else {
+                    window.location.href = googleUrl;
+                }
+                
+                // Clear search box
+                this.value = '';
+                applyFilter('');
+                event.preventDefault();
+            }
+        }
+    });
 
     function applyFilter(searchTerm) {
         const collections = document.querySelectorAll('.collection');
@@ -4029,6 +4051,29 @@ function startZenMode() {
                     mainSearchBox.setSelectionRange(searchValue.length, searchValue.length);
                     console.log("Focused main search box");
                 }, 100);
+            }
+        });
+        
+        // Add keydown listener for Google search functionality in zen mode
+        zenSearchBox.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const searchTerm = this.value.trim();
+                if (searchTerm.startsWith('?') && searchTerm.length > 1) {
+                    const googleQuery = searchTerm.substring(1); // Remove the ?
+                    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(googleQuery)}`;
+                    
+                    if (bookmarkManagerData.openInNewTab) {
+                        window.open(googleUrl, '_blank');
+                    } else {
+                        window.location.href = googleUrl;
+                    }
+                    
+                    // Clear search box and exit zen mode
+                    this.value = '';
+                    document.body.classList.remove('zen-mode');
+                    stopZenMode();
+                    event.preventDefault();
+                }
             }
         });
         
