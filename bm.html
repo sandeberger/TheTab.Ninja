@@ -39,6 +39,7 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            z-index: 1010; /* Högre än zenSearchContainer (500) för att alltid ligga överst */
         }
         #leftPane.closed, #rightPane.closed {
             width: 30px;
@@ -1085,6 +1086,8 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            position: relative;
+            z-index: 1010; /* Högre än zenSearchContainer (500) för att alltid ligga överst */
         }
 
         .tab-nav {
@@ -1262,7 +1265,7 @@
             opacity: 0;
             transform: translateY(-20px);
             transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
+            /* pointer-events: none; REMOVED - så knappar fungerar i zen initial state */
         }
 
         body.zen-mode.scrolled #topBar,
@@ -1302,7 +1305,7 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 900;
+            z-index: 500; /* Lägre än UI-element för att inte blockera interaktion */
             width: 100%;
             text-align: center;
         }
@@ -1481,7 +1484,7 @@
             </div>
         </div>
         <div id="zenSearchContainer">
-            <input type="text" id="zenSearchBox" placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red" >
+            <input type="text" id="zenSearchBox" placeholder="Search..." >
         </div>
         <div id="zenDateTime" class="zen-datetime-display">
             <div class="zen-time"></div>
