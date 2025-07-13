@@ -3276,6 +3276,7 @@ function debounce(func, wait) {
 function handleZenKeyboard(event) {
     // Only handle in zen mode
     if (!document.body.classList.contains('zen-mode')) return;
+    console.log("ZEN KEYBOARD EVENT:", event.key);
     
     // Skip if user is typing in an input field or other interactive element
     const activeElement = document.activeElement;
@@ -3285,10 +3286,62 @@ function handleZenKeyboard(event) {
         activeElement.isContentEditable
     );
     
-    // Handle Escape key - clear search and focus
+    // Handle Escape key - return to zen initial screen
     if (event.key === 'Escape') {
+        console.log("ESC pressed in zen mode! (unique:", Date.now(), ") isSearching:", document.body.classList.contains('searching'), "hasScrolled:", zenUserHasScrolled);
+        console.log("ESC pressed in zen mode! (unique:", Date.now(), ") isSearching:", document.body.classList.contains('searching'), "hasScrolled:", zenUserHasScrolled);
         event.preventDefault();
-        clearZenSearch();
+        
+        // If user has scrolled down to collections or is searching, return to zen initial screen
+        const isSearching = document.body.classList.contains('searching');
+        const hasScrolled = zenUserHasScrolled;
+        
+        if (isSearching || hasScrolled) {
+            console.log("ENTERING SCROLL BRANCH! isSearching:", isSearching, "hasScrolled:", hasScrolled);
+            // Clear search
+            const mainSearchBox = document.getElementById('searchBox');
+            const zenSearchBox = document.getElementById('zenSearchBox');
+            if (mainSearchBox) mainSearchBox.value = '';
+            if (zenSearchBox) zenSearchBox.value = '';
+            
+            // Remove searching class and reset scroll flag
+            document.body.classList.remove('searching');
+            zenUserHasScrolled = false;
+            
+            // Scroll back to top to show zen initial screen
+            console.log("SCROLLING TO TOP!");
+            
+            // Force zen initial screen by setting collections margin
+            const collections = document.getElementById("collections");
+            if (collections) {
+                collections.style.marginTop = "100vh";
+                console.log("Set collections marginTop to 100vh");
+            
+            // Remove scrolled class to show clock again
+            document.body.classList.remove('scrolled');
+            console.log("Removed scrolled class to show clock");
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Focus zen search box after scroll completes
+            setTimeout(() => {
+                if (zenSearchBox) {
+                    zenSearchBox.focus();
+                }
+            }, 500);
+        } else {
+            // If already at zen initial screen, just clear and focus zen search box
+            const zenSearchBox = document.getElementById('zenSearchBox');
+            if (zenSearchBox) {
+                zenSearchBox.value = '';
+                zenSearchBox.focus();
+                // Trigger input event to clear filters
+                zenSearchBox.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            
+            // Remove searching class
+            document.body.classList.remove('searching');
+        }
         return;
     }
     
@@ -3311,6 +3364,7 @@ function handleZenKeyboard(event) {
 function handleZenClick(event) {
     // Only handle in zen mode
     if (!document.body.classList.contains('zen-mode')) return;
+    console.log("ZEN KEYBOARD EVENT:", event.key);
     
     const target = event.target;
     
