@@ -12,6 +12,8 @@ let bookmarkManagerData = {
     closeWhenSaveTab: false,
     activeLeftTab: 'spaces',
     zenMode: false,
+    spaces: ['Everything'], // Default space that cannot be removed
+    currentSpace: 'Everything',
     githubConfig: {
         username: '',
         repo: '',
@@ -1080,8 +1082,18 @@ function loadFromLocalStorage() {
             const collectionsContainer = document.getElementById('collections');
             collectionsContainer.innerHTML = '';
 
+            const currentSpace = bookmarkManagerData.currentSpace || 'Everything';
+            
             const sortedCollections = bookmarkManagerData.collections
                 .filter(c => !c.deleted)
+                .filter(c => {
+                    // Om Everything är valt, visa alla collections
+                    if (currentSpace === 'Everything') {
+                        return true;
+                    }
+                    // Annars visa bara collections som tillhör det valda spacet
+                    return c.spaces && Array.isArray(c.spaces) && c.spaces.includes(currentSpace);
+                })
                 .sort((a, b) => a.position - b.position);
 
             sortedCollections.forEach((collection) => {
@@ -1107,6 +1119,23 @@ function loadFromLocalStorage() {
                 // Collection Title
                 const title = document.createElement('h2');
                 title.textContent = collection.name;
+                
+                // Spaces indicator
+                if (collection.spaces && collection.spaces.length > 1) {
+                    const spacesIndicator = document.createElement('span');
+                    spacesIndicator.className = 'spaces-indicator';
+                    spacesIndicator.style.cssText = `
+                        font-size: 12px; 
+                        color: ${document.body.classList.contains('dark-mode') ? '#999' : '#666'}; 
+                        margin-left: 10px;
+                        font-weight: normal;
+                    `;
+                    const visibleSpaces = collection.spaces.filter(s => s !== 'Everything');
+                    if (visibleSpaces.length > 0) {
+                        spacesIndicator.textContent = `(${visibleSpaces.join(', ')})`;
+                        title.appendChild(spacesIndicator);
+                    }
+                }
 
                 // Toggle Button
                 const toggleBtn = document.createElement('button');
@@ -1124,6 +1153,7 @@ function loadFromLocalStorage() {
                     { className: 'fetch-alltabs', icon: 'inbox', title: 'Get all Chrome tabs', action: () => fetchAllTabs(collection.id) },
                     { className: 'add-bookmark', text: '+', title: 'Create bookmark', action: () => addBookmark(collection.id) },
                     { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
+                    { className: 'edit-spaces', text: '🏷️', title: 'Manage spaces for this collection', action: () => editCollectionSpaces(collection.id) },
                     { className: 'move-collection', text: '▲', title: 'Move collection up', action: () => moveCollection(collection.id, -1) },
                     { className: 'move-collection', text: '▼', title: 'Move collection down', action: () => moveCollection(collection.id, 1) },
                     { className: 'delete-collection', text: '🗑️', title: 'Delete collection', action: () => deleteCollection(collection.id) }
@@ -1496,8 +1526,13 @@ function enrichCollection(collection) {
         deleted: false,
         position: 0,
         bookmarks: [],
+        spaces: ['Everything'], // Default: tillhör Everything space (bakåtkompatibilitet)
         ...collection,
-        bookmarks: (collection.bookmarks || []).map(enrichBookmark)
+        bookmarks: (collection.bookmarks || []).map(enrichBookmark),
+        // Säkerställ att spaces alltid är en array och innehåller minst Everything
+        spaces: Array.isArray(collection.spaces) && collection.spaces.length > 0 
+            ? collection.spaces 
+            : ['Everything']
     };
 }
 
@@ -1544,6 +1579,82 @@ function editCollection(collectionId) {
             renderCollections();
         }
     }
+}
+
+function editCollectionSpaces(collectionId) {
+    const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+    if (!collection) return;
+    
+    // Skapa en dialog för att välja spaces
+    const availableSpaces = bookmarkManagerData.spaces || ['Everything'];
+    const currentSpaces = collection.spaces || ['Everything'];
+    
+    const spacesHtml = availableSpaces.map(space => {
+        const checked = currentSpaces.includes(space) ? 'checked' : '';
+        const disabled = space === 'Everything' ? 'disabled' : '';
+        return `
+            <label style="display: block; margin: 5px 0;">
+                <input type="checkbox" value="${space}" ${checked} ${disabled}>
+                ${space}
+                ${space === 'Everything' ? ' (always included)' : ''}
+            </label>
+        `;
+    }).join('');
+    
+    const dialogHtml = `
+        <div id="spacesDialog" style="
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000; min-width: 300px; max-height: 400px; overflow-y: auto;
+        ">
+            <h3>Select Spaces for "${collection.name}"</h3>
+            <div style="margin: 15px 0;">
+                ${spacesHtml}
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button id="cancelSpaces" style="margin-right: 10px; padding: 8px 16px;">Cancel</button>
+                <button id="saveSpaces" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px;">Save</button>
+            </div>
+        </div>
+        <div id="spacesOverlay" style="
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 9999;
+        "></div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', dialogHtml);
+    
+    // Add event listeners
+    document.getElementById('saveSpaces').addEventListener('click', () => {
+        const checkboxes = document.querySelectorAll('#spacesDialog input[type="checkbox"]');
+        const selectedSpaces = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        // Always ensure Everything is included
+        if (!selectedSpaces.includes('Everything')) {
+            selectedSpaces.unshift('Everything');
+        }
+        
+        collection.spaces = selectedSpaces;
+        collection.lastModified = Date.now();
+        saveToLocalStorage();
+        renderCollections();
+        
+        // Remove dialog
+        document.getElementById('spacesDialog').remove();
+        document.getElementById('spacesOverlay').remove();
+    });
+    
+    document.getElementById('cancelSpaces').addEventListener('click', () => {
+        document.getElementById('spacesDialog').remove();
+        document.getElementById('spacesOverlay').remove();
+    });
+    
+    document.getElementById('spacesOverlay').addEventListener('click', () => {
+        document.getElementById('spacesDialog').remove();
+        document.getElementById('spacesOverlay').remove();
+    });
 }
 
 // Uppdaterad toggleCollection funktion
@@ -2567,6 +2678,9 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchChromeTabs();
     setInterval(fetchChromeTabs, 5000);
 
+    // Initialize spaces functionality
+    initializeSpaces();
+
     document.getElementById('addCollection').addEventListener('click', addCollection);
     
     document.getElementById('openInNewTab').addEventListener('change', (e) => {
@@ -3020,6 +3134,163 @@ if (!bookmarkManagerData.activeLeftTab) {
     bookmarkManagerData.activeLeftTab = 'spaces';
 }
 
+// Spaces Management Functions
+function renderSpaces() {
+    const spacesList = document.getElementById('spacesList');
+    if (!spacesList) return;
+    
+    spacesList.innerHTML = '';
+    
+    bookmarkManagerData.spaces.forEach(spaceName => {
+        const spaceItem = document.createElement('div');
+        spaceItem.className = 'space-item';
+        if (spaceName === bookmarkManagerData.currentSpace) {
+            spaceItem.classList.add('active');
+        }
+        
+        spaceItem.innerHTML = `
+            <span class="space-name">${spaceName}</span>
+            ${spaceName !== 'Everything' ? '<button class="delete-space-btn" data-space="' + spaceName + '">×</button>' : ''}
+        `;
+        
+        // Add click listener for space selection
+        spaceItem.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-space-btn')) {
+                selectSpace(spaceName);
+            }
+        });
+        
+        // Add delete listener if delete button exists
+        const deleteBtn = spaceItem.querySelector('.delete-space-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteSpace(spaceName);
+            });
+        }
+        
+        spacesList.appendChild(spaceItem);
+    });
+}
+
+function addSpace() {
+    const newSpaceNameInput = document.getElementById('newSpaceName');
+    const spaceName = newSpaceNameInput.value.trim();
+    
+    if (!spaceName) {
+        alert('Please enter a space name');
+        return;
+    }
+    
+    if (spaceName.length > 30) {
+        alert('Space name must be 30 characters or less');
+        return;
+    }
+    
+    if (bookmarkManagerData.spaces.includes(spaceName)) {
+        alert('A space with this name already exists');
+        return;
+    }
+    
+    // Add the space
+    bookmarkManagerData.spaces.push(spaceName);
+    saveToLocalStorage();
+    
+    // Clear input and re-render
+    newSpaceNameInput.value = '';
+    renderSpaces();
+}
+
+function deleteSpace(spaceName) {
+    if (spaceName === 'Everything') {
+        alert('Cannot delete the "Everything" space');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete the space "${spaceName}"?`)) {
+        // Remove from spaces array
+        const index = bookmarkManagerData.spaces.indexOf(spaceName);
+        if (index > -1) {
+            bookmarkManagerData.spaces.splice(index, 1);
+        }
+        
+        // If this was the current space, switch to Everything
+        if (bookmarkManagerData.currentSpace === spaceName) {
+            bookmarkManagerData.currentSpace = 'Everything';
+        }
+        
+        // Remove this space from all collections that use it
+        bookmarkManagerData.collections.forEach(collection => {
+            if (collection.spaces && Array.isArray(collection.spaces)) {
+                const spaceIndex = collection.spaces.indexOf(spaceName);
+                if (spaceIndex > -1) {
+                    collection.spaces.splice(spaceIndex, 1);
+                    // Ensure at least Everything remains
+                    if (collection.spaces.length === 0 || !collection.spaces.includes('Everything')) {
+                        collection.spaces = ['Everything'];
+                    }
+                    collection.lastModified = Date.now();
+                }
+            }
+        });
+        
+        saveToLocalStorage();
+        renderSpaces();
+        renderCollections(); // Re-render collections since spaces have changed
+    }
+}
+
+function selectSpace(spaceName) {
+    bookmarkManagerData.currentSpace = spaceName;
+    saveToLocalStorage();
+    renderSpaces();
+    
+    // Filter and re-render collections based on selected space
+    renderCollections();
+}
+
+function initializeSpaces() {
+    // Ensure spaces array exists and has Everything
+    if (!bookmarkManagerData.spaces || !Array.isArray(bookmarkManagerData.spaces)) {
+        bookmarkManagerData.spaces = ['Everything'];
+    }
+    
+    if (!bookmarkManagerData.spaces.includes('Everything')) {
+        bookmarkManagerData.spaces.unshift('Everything');
+    }
+    
+    // Ensure currentSpace is set
+    if (!bookmarkManagerData.currentSpace || !bookmarkManagerData.spaces.includes(bookmarkManagerData.currentSpace)) {
+        bookmarkManagerData.currentSpace = 'Everything';
+    }
+    
+    // Add event listeners
+    const addSpaceBtn = document.getElementById('addSpaceBtn');
+    const newSpaceNameInput = document.getElementById('newSpaceName');
+    
+    if (addSpaceBtn) {
+        addSpaceBtn.addEventListener('click', addSpace);
+    }
+    
+    if (newSpaceNameInput) {
+        newSpaceNameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addSpace();
+            }
+        });
+        
+        // Enable/disable add button based on input
+        newSpaceNameInput.addEventListener('input', (e) => {
+            const addBtn = document.getElementById('addSpaceBtn');
+            if (addBtn) {
+                addBtn.disabled = !e.target.value.trim();
+            }
+        });
+    }
+    
+    // Render spaces
+    renderSpaces();
+}
 
 // Zen Mode Functions
 let zenDateTimeInterval = null;
