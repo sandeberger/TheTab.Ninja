@@ -1571,14 +1571,143 @@ function addCollection() {
 // Uppdaterad funktion för att redigera en samling
 function editCollection(collectionId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-    if (collection) {
-        const newName = prompt('Enter new collection name:', collection.name);
-        if (newName) {
+    if (!collection) return;
+    
+    // Kontrollera om dark mode är aktivt
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const dialogBg = isDarkMode ? '#2a2a2a' : 'white';
+    const textColor = isDarkMode ? '#e0e0e0' : '#333';
+    const inputBg = isDarkMode ? '#3a3a3a' : 'white';
+    const inputBorder = isDarkMode ? '#555' : '#ccc';
+    const cancelBg = isDarkMode ? '#444' : '#f0f0f0';
+    const cancelTextColor = isDarkMode ? '#e0e0e0' : '#333';
+    
+    // Skapa overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 9999; display: flex; 
+        align-items: center; justify-content: center;
+    `;
+    
+    // Skapa dialog
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px; 
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 350px; max-width: 500px;
+        border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
+        backdrop-filter: blur(10px); animation: fadeIn 0.2s ease;
+    `;
+    
+    dialog.innerHTML = `
+        <h3 style="color: ${textColor}; margin-top: 0; margin-bottom: 20px; font-size: 18px;">Edit Collection Name</h3>
+        <div style="margin: 15px 0;">
+            <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">Collection Name:</label>
+            <input type="text" id="collectionNameInput" value="${collection.name}" style="
+                width: 100%; padding: 12px; border: 2px solid ${inputBorder}; 
+                border-radius: 6px; font-size: 14px; box-sizing: border-box;
+                background: ${inputBg}; color: ${textColor};
+                transition: border-color 0.2s ease;
+            " placeholder="Enter collection name">
+        </div>
+        <div style="margin-top: 25px; text-align: right;">
+            <button id="cancelEdit" style="
+                margin-right: 12px; padding: 10px 20px; background: ${cancelBg}; 
+                color: ${cancelTextColor}; border: 1px solid ${isDarkMode ? '#666' : '#ccc'}; 
+                border-radius: 6px; cursor: pointer; font-size: 14px;
+                transition: all 0.2s ease;
+            ">Cancel</button>
+            <button id="saveEdit" style="
+                padding: 10px 20px; background: #4CAF50; color: white; 
+                border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+                transition: all 0.2s ease;
+            ">Save</button>
+        </div>
+    `;
+    
+    // Lägg till CSS animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // Fokusera på input och markera text
+    const input = dialog.querySelector('#collectionNameInput');
+    setTimeout(() => {
+        input.focus();
+        input.select();
+    }, 100);
+    
+    // Lägg till hover effects
+    const cancelBtn = dialog.querySelector('#cancelEdit');
+    const saveBtn = dialog.querySelector('#saveEdit');
+    
+    cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.background = isDarkMode ? '#555' : '#e0e0e0';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.background = cancelBg;
+    });
+    
+    saveBtn.addEventListener('mouseenter', () => {
+        saveBtn.style.background = '#45a049';
+    });
+    saveBtn.addEventListener('mouseleave', () => {
+        saveBtn.style.background = '#4CAF50';
+    });
+    
+    input.addEventListener('focus', () => {
+        input.style.borderColor = '#4CAF50';
+    });
+    input.addEventListener('blur', () => {
+        input.style.borderColor = inputBorder;
+    });
+    
+    // Event handlers
+    function closeDialog() {
+        document.body.removeChild(overlay);
+        document.head.removeChild(style);
+    }
+    
+    function saveCollection() {
+        const newName = input.value.trim();
+        if (newName && newName !== collection.name) {
             collection.name = newName;
             collection.lastModified = Date.now();
+            saveToLocalStorage();
             renderCollections();
         }
+        closeDialog();
     }
+    
+    // Button events
+    cancelBtn.addEventListener('click', closeDialog);
+    saveBtn.addEventListener('click', saveCollection);
+    
+    // Enter key to save, Escape to cancel
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveCollection();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeDialog();
+        }
+    });
+    
+    // Click outside to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
 }
 
 function editCollectionSpaces(collectionId) {
@@ -1775,36 +1904,373 @@ function handleBookmarkError(error) {
 // Uppdaterad funktion för att redigera ett bokmärke
 async function editBookmark(collectionId, bookmarkId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-    if (collection) {
-        const bookmark = collection.bookmarks.find(b => b.id === bookmarkId);
-        if (bookmark) {
-            const title = prompt('Edit bookmark title:', bookmark.title);
-            const url = prompt('Edit bookmark URL:', bookmark.url);
-            const description = prompt('Edit bookmark description:', bookmark.description);
-            if (title && url) {
-                const icon = await getFavicon(url);
-                Object.assign(bookmark, { title, url, description, icon, lastModified: Date.now() });
-                collection.lastModified = Date.now();
-                renderCollections();
+    if (!collection) return;
+    
+    const bookmark = collection.bookmarks.find(b => b.id === bookmarkId);
+    if (!bookmark) return;
+    
+    // Kontrollera om dark mode är aktivt
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const dialogBg = isDarkMode ? '#2a2a2a' : 'white';
+    const textColor = isDarkMode ? '#e0e0e0' : '#333';
+    const inputBg = isDarkMode ? '#3a3a3a' : 'white';
+    const inputBorder = isDarkMode ? '#555' : '#ccc';
+    const cancelBg = isDarkMode ? '#444' : '#f0f0f0';
+    const cancelTextColor = isDarkMode ? '#e0e0e0' : '#333';
+    
+    // Skapa overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 9999; display: flex; 
+        align-items: center; justify-content: center;
+    `;
+    
+    // Skapa dialog
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px; 
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 400px; max-width: 600px;
+        border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
+        backdrop-filter: blur(10px); animation: fadeIn 0.2s ease;
+    `;
+    
+    dialog.innerHTML = `
+        <h3 style="color: ${textColor}; margin-top: 0; margin-bottom: 20px; font-size: 18px;">Edit Bookmark</h3>
+        <div style="margin: 15px 0;">
+            <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">Title:</label>
+            <input type="text" id="bookmarkTitleInput" value="${bookmark.title || ''}" style="
+                width: 100%; padding: 12px; border: 2px solid ${inputBorder}; 
+                border-radius: 6px; font-size: 14px; box-sizing: border-box;
+                background: ${inputBg}; color: ${textColor};
+                transition: border-color 0.2s ease;
+            " placeholder="Enter bookmark title">
+        </div>
+        <div style="margin: 15px 0;">
+            <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">URL:</label>
+            <input type="url" id="bookmarkUrlInput" value="${bookmark.url || ''}" style="
+                width: 100%; padding: 12px; border: 2px solid ${inputBorder}; 
+                border-radius: 6px; font-size: 14px; box-sizing: border-box;
+                background: ${inputBg}; color: ${textColor};
+                transition: border-color 0.2s ease;
+            " placeholder="https://example.com">
+        </div>
+        <div style="margin: 15px 0;">
+            <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">Description (optional):</label>
+            <textarea id="bookmarkDescInput" style="
+                width: 100%; padding: 12px; border: 2px solid ${inputBorder}; 
+                border-radius: 6px; font-size: 14px; box-sizing: border-box;
+                background: ${inputBg}; color: ${textColor}; resize: vertical;
+                min-height: 80px; transition: border-color 0.2s ease;
+            " placeholder="Enter description (optional)">${bookmark.description || ''}</textarea>
+        </div>
+        <div style="margin-top: 25px; text-align: right;">
+            <button id="cancelEditBookmark" style="
+                margin-right: 12px; padding: 10px 20px; background: ${cancelBg}; 
+                color: ${cancelTextColor}; border: 1px solid ${isDarkMode ? '#666' : '#ccc'}; 
+                border-radius: 6px; cursor: pointer; font-size: 14px;
+                transition: all 0.2s ease;
+            ">Cancel</button>
+            <button id="saveEditBookmark" style="
+                padding: 10px 20px; background: #4CAF50; color: white; 
+                border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+                transition: all 0.2s ease;
+            ">Save</button>
+        </div>
+    `;
+    
+    // Lägg till CSS animation (kolla om den redan finns)
+    if (!document.querySelector('style[data-dialog-animation]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-dialog-animation', 'true');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
             }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // Hämta input element
+    const titleInput = dialog.querySelector('#bookmarkTitleInput');
+    const urlInput = dialog.querySelector('#bookmarkUrlInput');
+    const descInput = dialog.querySelector('#bookmarkDescInput');
+    const cancelBtn = dialog.querySelector('#cancelEditBookmark');
+    const saveBtn = dialog.querySelector('#saveEditBookmark');
+    
+    // Fokusera på title input och markera text
+    setTimeout(() => {
+        titleInput.focus();
+        titleInput.select();
+    }, 100);
+    
+    // Lägg till hover effects
+    cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.background = isDarkMode ? '#555' : '#e0e0e0';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.background = cancelBg;
+    });
+    
+    saveBtn.addEventListener('mouseenter', () => {
+        saveBtn.style.background = '#45a049';
+    });
+    saveBtn.addEventListener('mouseleave', () => {
+        saveBtn.style.background = '#4CAF50';
+    });
+    
+    // Focus effects för inputs
+    [titleInput, urlInput, descInput].forEach(input => {
+        input.addEventListener('focus', () => {
+            input.style.borderColor = '#4CAF50';
+        });
+        input.addEventListener('blur', () => {
+            input.style.borderColor = inputBorder;
+        });
+    });
+    
+    // Event handlers
+    function closeDialog() {
+        document.body.removeChild(overlay);
+    }
+    
+    async function saveBookmark() {
+        const newTitle = titleInput.value.trim();
+        const newUrl = urlInput.value.trim();
+        const newDescription = descInput.value.trim();
+        
+        if (!newTitle || !newUrl) {
+            // Highlighta fält som saknas
+            if (!newTitle) {
+                titleInput.style.borderColor = '#f44336';
+                titleInput.focus();
+            } else if (!newUrl) {
+                urlInput.style.borderColor = '#f44336';
+                urlInput.focus();
+            }
+            return;
+        }
+        
+        // Visa loading state
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+        saveBtn.style.background = '#666';
+        
+        try {
+            // Hämta favicon om URL har ändrats
+            let newIcon = bookmark.icon;
+            if (newUrl !== bookmark.url) {
+                newIcon = await getFavicon(newUrl);
+            }
+            
+            // Uppdatera bookmark
+            Object.assign(bookmark, {
+                title: newTitle,
+                url: newUrl,
+                description: newDescription,
+                icon: newIcon,
+                lastModified: Date.now()
+            });
+            
+            collection.lastModified = Date.now();
+            saveToLocalStorage();
+            renderCollections();
+            closeDialog();
+            
+        } catch (error) {
+            console.error('Error saving bookmark:', error);
+            saveBtn.textContent = 'Save';
+            saveBtn.disabled = false;
+            saveBtn.style.background = '#4CAF50';
+            
+            // Visa error på URL fältet
+            urlInput.style.borderColor = '#f44336';
+            urlInput.focus();
         }
     }
+    
+    // Button events
+    cancelBtn.addEventListener('click', closeDialog);
+    saveBtn.addEventListener('click', saveBookmark);
+    
+    // Keyboard shortcuts
+    dialog.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            saveBookmark();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeDialog();
+        }
+    });
+    
+    // Click outside to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
 }
 
 // Uppdaterad funktion för att ta bort ett bokmärke
 function deleteBookmark(collectionId, bookmarkId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-    if (collection) {
-      const bookmark = collection.bookmarks.find(b => b.id === bookmarkId);
-      if (bookmark) {
-        bookmark.deleted = true; // ✅ Sätt flagga
-        bookmark.lastModified = Date.now(); // ✅ Uppdatera timestamp
-        collection.lastModified = Date.now();
-        renderCollections();
-        saveToLocalStorage();
-      }
+    if (!collection) return;
+    
+    const bookmark = collection.bookmarks.find(b => b.id === bookmarkId);
+    if (!bookmark) return;
+    
+    // Skapa bekräftelsedialog
+    showDeleteConfirmation(
+        'Delete Bookmark',
+        `Are you sure you want to delete "${bookmark.title}"?`,
+        'This action cannot be undone.',
+        () => {
+            // Bekräftat - ta bort bookmark
+            bookmark.deleted = true;
+            bookmark.lastModified = Date.now();
+            collection.lastModified = Date.now();
+            saveToLocalStorage();
+            renderCollections();
+        }
+    );
+}
+
+function showDeleteConfirmation(title, message, subtitle, onConfirm) {
+    // Kontrollera om dark mode är aktivt
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const dialogBg = isDarkMode ? '#2a2a2a' : 'white';
+    const textColor = isDarkMode ? '#e0e0e0' : '#333';
+    const subtitleColor = isDarkMode ? '#999' : '#666';
+    const cancelBg = isDarkMode ? '#444' : '#f0f0f0';
+    const cancelTextColor = isDarkMode ? '#e0e0e0' : '#333';
+    
+    // Skapa overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 9999; display: flex; 
+        align-items: center; justify-content: center;
+    `;
+    
+    // Skapa dialog
+    const dialog = document.createElement('div');
+    dialog.style.cssText = `
+        background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px; 
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 350px; max-width: 500px;
+        border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
+        backdrop-filter: blur(10px); animation: fadeIn 0.2s ease;
+        text-align: center;
+    `;
+    
+    dialog.innerHTML = `
+        <div style="margin-bottom: 20px;">
+            <div style="
+                width: 60px; height: 60px; margin: 0 auto 15px; 
+                background: #ff5722; border-radius: 50%; 
+                display: flex; align-items: center; justify-content: center;
+                font-size: 24px; color: white;
+            ">⚠️</div>
+            <h3 style="color: ${textColor}; margin: 0 0 10px 0; font-size: 18px;">${title}</h3>
+            <p style="color: ${textColor}; margin: 0 0 8px 0; font-size: 14px; line-height: 1.4;">${message}</p>
+            ${subtitle ? `<p style="color: ${subtitleColor}; margin: 0; font-size: 12px; font-style: italic;">${subtitle}</p>` : ''}
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="cancelDelete" style="
+                padding: 10px 20px; background: ${cancelBg}; 
+                color: ${cancelTextColor}; border: 1px solid ${isDarkMode ? '#666' : '#ccc'}; 
+                border-radius: 6px; cursor: pointer; font-size: 14px;
+                transition: all 0.2s ease; min-width: 80px;
+            ">Cancel</button>
+            <button id="confirmDelete" style="
+                padding: 10px 20px; background: #f44336; color: white; 
+                border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+                transition: all 0.2s ease; min-width: 80px;
+            ">Delete</button>
+        </div>
+    `;
+    
+    // Lägg till CSS animation om den inte redan finns
+    if (!document.querySelector('style[data-dialog-animation]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-dialog-animation', 'true');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
     }
-  }
+    
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // Hämta knappar
+    const cancelBtn = dialog.querySelector('#cancelDelete');
+    const confirmBtn = dialog.querySelector('#confirmDelete');
+    
+    // Fokusera på Cancel-knappen (säkrare standard)
+    setTimeout(() => {
+        cancelBtn.focus();
+    }, 100);
+    
+    // Hover effects
+    cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.background = isDarkMode ? '#555' : '#e0e0e0';
+    });
+    cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.background = cancelBg;
+    });
+    
+    confirmBtn.addEventListener('mouseenter', () => {
+        confirmBtn.style.background = '#d32f2f';
+    });
+    confirmBtn.addEventListener('mouseleave', () => {
+        confirmBtn.style.background = '#f44336';
+    });
+    
+    // Event handlers
+    function closeDialog() {
+        document.body.removeChild(overlay);
+    }
+    
+    function handleConfirm() {
+        closeDialog();
+        if (onConfirm) onConfirm();
+    }
+    
+    // Button events
+    cancelBtn.addEventListener('click', closeDialog);
+    confirmBtn.addEventListener('click', handleConfirm);
+    
+    // Keyboard shortcuts
+    dialog.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Bekräfta bara om Delete-knappen har fokus
+            if (document.activeElement === confirmBtn) {
+                handleConfirm();
+            } else {
+                closeDialog();
+            }
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            closeDialog();
+        }
+    });
+    
+    // Click outside to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeDialog();
+        }
+    });
+}
 
 // Uppdaterad openBookmark funktion
 function openBookmark(collectionId, bookmarkId) {
