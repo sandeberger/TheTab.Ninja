@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'wp_img02.png',
         'wp_img03.png',
         'wp_img05.png',
-        'wp_img06.png',
+        'wp_img16.png',
         'wp_img07.png',
         'wp_img08.png',
         'wp_img09.png',
@@ -3335,6 +3335,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.value = '';
                 applyFilter('');
                 event.preventDefault();
+            } else if (searchTerm.startsWith('!') && searchTerm.length > 1) {
+                const chatGptQuery = searchTerm.substring(1); // Remove the !
+                const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(chatGptQuery)}`;
+                
+                if (bookmarkManagerData.openInNewTab) {
+                    window.open(chatGptUrl, '_blank');
+                } else {
+                    window.location.href = chatGptUrl;
+                }
+                
+                // Clear search box
+                this.value = '';
+                applyFilter('');
+                event.preventDefault();
             }
         }
     });
@@ -4066,6 +4080,21 @@ function startZenMode() {
                         window.open(googleUrl, '_blank');
                     } else {
                         window.location.href = googleUrl;
+                    }
+                    
+                    // Clear search box and exit zen mode
+                    this.value = '';
+                    document.body.classList.remove('zen-mode');
+                    stopZenMode();
+                    event.preventDefault();
+                } else if (searchTerm.startsWith('!') && searchTerm.length > 1) {
+                    const chatGptQuery = searchTerm.substring(1); // Remove the !
+                    const chatGptUrl = `https://chatgpt.com/?q=${encodeURIComponent(chatGptQuery)}`;
+                    
+                    if (bookmarkManagerData.openInNewTab) {
+                        window.open(chatGptUrl, '_blank');
+                    } else {
+                        window.location.href = chatGptUrl;
                     }
                     
                     // Clear search box and exit zen mode
