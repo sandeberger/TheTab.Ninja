@@ -776,26 +776,29 @@
        
         #searchBox {
             padding: 8px;
-            width: 300px; 
             height: 28px; 
-            position: fixed;
-            top: 20px;            /* Avståndet från toppen – justera efter behov */
-            left: 50%;            /* Placera mitt i fönstret horisontellt */
-            transform: translateX(-50%);  /* Justera för att centra elementet exakt */
-            z-index: 1000;        /* Se till att sökrutan ligger över andra element */
             background-color:rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            width: calc(80% - 800px); /* 120px reserverat för sidorna */
+            border: none;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            flex: 1;
+            margin: 0 20px;
+            max-width: 600px;
+            min-width: 200px;
         }
 
-        @media (max-width: 1024px) {
-            #searchBox {
-                width: calc(100% - 40px);
-                left: 20px;
-                transform: none;
-            }
+        /* Zen mode fixed positioning */
+        body.zen-mode #searchBox {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: min(500px, calc(100vw - 40px));
+            margin: 0;
+            flex: none;
         }
 
         body.dark-mode #searchBox {
