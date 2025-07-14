@@ -795,6 +795,9 @@ async function synchronizeWithGitHub(retryCount = 0) {
         renderSpaces(); // Uppdatera spaces-listan efter sync
         saveToLocalStorage();
 
+        // Check if this is the first successful sync and show notification
+        checkAndShowFirstSyncNotification();
+
     } catch (error) {
         console.error('Sync error:', error);
         alert(`Sync failed: ${error.message}`);
@@ -1269,6 +1272,51 @@ function saveToLocalStorage() {
     } catch (error) {
         console.error('Error saving to local storage:', error);
     }
+}
+
+// First Sync Success Notification Functions
+function checkAndShowFirstSyncNotification() {
+    // Check if the notification has already been shown
+    const hasShownFirstSync = localStorage.getItem('hasShownFirstSyncNotification');
+    
+    if (!hasShownFirstSync) {
+        // Mark as shown to prevent future displays
+        localStorage.setItem('hasShownFirstSyncNotification', 'true');
+        
+        // Show the notification after a short delay
+        setTimeout(() => {
+            showFirstSyncNotification();
+        }, 1000);
+    }
+}
+
+function showFirstSyncNotification() {
+    const notification = document.getElementById('firstSyncNotification');
+    if (!notification) return;
+    
+    // Show the notification with animation
+    notification.classList.add('show');
+    
+    // Allow clicking to dismiss early
+    const handleClick = () => {
+        hideFirstSyncNotification();
+        notification.removeEventListener('click', handleClick);
+    };
+    notification.addEventListener('click', handleClick);
+    
+    // Auto-hide after 6 seconds
+    setTimeout(() => {
+        hideFirstSyncNotification();
+        notification.removeEventListener('click', handleClick);
+    }, 10000);
+}
+
+function hideFirstSyncNotification() {
+    const notification = document.getElementById('firstSyncNotification');
+    if (!notification) return;
+    
+    // Hide with animation
+    notification.classList.remove('show');
 }
 
 // Uppdaterad funktion för att ladda från localStorage

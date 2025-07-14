@@ -1847,6 +1847,74 @@
             box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1), 
                         0 0 0 1px rgba(255, 255, 255, 0.1);
         }
+        
+        /* First Sync Success Notification */
+        #firstSyncNotification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 25px 35px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            max-width: 350px;
+            line-height: 1.4;
+        }
+        
+        #firstSyncNotification.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        #firstSyncNotification .notification-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+            animation: bounce 2s infinite;
+        }
+        
+        #firstSyncNotification .store-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        #firstSyncNotification .store-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        /* Dark mode support for notification */
+        body.dark-mode #firstSyncNotification {
+            background: linear-gradient(135deg, #2E7D32, #2E7D32);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
 
     </style>
 </head>
@@ -1994,6 +2062,16 @@
         </div>
     </div>    
     <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>    
+    
+    <!-- First Sync Success Notification -->
+    <div id="firstSyncNotification">
+        <div class="notification-icon">🎉</div>
+        <div>Do you like TheTab.Ninja?<br>Please leave a ⭐️!</div>
+        <a href="https://chromewebstore.google.com/detail/thetabninja/bnmjmbmlfohkaghofdaadenippkgpmab" target="_blank" class="store-link">
+            Rate on Chrome Store
+        </a>
+    </div>
+    
     <script src="bm.js"></script>    
 </body>
 </html>
