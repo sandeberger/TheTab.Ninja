@@ -727,8 +727,10 @@ async function synchronizeWithGitHub(retryCount = 0) {
 
         // Steg 2: Enricha remote-data
         const remoteData = rawRemoteData ? {
+            ...rawRemoteData, // Behåll alla andra egenskaper
             collections: (rawRemoteData.collections || []).map(enrichCollection),
-            ...rawRemoteData
+            // NY RAD: Applicera enrichSpace på fjärrdatan för spaces
+            spaces: (rawRemoteData.spaces || []).map(enrichSpace)
         } : null;
 
         // Steg 3: Validera datastrukturer
@@ -747,8 +749,8 @@ async function synchronizeWithGitHub(retryCount = 0) {
         );
 
         // Steg 4.5: Merga spaces
-        const localSpaces = localData?.spaces || ['Everything'];
-        const remoteSpaces = remoteData?.spaces || ['Everything'];
+        const localSpaces = (localData?.spaces || ['Everything']).map(enrichSpace); // Bra att enricha lokal data också
+        const remoteSpaces = remoteData?.spaces || [{ name: 'Everything', deleted: false, lastModified: Date.now() }];
         const mergedSpaces = mergeSpaces(localSpaces, remoteSpaces);
         
         // Säkerställ att currentSpace fortfarande är giltig
@@ -757,8 +759,9 @@ async function synchronizeWithGitHub(retryCount = 0) {
         let mergedCurrentSpace = localCurrentSpace;
         
         // Om lokalt currentSpace inte finns i merged spaces, använd remote eller fallback
-        if (!mergedSpaces.includes(localCurrentSpace)) {
-            if (mergedSpaces.includes(remoteCurrentSpace)) {
+        const spaceNames = mergedSpaces.filter(space => !space.deleted).map(space => space.name);
+        if (!spaceNames.includes(localCurrentSpace)) {
+            if (spaceNames.includes(remoteCurrentSpace)) {
                 mergedCurrentSpace = remoteCurrentSpace;
             } else {
                 mergedCurrentSpace = 'Everything';
@@ -1831,6 +1834,26 @@ function enrichCollection(collection) {
         spaces: Array.isArray(collection.spaces) && collection.spaces.length > 0 
             ? collection.spaces 
             : ['Everything']
+    };
+}
+
+// HELPER FUNCTION TO ENRICH A SINGLE SPACE
+function enrichSpace(space) {
+    // Om spacet är en gammal sträng, konvertera det först
+    if (typeof space === 'string') {
+        return {
+            name: space,
+            deleted: false,
+            lastModified: Date.now()
+        };
+    }
+
+    // Säkerställ att alla fält finns och har rätt typ
+    return {
+        name: space.name || 'Unnamed Space', // Fallback
+        deleted: space.deleted || false,
+        // KRITISK RAD: Garantera att lastModified är ett tal
+        lastModified: space.lastModified && Number(space.lastModified) ? Number(space.lastModified) : Date.now()
     };
 }
 
