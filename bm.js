@@ -3325,6 +3325,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Zen mode event listener
     document.getElementById('zenMode').addEventListener('change', (e) => {
+        // Disable zen mode on mobile devices
+        if (window.innerWidth <= 768) {
+            e.target.checked = false;
+            alert('Zen mode is not available on mobile devices for optimal user experience.');
+            return;
+        }
+        
         bookmarkManagerData.zenMode = e.target.checked;
         if (e.target.checked) {
             document.body.classList.add('zen-mode');
@@ -3336,12 +3343,28 @@ document.addEventListener('DOMContentLoaded', () => {
         saveToLocalStorage();
     });
 
-    // Initialize zen mode if enabled
-    if (bookmarkManagerData.zenMode) {
+    // Initialize zen mode if enabled (but not on mobile)
+    if (bookmarkManagerData.zenMode && window.innerWidth > 768) {
         document.getElementById('zenMode').checked = true;
         document.body.classList.add('zen-mode');
         startZenMode();
+    } else if (window.innerWidth <= 768) {
+        // Disable zen mode on mobile
+        document.getElementById('zenMode').checked = false;
+        bookmarkManagerData.zenMode = false;
+        document.body.classList.remove('zen-mode');
     }
+    
+    // Monitor window resize to disable zen mode on mobile
+    window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768 && bookmarkManagerData.zenMode) {
+            document.getElementById('zenMode').checked = false;
+            bookmarkManagerData.zenMode = false;
+            document.body.classList.remove('zen-mode');
+            stopZenMode();
+            saveToLocalStorage();
+        }
+    });
 
     document.getElementById('importFile').addEventListener('change', (e) => {
         const file = e.target.files[0];

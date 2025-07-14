@@ -42,6 +42,29 @@
         
         /* Mobile responsiveness improvements */
         @media only screen and (max-width: 768px) {
+            /* Disable zen mode on mobile */
+            body.zen-mode {
+                overflow-y: auto !important;
+            }
+            
+            body.zen-mode #collections {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            
+            body.zen-mode #topBar {
+                opacity: 1 !important;
+                transform: translateY(0) !important;
+                pointer-events: auto !important;
+            }
+            
+            body.zen-mode .zen-datetime-display {
+                display: none !important;
+            }
+            
+            body.zen-mode #zenSearchContainer {
+                display: none !important;
+            }
             /* Force full height on mobile */
             html, body {
                 height: 100%;
@@ -210,6 +233,16 @@
             
             body.dark-mode .mobile-pane-toggle:hover {
                 background: rgba(80, 80, 80, 1);
+            }
+            
+            /* Hide zen mode option on mobile */
+            #zenMode {
+                display: none;
+            }
+            
+            /* Hide zen mode label on mobile */
+            label:has(#zenMode) {
+                display: none;
             }
             
             /* Ensure collections get maximum available height */
