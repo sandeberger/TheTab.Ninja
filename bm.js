@@ -26,6 +26,102 @@ let bookmarkManagerData = {
 let draggedItem = null;
 let placeholder = null;
 
+// Global applyFilter function for use by both search box and zen search
+function applyFilter(searchTerm) {
+    const collections = document.querySelectorAll('.collection');
+    const isCollectionSearch = searchTerm.startsWith('#');
+    const isGlobalSearch = searchTerm.startsWith('%');
+    
+    // Hantera OR-operatorn
+    let searchTerms = [];
+    if (searchTerm) {
+        const rawTerms = searchTerm.split('|');
+        searchTerms = rawTerms
+            .map(term => term.trim().toLowerCase())
+            .filter(term => term.length > 0);
+    }
+
+    collections.forEach(collectionElement => {
+        const collectionId = collectionElement.dataset.collectionId;
+        const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
+        const bookmarksContainer = collectionElement.querySelector('.bookmarks');
+        const bookmarkElements = bookmarksContainer.querySelectorAll('.bookmark');
+        let showCollection = false;
+        let hasVisibleBookmarks = false;
+
+        if (!searchTerm) {
+            collectionElement.classList.remove('hidden');
+            bookmarkElements.forEach(b => b.classList.remove('hidden'));
+            return;
+        }
+
+        // Dela upp söktermer baserat på söktyp
+        if (isCollectionSearch) {
+            const collectionSearchTerms = searchTerms.map(t => t.replace(/^#/, ''));
+            showCollection = collectionSearchTerms.some(term => 
+                collectionData.name.toLowerCase().includes(term)
+            );
+            bookmarkElements.forEach(b => b.classList.toggle('hidden', !showCollection));
+            hasVisibleBookmarks = showCollection;
+        } 
+        else if (isGlobalSearch) {
+            const globalSearchTerms = searchTerms.map(t => t.replace(/^%/, ''));
+            const collectionMatch = globalSearchTerms.some(term => 
+                collectionData.name.toLowerCase().includes(term)
+            );
+            
+            bookmarkElements.forEach(bookmarkElement => {
+                const bookmarkId = bookmarkElement.dataset.bookmarkId;
+                const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
+                const bookmarkMatch = globalSearchTerms.some(term => 
+                    bookmarkData.title.toLowerCase().includes(term) ||
+                    bookmarkData.url.toLowerCase().includes(term)
+                );
+                
+                bookmarkElement.classList.toggle('hidden', !bookmarkMatch);
+                if (bookmarkMatch) hasVisibleBookmarks = true;
+            });
+            
+            showCollection = collectionMatch || hasVisibleBookmarks;
+            if (collectionMatch) {
+                bookmarkElements.forEach(b => b.classList.remove('hidden'));
+            }
+        } 
+        else {
+            bookmarkElements.forEach(bookmarkElement => {
+                const bookmarkId = bookmarkElement.dataset.bookmarkId;
+                const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
+                const bookmarkMatch = searchTerms.some(term => 
+                    bookmarkData.title.toLowerCase().includes(term) ||
+                    bookmarkData.url.toLowerCase().includes(term)
+                );
+                
+                bookmarkElement.classList.toggle('hidden', !bookmarkMatch);
+                if (bookmarkMatch) hasVisibleBookmarks = true;
+            });
+            showCollection = hasVisibleBookmarks;
+        }
+
+        // Hantera visning av collection
+        const bookmarksContainerElement = collectionElement.querySelector('.bookmarks');
+        const toggleButton = collectionElement.querySelector('.toggle-collection');
+        
+        if (showCollection && !collectionElement.classList.contains('is-open')) {
+            collectionElement.classList.add('is-open');
+            bookmarksContainerElement.style.display = 'flex';
+            if (toggleButton) toggleButton.textContent = '∨';
+        } else if (!searchTerm) {
+            if (collectionData && !collectionData.isOpen) {
+                collectionElement.classList.remove('is-open');
+                bookmarksContainerElement.style.display = 'none';
+                if (toggleButton) toggleButton.textContent = '∧';
+            }
+        }
+
+        collectionElement.classList.toggle('hidden', !showCollection);
+    });
+}
+
 // Global funktion för att sätta bakgrundsbild
 function setBackground(imageName, type = 'predefined') {
     if (type === 'custom') {
@@ -802,13 +898,60 @@ function mergeBookmarkVersions(local, remote) {
   }
 
 function mergeSpaces(localSpaces, remoteSpaces) {
-    // Kombinera och deduplicera spaces från båda källor
-    const allSpaces = [...localSpaces, ...remoteSpaces];
-    const uniqueSpaces = [...new Set(allSpaces)];
+    // Normalize spaces to object format if they're still strings (migration)
+    const normalizeSpaces = (spaces) => {
+        if (!Array.isArray(spaces)) return [];
+        return spaces.map(space => {
+            if (typeof space === 'string') {
+                return {
+                    name: space,
+                    deleted: false,
+                    lastModified: Date.now()
+                };
+            }
+            return space;
+        });
+    };
     
-    // Säkerställ att 'Everything' alltid finns och är först
-    const mergedSpaces = uniqueSpaces.filter(space => space !== 'Everything');
-    mergedSpaces.unshift('Everything');
+    const normalizedLocal = normalizeSpaces(localSpaces);
+    const normalizedRemote = normalizeSpaces(remoteSpaces);
+    
+    // Merge spaces like collections - using the same logic as mergeDatasets
+    const allSpaces = [...normalizedLocal, ...normalizedRemote];
+    const spaceMap = new Map();
+    
+    // Build up spaces based on latest version
+    for (const space of allSpaces) {
+        const existing = spaceMap.get(space.name) || {
+            name: space.name,
+            deleted: false,
+            lastModified: 0
+        };
+        
+        // Use the version with the latest timestamp
+        const shouldUseIncoming = space.lastModified > existing.lastModified;
+        spaceMap.set(space.name, {
+            name: shouldUseIncoming ? space.name : existing.name,
+            deleted: shouldUseIncoming ? space.deleted : existing.deleted,
+            lastModified: Math.max(existing.lastModified, space.lastModified)
+        });
+    }
+    
+    // Convert back to array and ensure Everything is always present and not deleted
+    const mergedSpaces = Array.from(spaceMap.values());
+    
+    // Ensure Everything always exists and is not deleted
+    let everythingSpace = mergedSpaces.find(s => s.name === 'Everything');
+    if (!everythingSpace) {
+        everythingSpace = {
+            name: 'Everything',
+            deleted: false,
+            lastModified: Date.now()
+        };
+        mergedSpaces.push(everythingSpace);
+    } else {
+        everythingSpace.deleted = false; // Everything can never be deleted
+    }
     
     return mergedSpaces;
 }
@@ -1870,7 +2013,10 @@ function editCollectionSpaces(collectionId) {
     if (!collection) return;
     
     // Skapa en dialog för att välja spaces
-    const availableSpaces = bookmarkManagerData.spaces || ['Everything'];
+    migrateSpacesToObjectFormat();
+    const availableSpaces = bookmarkManagerData.spaces
+        .filter(space => !space.deleted)
+        .map(space => space.name) || ['Everything'];
     const currentSpaces = collection.spaces || ['Everything'];
     
     // Kontrollera om dark mode är aktivt för labels
@@ -3340,6 +3486,10 @@ function addCollectionDragListeners(collectionElement) {
 // Initialiseringskod
 document.addEventListener('DOMContentLoaded', () => {
     loadFromLocalStorage();
+    
+    // Migrate spaces to object format after loading
+    migrateSpacesToObjectFormat();
+    
     renderCollections();
     fetchChromeTabs();
     setInterval(fetchChromeTabs, 5000);
@@ -3574,102 +3724,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function applyFilter(searchTerm) {
-        const collections = document.querySelectorAll('.collection');
-        const isCollectionSearch = searchTerm.startsWith('#');
-        const isGlobalSearch = searchTerm.startsWith('%');
-        
-        // Hantera OR-operatorn
-        let searchTerms = [];
-        if (searchTerm) {
-            const rawTerms = searchTerm.split('|');
-            searchTerms = rawTerms
-                .map(term => term.trim().toLowerCase())
-                .filter(term => term.length > 0);
-        }
-    
-        collections.forEach(collectionElement => {
-            const collectionId = collectionElement.dataset.collectionId;
-            const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
-            const bookmarksContainer = collectionElement.querySelector('.bookmarks');
-            const bookmarkElements = bookmarksContainer.querySelectorAll('.bookmark');
-            let showCollection = false;
-            let hasVisibleBookmarks = false;
-    
-            if (!searchTerm) {
-                collectionElement.classList.remove('hidden');
-                bookmarkElements.forEach(b => b.classList.remove('hidden'));
-                return;
-            }
-    
-            // Dela upp söktermer baserat på söktyp
-            if (isCollectionSearch) {
-                const collectionSearchTerms = searchTerms.map(t => t.replace(/^#/, ''));
-                showCollection = collectionSearchTerms.some(term => 
-                    collectionData.name.toLowerCase().includes(term)
-                );
-                bookmarkElements.forEach(b => b.classList.toggle('hidden', !showCollection));
-                hasVisibleBookmarks = showCollection;
-            } 
-            else if (isGlobalSearch) {
-                const globalSearchTerms = searchTerms.map(t => t.replace(/^%/, ''));
-                const collectionMatch = globalSearchTerms.some(term => 
-                    collectionData.name.toLowerCase().includes(term)
-                );
-                
-                bookmarkElements.forEach(bookmarkElement => {
-                    const bookmarkId = bookmarkElement.dataset.bookmarkId;
-                    const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
-                    const bookmarkMatch = globalSearchTerms.some(term => 
-                        bookmarkData.title.toLowerCase().includes(term) ||
-                        bookmarkData.url.toLowerCase().includes(term)
-                    );
-                    
-                    bookmarkElement.classList.toggle('hidden', !bookmarkMatch);
-                    if (bookmarkMatch) hasVisibleBookmarks = true;
-                });
-                
-                showCollection = collectionMatch || hasVisibleBookmarks;
-                if (collectionMatch) {
-                    bookmarkElements.forEach(b => b.classList.remove('hidden'));
-                }
-            } 
-            else {
-                bookmarkElements.forEach(bookmarkElement => {
-                    const bookmarkId = bookmarkElement.dataset.bookmarkId;
-                    const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
-                    const bookmarkMatch = searchTerms.some(term => 
-                        bookmarkData.title.toLowerCase().includes(term) ||
-                        bookmarkData.url.toLowerCase().includes(term)
-                    );
-                    
-                    bookmarkElement.classList.toggle('hidden', !bookmarkMatch);
-                    if (bookmarkMatch) hasVisibleBookmarks = true;
-                });
-                showCollection = hasVisibleBookmarks;
-            }
-    
-            // Hantera visning av collection
-            const bookmarksContainerElement = collectionElement.querySelector('.bookmarks');
-            const toggleButton = collectionElement.querySelector('.toggle-collection');
-            
-            if (showCollection && !collectionElement.classList.contains('is-open')) {
-                collectionElement.classList.add('is-open');
-                bookmarksContainerElement.style.display = 'flex';
-                if (toggleButton) toggleButton.textContent = '∨';
-                // Removed persistent update: collectionData.isOpen is no longer modified during filtering.
-                // if (collectionData) collectionData.isOpen = true;
-            } else if (!searchTerm) {
-                if (collectionData && !collectionData.isOpen) {
-                    collectionElement.classList.remove('is-open');
-                    bookmarksContainerElement.style.display = 'none';
-                    if (toggleButton) toggleButton.textContent = '∧';
-                }
-            }
-    
-            collectionElement.classList.toggle('hidden', !showCollection);
-        });
-    }
+    // applyFilter function moved to global scope
 
     // Global drop-hanterare för att skapa nya Collections från Tab Groups
     document.addEventListener('dragover', (e) => {
@@ -3933,7 +3988,14 @@ function renderSpaces() {
     
     spacesList.innerHTML = '';
     
-    bookmarkManagerData.spaces.forEach(spaceName => {
+    // Ensure spaces are in object format
+    migrateSpacesToObjectFormat();
+    
+    // Filter out deleted spaces
+    const activeSpaces = bookmarkManagerData.spaces.filter(space => !space.deleted);
+    
+    activeSpaces.forEach(spaceObj => {
+        const spaceName = spaceObj.name;
         const spaceItem = document.createElement('div');
         spaceItem.className = 'space-item';
         if (spaceName === bookmarkManagerData.currentSpace) {
@@ -3979,18 +4041,54 @@ function addSpace() {
         return;
     }
     
-    if (bookmarkManagerData.spaces.includes(spaceName)) {
-        alert('A space with this name already exists');
-        return;
-    }
+    // Ensure spaces are in object format
+    migrateSpacesToObjectFormat();
     
-    // Add the space
-    bookmarkManagerData.spaces.push(spaceName);
+    // Check if space already exists (including deleted ones)
+    const existingSpace = bookmarkManagerData.spaces.find(s => s.name === spaceName);
+    if (existingSpace) {
+        if (existingSpace.deleted) {
+            // Resurrect the deleted space
+            existingSpace.deleted = false;
+            existingSpace.lastModified = Date.now();
+        } else {
+            alert('A space with this name already exists');
+            return;
+        }
+    } else {
+        // Add new space
+        bookmarkManagerData.spaces.push({
+            name: spaceName,
+            deleted: false,
+            lastModified: Date.now()
+        });
+    }
     saveToLocalStorage();
     
     // Clear input and re-render
     newSpaceNameInput.value = '';
     renderSpaces();
+}
+
+// Migration function to convert spaces from string array to object array
+function migrateSpacesToObjectFormat() {
+    if (!Array.isArray(bookmarkManagerData.spaces)) {
+        bookmarkManagerData.spaces = ['Everything'];
+    }
+    
+    const needsMigration = bookmarkManagerData.spaces.some(space => typeof space === 'string');
+    if (needsMigration) {
+        bookmarkManagerData.spaces = bookmarkManagerData.spaces.map(space => {
+            if (typeof space === 'string') {
+                return {
+                    name: space,
+                    deleted: false,
+                    lastModified: Date.now()
+                };
+            }
+            return space;
+        });
+    }
 }
 
 function deleteSpace(spaceName) {
@@ -4000,10 +4098,14 @@ function deleteSpace(spaceName) {
     }
     
     if (confirm(`Are you sure you want to delete the space "${spaceName}"?`)) {
-        // Remove from spaces array
-        const index = bookmarkManagerData.spaces.indexOf(spaceName);
-        if (index > -1) {
-            bookmarkManagerData.spaces.splice(index, 1);
+        // Ensure spaces are in object format
+        migrateSpacesToObjectFormat();
+        
+        // Soft delete the space
+        const spaceObj = bookmarkManagerData.spaces.find(s => s.name === spaceName);
+        if (spaceObj) {
+            spaceObj.deleted = true;
+            spaceObj.lastModified = Date.now();
         }
         
         // If this was the current space, switch to Everything
@@ -4047,12 +4149,24 @@ function initializeSpaces() {
         bookmarkManagerData.spaces = ['Everything'];
     }
     
-    if (!bookmarkManagerData.spaces.includes('Everything')) {
-        bookmarkManagerData.spaces.unshift('Everything');
+    // Migrate to object format
+    migrateSpacesToObjectFormat();
+    
+    // Ensure Everything exists and is not deleted
+    let everythingSpace = bookmarkManagerData.spaces.find(s => s.name === 'Everything');
+    if (!everythingSpace) {
+        bookmarkManagerData.spaces.unshift({
+            name: 'Everything',
+            deleted: false,
+            lastModified: Date.now()
+        });
+    } else {
+        everythingSpace.deleted = false; // Everything can never be deleted
     }
     
-    // Ensure currentSpace is set
-    if (!bookmarkManagerData.currentSpace || !bookmarkManagerData.spaces.includes(bookmarkManagerData.currentSpace)) {
+    // Ensure currentSpace is set and exists
+    const activeSpaceNames = bookmarkManagerData.spaces.filter(s => !s.deleted).map(s => s.name);
+    if (!bookmarkManagerData.currentSpace || !activeSpaceNames.includes(bookmarkManagerData.currentSpace)) {
         bookmarkManagerData.currentSpace = 'Everything';
     }
     
