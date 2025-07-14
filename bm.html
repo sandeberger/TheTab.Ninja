@@ -174,15 +174,7 @@
                 margin: 0;
             }
             
-            #addCollection::before {
-                content: "+";
-            }
-            
-            /* Hide text in Add Collection button on mobile */
-            #addCollection {
-                text-indent: -9999px;
-                overflow: hidden;
-            }
+            /* Add '+' content when button becomes small on mobile - see CSS below */
             
             #supportButton {
                 width: 40px;
@@ -244,14 +236,33 @@
             label:has(#zenMode) {
                 display: none;
             }
+        }
+        
+        /* Add '+' content to the existing small mobile button */
+        @media only screen and (max-width: 768px) {
+            #addCollection {
+                text-indent: -9999px;
+                overflow: visible; /* Changed from hidden to visible */
+                position: relative;
+                line-height: 1; /* Ensure proper line height */
+            }
             
-            /* Ensure collections get maximum available height */
-            #collections {
-                flex: 1;
-                min-height: 0;
-                overflow-y: auto;
-                padding: 5px;
-                margin: 0;
+            #addCollection::after {
+                content: "+";
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                font-weight: bold;
+                color: white;
+                line-height: 1;
+                z-index: 1;
+                pointer-events: none; /* Ensure clicks go through to button */
             }
         }
         

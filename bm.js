@@ -732,10 +732,16 @@ function mergeDatasets(localCollections, remoteCollections) {
             lastModified: 0
         };
 
-        // Uppdatera collection metadata
+        // Uppdatera collection metadata - använd senaste versionen baserat på lastModified
+        const shouldUseIncoming = collection.lastModified > existing.lastModified;
         collectionMap.set(collection.id, {
             ...existing,
-            name: mergeProperty(existing.name, collection.name),
+            ...(shouldUseIncoming ? collection : {}),
+            name: shouldUseIncoming ? collection.name : existing.name,
+            spaces: shouldUseIncoming ? collection.spaces : existing.spaces,
+            isOpen: shouldUseIncoming ? collection.isOpen : existing.isOpen,
+            position: shouldUseIncoming ? collection.position : existing.position,
+            deleted: shouldUseIncoming ? collection.deleted : existing.deleted,
             lastModified: Math.max(existing.lastModified, collection.lastModified),
             bookmarks: [] // Töm temporärt
         });
@@ -3399,6 +3405,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('syncButton').addEventListener('click', synchronizeWithGitHub);
+    
+    // Debug function to verify spaces sync
+    window.debugSpacesSync = function() {
+        const collections = bookmarkManagerData.collections.filter(c => !c.deleted);
+        console.log('Collections with spaces:');
+        collections.forEach(c => {
+            console.log(`Collection "${c.name}": spaces=${JSON.stringify(c.spaces)}, lastModified=${new Date(c.lastModified).toISOString()}`);
+        });
+    };
 
     // Left pane tabs functionality
     initializeLeftPaneTabs();
