@@ -14,6 +14,7 @@ let bookmarkManagerData = {
     zenMode: false,
     spaces: ['Everything'], // Default space that cannot be removed
     currentSpace: 'Everything',
+    collectionSortOrder: 'userdefined', // New setting for collection sorting
     githubConfig: {
         username: '',
         repo: '',
@@ -1161,6 +1162,7 @@ function loadFromLocalStorage() {
         document.getElementById('openInNewTab').checked = bookmarkManagerData.openInNewTab;
         document.getElementById('closeWhenSaveTab').checked = bookmarkManagerData.closeWhenSaveTab;
         document.getElementById('darkMode').checked = bookmarkManagerData.darkMode;
+        document.getElementById('collectionSortOrder').value = bookmarkManagerData.collectionSortOrder || 'userdefined';
         
         if (bookmarkManagerData.darkMode) {
             document.body.classList.add('dark-mode');
@@ -1197,6 +1199,33 @@ function loadFromLocalStorage() {
         const svgOutbox = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 309.197 309.197" xml:space="preserve" style="width:1em;height:1em" fill="currentColor"><path d="M120.808 211.587h67.581V110.916h54.559l-88.351-100.88-88.351 100.882h54.562z"/><path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/></svg>`;
 
         // Uppdaterad renderCollections funktion
+        // Function to get sort comparator based on current sort order
+        function getSortComparator() {
+            const sortOrder = bookmarkManagerData.collectionSortOrder || 'userdefined';
+            
+            switch (sortOrder) {
+                case 'name-az':
+                    return (a, b) => a.name.localeCompare(b.name);
+                case 'name-za':
+                    return (a, b) => b.name.localeCompare(a.name);
+                case 'modified-new':
+                    return (a, b) => {
+                        const aTime = Number(a.lastModified) || 0;
+                        const bTime = Number(b.lastModified) || 0;
+                        return bTime - aTime; // newest first (higher timestamp first)
+                    };
+                case 'modified-old':
+                    return (a, b) => {
+                        const aTime = Number(a.lastModified) || 0;
+                        const bTime = Number(b.lastModified) || 0;
+                        return aTime - bTime; // oldest first (lower timestamp first)
+                    };
+                case 'userdefined':
+                default:
+                    return (a, b) => (a.position || 0) - (b.position || 0);
+            }
+        }
+
         function renderCollections() {
             const collectionsContainer = document.getElementById('collections');
             collectionsContainer.innerHTML = '';
@@ -1213,23 +1242,26 @@ function loadFromLocalStorage() {
                     // Annars visa bara collections som tillhör det valda spacet
                     return c.spaces && Array.isArray(c.spaces) && c.spaces.includes(currentSpace);
                 })
-                .sort((a, b) => a.position - b.position);
+                .sort(getSortComparator());
 
             sortedCollections.forEach((collection) => {
                 const collectionElement = document.createElement('div');
                 collectionElement.className = `collection ${collection.isOpen ? 'is-open' : ''}`;
-                collectionElement.setAttribute('draggable', true);
+                collectionElement.setAttribute('draggable', bookmarkManagerData.collectionSortOrder === 'userdefined');
                 collectionElement.dataset.collectionId = collection.id;
 
                 // Collection Header
                 const header = document.createElement('div');
                 header.className = 'collection-header';
 
-                // Drag Handle
+                // Drag Handle - only show for userdefined sorting
                 const dragHandle = document.createElement('span');
                 dragHandle.className = 'drag-handle';
                 dragHandle.textContent = '☰';
-                dragHandle.setAttribute('draggable', true);
+                dragHandle.setAttribute('draggable', bookmarkManagerData.collectionSortOrder === 'userdefined');
+                if (bookmarkManagerData.collectionSortOrder !== 'userdefined') {
+                    dragHandle.style.display = 'none';
+                }
 
                 // Title Area
                 const titleArea = document.createElement('div');
@@ -1273,8 +1305,10 @@ function loadFromLocalStorage() {
                     { className: 'add-bookmark', text: '+', title: 'Create bookmark', action: () => addBookmark(collection.id) },
                     { className: 'edit-collection', text: '✏️', title: 'Edit collection', action: () => editCollection(collection.id) },
                     { className: 'edit-spaces', text: '🏷️', title: 'Manage spaces for this collection', action: () => editCollectionSpaces(collection.id) },
-                    { className: 'move-collection', text: '▲', title: 'Move collection up', action: () => moveCollection(collection.id, -1) },
-                    { className: 'move-collection', text: '▼', title: 'Move collection down', action: () => moveCollection(collection.id, 1) },
+                    ...(bookmarkManagerData.collectionSortOrder === 'userdefined' ? [
+                        { className: 'move-collection', text: '▲', title: 'Move collection up', action: () => moveCollection(collection.id, -1) },
+                        { className: 'move-collection', text: '▼', title: 'Move collection down', action: () => moveCollection(collection.id, 1) }
+                    ] : []),
                     { className: 'delete-collection', text: '🗑️', title: 'Delete collection', action: () => deleteCollection(collection.id) }
                 ];
 
@@ -1647,6 +1681,8 @@ function enrichCollection(collection) {
         bookmarks: [],
         spaces: ['Everything'], // Default: tillhör Everything space (bakåtkompatibilitet)
         ...collection,
+        // Ensure lastModified is a valid number (for old collections that might not have it)
+        lastModified: collection.lastModified && Number(collection.lastModified) ? Number(collection.lastModified) : Date.now(),
         bookmarks: (collection.bookmarks || []).map(enrichBookmark),
         // Säkerställ att spaces alltid är en array och innehåller minst Everything
         spaces: Array.isArray(collection.spaces) && collection.spaces.length > 0 
@@ -3406,12 +3442,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('syncButton').addEventListener('click', synchronizeWithGitHub);
     
+    // Collection sort order event listener
+    document.getElementById('collectionSortOrder').addEventListener('change', (e) => {
+        bookmarkManagerData.collectionSortOrder = e.target.value;
+        saveToLocalStorage();
+        renderCollections();
+    });
+
     // Debug function to verify spaces sync
     window.debugSpacesSync = function() {
         const collections = bookmarkManagerData.collections.filter(c => !c.deleted);
         console.log('Collections with spaces:');
         collections.forEach(c => {
             console.log(`Collection "${c.name}": spaces=${JSON.stringify(c.spaces)}, lastModified=${new Date(c.lastModified).toISOString()}`);
+        });
+    };
+
+    // Debug function to check lastModified values and sorting
+    window.debugSorting = function() {
+        const collections = bookmarkManagerData.collections.filter(c => !c.deleted);
+        console.log('Collections sorting debug:');
+        console.log('Current sort order:', bookmarkManagerData.collectionSortOrder);
+        collections.forEach(c => {
+            console.log(`"${c.name}": lastModified=${c.lastModified} (${new Date(c.lastModified).toISOString()}), position=${c.position}`);
+        });
+        
+        // Test sorting - recreate comparator since it's in different scope
+        const sortOrder = bookmarkManagerData.collectionSortOrder || 'userdefined';
+        let comparator;
+        switch (sortOrder) {
+            case 'name-az':
+                comparator = (a, b) => a.name.localeCompare(b.name);
+                break;
+            case 'name-za':
+                comparator = (a, b) => b.name.localeCompare(a.name);
+                break;
+            case 'modified-new':
+                comparator = (a, b) => {
+                    const aTime = Number(a.lastModified) || 0;
+                    const bTime = Number(b.lastModified) || 0;
+                    return bTime - aTime;
+                };
+                break;
+            case 'modified-old':
+                comparator = (a, b) => {
+                    const aTime = Number(a.lastModified) || 0;
+                    const bTime = Number(b.lastModified) || 0;
+                    return aTime - bTime;
+                };
+                break;
+            case 'userdefined':
+            default:
+                comparator = (a, b) => (a.position || 0) - (b.position || 0);
+                break;
+        }
+        const sorted = [...collections].sort(comparator);
+        console.log('Sorted order:');
+        sorted.forEach((c, i) => {
+            console.log(`${i+1}. "${c.name}": lastModified=${c.lastModified} (${new Date(c.lastModified).toISOString()})`);
+        });
+        
+        // Test if timestamps are actually numbers
+        console.log('Timestamp validation:');
+        collections.forEach(c => {
+            console.log(`"${c.name}": typeof lastModified = ${typeof c.lastModified}, isNaN = ${isNaN(c.lastModified)}, Number(lastModified) = ${Number(c.lastModified)}`);
         });
     };
 

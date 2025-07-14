@@ -1016,6 +1016,23 @@
             color: white;
         }
 
+        /* Collection sort dropdown styling */
+        #collectionSortOrder {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+        }
+
+        body.dark-mode #collectionSortOrder {
+            background-color: #333;
+            border-color: #555;
+            color: white;
+        }
+
         /*body.dark-mode #syncButton {
             background-color: rgba(35, 134, 54, 0.35);
             backdrop-filter: blur(8px);
@@ -1816,7 +1833,19 @@
                         </div>
                     </div>
                     <div id="settings-tab" class="tab-pane">
-                        <div id="settings">                                
+                        <div id="settings">
+                        <h3>Collection Settings</h3>
+                        <label>
+                            Collection sort order:
+                            <select id="collectionSortOrder">
+                                <option value="userdefined">User defined (position)</option>
+                                <option value="name-az">Name (A-Z)</option>
+                                <option value="name-za">Name (Z-A)</option>
+                                <option value="modified-new">Last modified (newest first)</option>
+                                <option value="modified-old">Last modified (oldest first)</option>
+                            </select>
+                        </label>
+                        <br><br>
                         <h3>GitHub Sync Settings</h3>
             <input type="text" id="githubUsername" placeholder="GitHub Username">
             <input type="text" id="githubRepo" placeholder="Repository Name">
