@@ -1064,6 +1064,44 @@
         .help-link i {
             font-size: 16px;
         }
+
+        .help-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .help-button:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .help-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        body.dark-mode .help-button {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+        }
+
+        body.dark-mode .help-button:hover {
+            background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        }
        
         #searchBox {
             padding: 8px;
@@ -1887,6 +1925,14 @@
             <label>
                 <input type="checkbox" id="zenMode"> Zen mode
             </label>
+            <br><br>
+            <hr>
+            <h3>Help & Support</h3>
+            <div class="help-link-container">
+                <button id="helpButton" class="help-button">
+                    ❓ How to use TheTab.Ninja
+                </button>
+            </div>
             <br>
             <div id="mysettings">
                 <h3>Wallpaper</h3>

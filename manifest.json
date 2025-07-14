@@ -1,32 +1,48 @@
 {
   "manifest_version": 3,
-  "name": "TheTab.Ninja",
+  "name": "TheTab.Ninja – Smart new tab start page & bookmark manager",
   "version": "1.2",
+  "description": "New tab page & bookmark manager that becomes your personal launchpad. Sync privately via GitHub. Organize tabs & bookmarks fast.",
+
   "icons": {
-    "128": "128p.png"
+    "128": "assets/light-128.png"
   },
-  "description": "TheTab.Ninja extension is a launchpage for each new tab and it allows you to manage your bookmarks and tabs.",  
-  "host_permissions": [
-    "https://www.google.com/*",
-    "https://*.gstatic.com/*", 
-    "https://api.github.com/*",    
-    "https://raw.githubusercontent.com/*"
-  ],
+
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    
+    "default_icon": {
+      "128": "assets/light-128.png"
+    },
+    
+    "theme_icons": [
+      {
+        "light": "assets/light-128.png",
+        "dark":  "assets/dark-128.png",
+        "size": 128
+      }
+    ]
+  },
+
+  "chrome_url_overrides": {
+    "newtab": "bm.html"
   },
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
+
   "permissions": [
     "tabs",
-    "windows", 
+    "windows",
     "tabGroups"
   ],
-  "chrome_url_overrides": {
-    "newtab": "bm.html"
-  },
+  "host_permissions": [
+    "https://www.google.com/*",
+    "https://*.gstatic.com/*",
+    "https://api.github.com/*",
+    "https://raw.githubusercontent.com/*"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   }

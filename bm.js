@@ -134,6 +134,9 @@ function setBackground(imageName, type = 'predefined') {
     }
 }
 
+// Ensure it's also available on window for consistency
+window.setBackground = setBackground;
+
 
 /*document.addEventListener('DOMContentLoaded', () => {
     const backgroundSelect = document.getElementById('backgroundSelect');
@@ -3796,6 +3799,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('syncButton').addEventListener('click', synchronizeWithGitHub);
+    
+    // Help button event listener
+    document.getElementById('helpButton').addEventListener('click', function() {
+        if (bookmarkManagerData.openInNewTab) {
+            window.open('tabninja_help.html', '_blank');
+        } else {
+            window.location.href = 'tabninja_help.html';
+        }
+    });
     
     // Collection sort order event listener
     document.getElementById('collectionSortOrder').addEventListener('change', (e) => {
