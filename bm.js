@@ -26,6 +26,132 @@ let bookmarkManagerData = {
 let draggedItem = null;
 let placeholder = null;
 
+// Function to validate and clean favicon URLs
+function getSafeIconUrl(iconUrl) {
+    // Return fallback immediately if no URL provided
+    if (!iconUrl || iconUrl === 'default-icon.png') {
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+    }
+    
+    // If it's already a data URL, return as is
+    if (iconUrl.startsWith('data:')) {
+        return iconUrl;
+    }
+    
+    // Check for problematic URLs that commonly cause 404s
+    const problematicPatterns = [
+        'faviconV2?client=SOCIAL',
+        't0.gstatic.com/faviconV2',
+        't1.gstatic.com/faviconV2',
+        't2.gstatic.com/faviconV2',
+        't3.gstatic.com/faviconV2',
+        'faviconV2?client=SOCIAL&type=FAVICON',
+        'fallback_opts=TYPE,SIZE,URL'
+    ];
+    
+    // If URL contains problematic patterns, replace with safe Google favicon service
+    for (const pattern of problematicPatterns) {
+        if (iconUrl.includes(pattern)) {
+            try {
+                // Extract domain from the problematic URL
+                const urlMatch = iconUrl.match(/url=([^&]+)/);
+                if (urlMatch) {
+                    const decodedUrl = decodeURIComponent(urlMatch[1]);
+                    const domain = new URL(decodedUrl).hostname;
+                    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+                }
+            } catch (e) {
+                // If URL parsing fails, return fallback
+                return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+            }
+        }
+    }
+    
+    // Return the original URL if it seems safe
+    return iconUrl;
+}
+
+// Function to clean up existing problematic favicon URLs in collections
+function cleanupFaviconUrls(collections) {
+    return collections.map(collection => ({
+        ...collection,
+        bookmarks: collection.bookmarks.map(bookmark => ({
+            ...bookmark,
+            icon: getSafeIconUrl(bookmark.icon)
+        }))
+    }));
+}
+
+// Force cleanup of all existing favicon URLs in current data
+function forceCleanupAllFaviconUrls() {
+    let hasChanges = false;
+    
+    if (bookmarkManagerData.collections && Array.isArray(bookmarkManagerData.collections)) {
+        bookmarkManagerData.collections = bookmarkManagerData.collections.map(collection => {
+            const cleanedBookmarks = collection.bookmarks.map(bookmark => {
+                const originalIcon = bookmark.icon;
+                const cleanedIcon = getSafeIconUrl(bookmark.icon);
+                
+                if (originalIcon !== cleanedIcon) {
+                    hasChanges = true;
+                    console.log('Cleaned favicon URL:', originalIcon, '->', cleanedIcon);
+                }
+                
+                return {
+                    ...bookmark,
+                    icon: cleanedIcon
+                };
+            });
+            
+            return {
+                ...collection,
+                bookmarks: cleanedBookmarks
+            };
+        });
+    }
+    
+    if (hasChanges) {
+        console.log('Favicon URLs cleaned and saved to localStorage');
+    }
+}
+
+// Global error handling for resource loading
+window.addEventListener('error', function(e) {
+    // Check if it's an image loading error (favicon, background images, etc.)
+    if (e.target && e.target.tagName === 'IMG') {
+        // Check if it's a problematic favicon URL
+        const src = e.target.src;
+        if (src && (src.includes('faviconV2') || src.includes('t2.gstatic.com') || 
+                   src.includes('t1.gstatic.com') || src.includes('t3.gstatic.com'))) {
+            console.debug('Blocked problematic favicon URL:', src);
+        }
+        
+        // Suppress error from console for image loading failures
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // If it doesn't already have a fallback, set a generic one
+        if (!e.target.dataset.fallbackApplied) {
+            e.target.dataset.fallbackApplied = 'true';
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNMTAgMTBIMjJWMTJIMTBWMTBaTTEwIDE1SDIyVjE3SDEwVjE1Wk0xMCAyMEgyMlYyMkgxMFYyMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPg==';
+        }
+        return false;
+    }
+}, true); // Use capture phase to catch before it bubbles
+
+// Suppress unhandled promise rejection warnings for favicon fetches
+window.addEventListener('unhandledrejection', function(e) {
+    // Check if it's a favicon-related error
+    if (e.reason && e.reason.message && 
+        (e.reason.message.includes('favicon') || 
+         e.reason.message.includes('Favicon fetch timeout') ||
+         e.reason.message.includes('icon'))) {
+        // Suppress the error from console
+        e.preventDefault();
+        console.debug('Favicon fetch failed (suppressed):', e.reason.message);
+    }
+});
+
 // Global applyFilter function for use by both search box and zen search
 function applyFilter(searchTerm) {
     const collections = document.querySelectorAll('.collection');
@@ -1331,6 +1457,9 @@ function loadFromLocalStorage() {
             // Enrich collections and bookmarks
             if (Array.isArray(parsedData.collections)) {
                 parsedData.collections = parsedData.collections.map(enrichCollection);
+                
+                // Clean up problematic favicon URLs
+                parsedData.collections = cleanupFaviconUrls(parsedData.collections);
             }
 
             const existingPat = bookmarkManagerData.githubConfig?.pat;
@@ -1666,8 +1795,18 @@ function loadFromLocalStorage() {
             bookmarkElement.dataset.bookmarkId = bookmark.id;
 
             const bookmarkIcon = document.createElement('img');
-            bookmarkIcon.src = bookmark.icon || 'default-icon.png';
+            
+            // Validate and clean favicon URL before using it
+            let iconSrc = getSafeIconUrl(bookmark.icon);
+            bookmarkIcon.src = iconSrc;
             bookmarkIcon.alt = 'Icon';
+            
+            // Handle favicon loading errors gracefully
+            bookmarkIcon.onerror = function() {
+                // Fallback to a generic icon if loading fails
+                this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                this.onerror = null; // Prevent infinite loops
+            };
 
             const bookmarkTitle = document.createElement('h3');
             bookmarkTitle.textContent = bookmark.title;
@@ -1788,17 +1927,27 @@ function loadFromLocalStorage() {
         function getFavicon(url) {
             const extensionId = extId; // Ersätt med ditt extension-ID
             return new Promise((resolve, reject) => {
-                //chrome.runtime.sendMessage(extensionId, { action: 'fetchFavicon', url }, (response) => {
+                // Timeout för att undvika långa väntetider
+                const timeout = setTimeout(() => {
+                    reject(new Error('Favicon fetch timeout'));
+                }, 5000);
+                
                 chrome.runtime.sendMessage({ action: 'fetchFavicon', url }, (response) => {
+                    clearTimeout(timeout);
+                    
                     if (chrome.runtime.lastError) {
-                        // Hantera eventuella fel från sendMessage
-                        reject(new Error(chrome.runtime.lastError.message));
+                        // Fallback to embedded SVG icon on communication error
+                        const fallbackUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                        resolve(fallbackUrl);
                         return;
                     }
+                    
                     if (response && response.faviconUrl) {
                         resolve(response.faviconUrl);
                     } else {
-                        reject(new Error('Ingen favicon URL mottogs från extensionen.'));
+                        // Fallback to embedded SVG icon if no response
+                        const fallbackUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                        resolve(fallbackUrl);
                     }
                 });
             });
@@ -3355,7 +3504,18 @@ function createChromeTabElement(tab, windowId) {
     tabDiv.dataset.tabId = tab.id;
 
     const tabIcon = document.createElement('img');
-    tabIcon.src = tab.favIconUrl || 'default-icon.png';
+    
+    // Validate and clean favicon URL before using it
+    let iconSrc = getSafeIconUrl(tab.favIconUrl);
+    tabIcon.src = iconSrc;
+    
+    // Handle tab favicon loading errors gracefully
+    tabIcon.onerror = function() {
+        // Fallback to a generic tab icon if loading fails
+        this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzY2NjY2NiIvPgo8cGF0aCBkPSJNMTAgMTBIMjJWMTJIMTBWMTBaTTEwIDE1SDIyVjE3SDEwVjE1Wk0xMCAyMEgyMlYyMkgxMFYyMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPg==';
+        this.onerror = null; // Prevent infinite loops
+    };
+    
     tabDiv.appendChild(tabIcon);
 
     const tabTitle = document.createElement('span');
@@ -3746,6 +3906,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Migrate spaces to object format after loading
     migrateSpacesToObjectFormat();
     
+    // Force cleanup of all existing favicon URLs
+    forceCleanupAllFaviconUrls();
+    
+    // Clean up and re-save any problematic favicon URLs that might still exist
+    saveToLocalStorage();
+    
     renderCollections();
     fetchChromeTabs();
     setInterval(fetchChromeTabs, 5000);
@@ -3826,6 +3992,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('exportButton').addEventListener('click', exportBookmarks);
     document.getElementById('importTobyFile').addEventListener('change', importTobyBookmarks);
     document.getElementById('deleteAllButton').addEventListener('click', deleteAllCollections);
+    document.getElementById('cleanupFaviconsButton').addEventListener('click', function() {
+        forceCleanupAllFaviconUrls();
+        saveToLocalStorage();
+        renderCollections();
+        alert('Favicon URLs have been cleaned up and fixed!');
+    });
 
     // GitHub settings event listeners
     document.getElementById('githubUsername').addEventListener('change', (e) => {

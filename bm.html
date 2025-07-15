@@ -1102,6 +1102,291 @@
         body.dark-mode .help-button:hover {
             background: linear-gradient(135deg, #1b5e20, #2e7d32);
         }
+        
+        /* Modern Settings Section Styling */
+        .settings-section {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .settings-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+        }
+        
+        .settings-section h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .settings-section-icon {
+            font-size: 20px;
+            min-width: 24px;
+        }
+        
+        .settings-group {
+            margin-bottom: 15px;
+        }
+        
+        .settings-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .setting-item-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .setting-item-vertical label {
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+        
+        .setting-item-vertical:last-child {
+            border-bottom: none;
+        }
+        
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        
+        .setting-label {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .setting-title {
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+        
+        .setting-description {
+            font-size: 13px;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+        
+        .setting-control {
+            margin-left: 15px;
+        }
+        
+        .setting-control input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .setting-control select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            min-width: 180px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .danger-zone {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.05));
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .danger-zone h3 {
+            color: #dc3545;
+        }
+        
+        .danger-zone .setting-description {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        
+        .wallpaper-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .wallpaper-thumbnail {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            object-fit: cover;
+        }
+        
+        .wallpaper-thumbnail:hover {
+            transform: scale(1.05);
+            border-color: #4CAF50;
+        }
+        
+        .wallpaper-thumbnail.selected {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* Dark mode for settings */
+        body.dark-mode .settings-section {
+            background: rgba(42, 42, 42, 0.6);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        body.dark-mode .settings-section h3 {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .setting-item {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        body.dark-mode .setting-item-vertical {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        body.dark-mode .setting-item-vertical label {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .setting-title {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .setting-description {
+            color: #bbb;
+        }
+        
+        body.dark-mode .form-label {
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .form-input {
+            background: rgba(60, 60, 60, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .form-input:focus {
+            border-color: #4CAF50;
+            background: rgba(80, 80, 80, 0.9);
+        }
+        
+        body.dark-mode .setting-control select {
+            background: rgba(60, 60, 60, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+        }
+        
+        body.dark-mode .danger-zone {
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.2), rgba(220, 53, 69, 0.1));
+            border-color: rgba(220, 53, 69, 0.4);
+        }
        
         #searchBox {
             padding: 8px;
@@ -1137,20 +1422,20 @@
             backdrop-filter: blur(8px);
         }
         #backgroundThumbnails {
-            display: flex; /* Eller 'grid' för mer avancerad layout */
-            flex-wrap: wrap; /* Om miniatyrerna ska radbrytas */
-            gap: 10px; /* Mellanrum mellan miniatyrerna */
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
             margin-top: 10px;
         }
 
         .background-thumbnail {
-            width: 50px; /* Justera storleken efter behov */
+            width: 100%;
             height: 50px;
-            border: 2px solid transparent; /* Tunn ram som standard */
+            border: 2px solid transparent;
             border-radius: 4px;
             cursor: pointer;
-            object-fit: cover; /* Se till att bilden täcker miniatyr-ytan */
-            transition: border-color 0.3s; /* Mjuk övergång för border-color */
+            object-fit: cover;
+            transition: border-color 0.3s;
         }
 
         .background-thumbnail:hover,
@@ -1175,14 +1460,14 @@
         }
 
         #customBackgroundThumbnails {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 10px;
         }
 
         .custom-upload-button {
-            width: 50px;
+            width: 100%;
             height: 50px;
             border: 2px dashed #007bff;
             border-radius: 4px;
@@ -1217,7 +1502,7 @@
         }
 
         .custom-thumbnail img {
-            width: 50px;
+            width: 100%;
             height: 50px;
             border: 2px solid transparent;
             border-radius: 4px;
@@ -1940,86 +2225,162 @@
                     </div>
                     <div id="settings-tab" class="tab-pane">
                         <div id="settings">
-                        <h3>Collection Settings</h3>
-                        <label>
-                            Collection sort order:
-                            <select id="collectionSortOrder">
-                                <option value="userdefined">User defined (position)</option>
-                                <option value="name-az">Name (A-Z)</option>
-                                <option value="name-za">Name (Z-A)</option>
-                                <option value="modified-new">Last modified (newest first)</option>
-                                <option value="modified-old">Last modified (oldest first)</option>
-                            </select>
-                        </label>
-                        <br><br>
-                        <h3>GitHub Sync Settings</h3>
-            <input type="text" id="githubUsername" placeholder="GitHub Username">
-            <input type="text" id="githubRepo" placeholder="Repository Name">
-            <input type="password" id="githubPat" placeholder="Personal Access Token">
-            <div class="help-link-container">
-                <a href="/github-setup-guide.html" target="_blank" class="help-link">
-                    <i class="fas fa-question-circle"></i>
-                   ❓ How do I create a GitHub Personal Access Token?
-                </a>
-            </div>
-            <hr>
-            <h3>Import / Export</h3>
-            <button id="exportButton" class="import-button">Export Tab Collections</button>
-            <label for="importFile" class="import-button">
-                <input type="file" id="importFile" accept=".json" style="display:none;">
-                Import Tab Collections
-            </label>
-            <label for="importTobyFile" class="import-button">
-                <input type="file" id="importTobyFile" accept=".json" style="display:none;">
-                Import Toby data (JSON)
-            </label>
+                            <!-- Basic Settings Section -->
+                            <div class="settings-section">
+                                <h3>
+                                    <span class="settings-section-icon">⚙️</span>
+                                    Basic Settings
+                                </h3>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <label for="openInNewTab">Open bookmarks in a new tab</label>
+                                        <div class="setting-description">Prevent navigation away from your new tab page</div>
+                                    </div>
+                                    <input type="checkbox" id="openInNewTab" class="setting-checkbox">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <label for="closeWhenSaveTab">Close Chrome tabs when saved</label>
+                                        <div class="setting-description">Automatically close tabs after saving to collection</div>
+                                    </div>
+                                    <input type="checkbox" id="closeWhenSaveTab" class="setting-checkbox">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <label for="darkMode">Dark mode</label>
+                                        <div class="setting-description">Switch to dark theme for comfortable night browsing</div>
+                                    </div>
+                                    <input type="checkbox" id="darkMode" class="setting-checkbox">
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <label for="zenMode">Zen mode</label>
+                                        <div class="setting-description">Minimalist interface showing only clock until you scroll</div>
+                                    </div>
+                                    <input type="checkbox" id="zenMode" class="setting-checkbox">
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label for="collectionSortOrder">Collection sort order</label>
+                                    <select id="collectionSortOrder" class="setting-select">
+                                        <option value="userdefined">User defined (position)</option>
+                                        <option value="name-az">Name (A-Z)</option>
+                                        <option value="name-za">Name (Z-A)</option>
+                                        <option value="modified-new">Last modified (newest first)</option>
+                                        <option value="modified-old">Last modified (oldest first)</option>
+                                    </select>
+                                </div>
+                            </div>
 
-            <button id="deleteAllButton" class="delete-button">Delete All</button> <!-- Ny knapp -->
-            <br><br>
-            <hr>
-            <h3>Settings</h3>
-            <label>
-                <input type="checkbox" id="openInNewTab"> Open bookmarks in a new tab
-            </label>
-            <br>
-            <label>
-                <input type="checkbox" id="closeWhenSaveTab"> Close Chrome tabs when saved
-            </label>
-            <br>
-            <label>
-                <input type="checkbox" id="darkMode"> Dark mode
-            </label>
-            <br>
-            <label>
-                <input type="checkbox" id="zenMode"> Zen mode
-            </label>
-            <br><br>
-            <hr>
-            <h3>Help & Support</h3>
-            <div class="help-link-container">
-                <button id="helpButton" class="help-button">
-                    ❓ How to use TheTab.Ninja
-                </button>
-            </div>
-            <br>
-            <div id="mysettings">
-                <h3>Wallpaper</h3>
-                <div class="wallpaper-section">
-                    <h4>Custom background images</h4>
-                    <div id="customBackgroundThumbnails">
-                        <!-- Anpassade miniatyrer kommer att genereras här med JavaScript -->
-                    </div>
-                </div>
-                <div class="wallpaper-section">
-                    <h4>Predefined background images</h4>
-                    <div id="backgroundThumbnails">                    
-                        <!-- Miniatyrer kommer att genereras här med JavaScript -->
-                    </div>
-                </div>
-            </div>
-            <br>
-            <div id="versionDisplay"></div>            
-            <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
+                            <!-- Sync & Backup Section -->
+                            <div class="settings-section">
+                                <h3>
+                                    <span class="settings-section-icon">🔄</span>
+                                    Sync & Backup
+                                </h3>
+                                <div class="setting-item-vertical">
+                                    <label for="githubUsername">GitHub Username</label>
+                                    <input type="text" id="githubUsername" class="setting-input" placeholder="Enter your GitHub username">
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label for="githubRepo">Repository Name</label>
+                                    <input type="text" id="githubRepo" class="setting-input" placeholder="Enter repository name">
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label for="githubPat">Personal Access Token</label>
+                                    <input type="password" id="githubPat" class="setting-input" placeholder="Enter your GitHub PAT">
+                                </div>
+                                <div class="help-link-container">
+                                    <a href="/github-setup-guide.html" target="_blank" class="help-link">
+                                        ❓ How do I create a GitHub Personal Access Token?
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Appearance Section -->
+                            <div class="settings-section">
+                                <h3>
+                                    <span class="settings-section-icon">🎨</span>
+                                    Appearance
+                                </h3>
+                                <div id="mysettings">
+                                    <div class="wallpaper-section">
+                                        <h4>Custom background images</h4>
+                                        <div id="customBackgroundThumbnails">
+                                            <!-- Anpassade miniatyrer kommer att genereras här med JavaScript -->
+                                        </div>
+                                    </div>
+                                    <div class="wallpaper-section">
+                                        <h4>Predefined background images</h4>
+                                        <div id="backgroundThumbnails">                    
+                                            <!-- Miniatyrer kommer att genereras här med JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Management Section -->
+                            <div class="settings-section">
+                                <h3>
+                                    <span class="settings-section-icon">📁</span>
+                                    Data Management
+                                </h3>
+                                <div class="setting-item-vertical">
+                                    <label>Export Data</label>
+                                    <button id="exportButton" class="import-button">Export Tab Collections</button>
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label>Import Data</label>
+                                    <label for="importFile" class="import-button">
+                                        <input type="file" id="importFile" accept=".json" style="display:none;">
+                                        Import Tab Collections
+                                    </label>
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label>Import from Toby</label>
+                                    <label for="importTobyFile" class="import-button">
+                                        <input type="file" id="importTobyFile" accept=".json" style="display:none;">
+                                        Import Toby data (JSON)
+                                    </label>
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label>Fix Favicon URLs</label>
+                                    <button id="cleanupFaviconsButton" class="import-button">Fix Favicon URLs</button>
+                                </div>
+                            </div>
+
+                            <!-- Danger Zone Section -->
+                            <div class="danger-zone">
+                                <h3>
+                                    <span class="settings-section-icon">⚠️</span>
+                                    Danger Zone
+                                </h3>
+                                <div class="setting-item-vertical">
+                                    <label>Delete All Collections</label>
+                                    <button id="deleteAllButton" class="delete-button">Delete All</button>
+                                </div>
+                            </div>
+
+                            <!-- Help & Support Section -->
+                            <div class="settings-section">
+                                <h3>
+                                    <span class="settings-section-icon">❓</span>
+                                    Help & Support
+                                </h3>
+                                <div class="setting-item-vertical">
+                                    <label>User Guide</label>
+                                    <button id="helpButton" class="help-button">
+                                        ❓ How to use TheTab.Ninja
+                                    </button>
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label>About</label>
+                                    <div>
+                                        <div id="versionDisplay"></div>
+                                        <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>

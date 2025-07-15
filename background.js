@@ -54,21 +54,69 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }else if (message.action === 'fetchFavicon') {
     const { url } = message;
 
-    // Asynkron funktion för att hämta favicon från Googles S2-tjänst
+    // Improved favicon fetching with multiple fallbacks
     async function fetchGoogleFavicon(url) {
       try {
         const domain = new URL(url).hostname;
-        const faviconUrl = `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(url)}&size=32`;
-        //const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-        const response = await fetch(faviconUrl);
-        if (response.ok) {
-          sendResponse({ faviconUrl }); // Returnera favicon URL
-        } else {
-          sendResponse({ faviconUrl: 'default-icon.png' }); // Om favicon inte hittas
+        
+        // Try multiple favicon sources in order of reliability
+        const faviconSources = [
+          `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
+          `https://favicons.githubusercontent.com/${domain}`,
+          `https://${domain}/favicon.ico`,
+          // Fallback to a generic icon if all fail
+          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+'
+        ];
+        
+        // Try each source until one works
+        for (const faviconUrl of faviconSources) {
+          try {
+            // For data URLs, skip the fetch and use directly
+            if (faviconUrl.startsWith('data:')) {
+              sendResponse({ faviconUrl });
+              return;
+            }
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            const response = await fetch(faviconUrl, { 
+              method: 'HEAD', // Only check if resource exists
+              signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (response.ok) {
+              sendResponse({ faviconUrl });
+              return;
+            }
+          } catch (err) {
+            // Classify and handle different types of network errors silently
+            if (err.name === 'AbortError') {
+              console.debug('Favicon fetch timeout (suppressed):', faviconUrl);
+            } else if (err.message && err.message.includes('ERR_CONNECTION_TIMED_OUT')) {
+              console.debug('Connection timeout (suppressed):', faviconUrl);
+            } else if (err.message && err.message.includes('ERR_NAME_NOT_RESOLVED')) {
+              console.debug('DNS resolution failed (suppressed):', faviconUrl);
+            } else {
+              console.debug('Favicon fetch failed (suppressed):', err.message || 'Unknown error');
+            }
+            continue;
+          }
         }
+        
+        // If all sources fail, use the embedded SVG fallback
+        sendResponse({ 
+          faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
+        });
+        
       } catch (error) {
         console.error('Error fetching favicon:', error);
-        sendResponse({ faviconUrl: 'default-icon.png' }); // Vid fel, returnera default favicon
+        // Return embedded SVG as ultimate fallback
+        sendResponse({ 
+          faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
+        });
       }
     }
 
