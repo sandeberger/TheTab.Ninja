@@ -16,16 +16,19 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 - Customize background with predefined wallpapers or custom images
 - Access quick search shortcuts for Google and ChatGPT
 - Enjoy responsive mobile design with touch-optimized interface
+- Robust favicon error handling with automatic cleanup and fallback systems
+- Modern settings UI with card-based design and improved user experience
 
 ## Architecture
 
 ### Core Files Structure
 
-- `manifest.json` - Chrome extension manifest (v3)
+- `manifest.json` - Chrome extension manifest (v3, version 1.2)
 - `bm.html` / `bm.js` - Main new tab page interface and logic
 - `popup.html` / `popup.js` - Extension popup for saving current tab
 - `background.js` - Service worker handling GitHub sync, tab management, favicon fetching
-- `styles.css` - UI styling including dark mode support
+- `styles.css` - External CSS file with modern UI styling, dark mode support, and responsive design
+- `tabninja_help.html` - Comprehensive user guide and help documentation
 
 ### Key Components
 
@@ -35,6 +38,14 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 - Spaces management with object format and soft-delete capability
 - GitHub sync uses Git API for remote storage without external dependencies
 - Enhanced security with robust merge conflict resolution
+
+#### Favicon Error Handling System
+- Comprehensive URL validation and cleanup for problematic favicon URLs
+- Automatic detection and replacement of faulty Google favicon service URLs
+- Global error handling for image loading failures with graceful fallbacks
+- Console error suppression for better user experience
+- Fallback SVG icons for failed favicon loads
+- Background service worker with multiple fallback sources and timeout handling
 
 #### Drag & Drop System
 - Comprehensive drag-and-drop between collections, bookmarks, and Chrome tabs
@@ -68,6 +79,15 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 - Background sync across devices via GitHub
 - Thumbnail management with selection states
 - Remove custom backgrounds with confirmation dialogs
+
+#### Modern Settings UI Architecture
+- Card-based design with clean visual hierarchy and sections
+- Settings organized into logical groups: Basic Settings, Sync & Backup, Appearance, Data Management, Help & Support
+- Danger zone for destructive actions with clear visual warnings
+- Enhanced form controls with proper labels and descriptions
+- Responsive design that works on all screen sizes
+- Hover effects and smooth transitions for better user experience
+- External CSS architecture for better maintainability and performance
 
 ## Data Structure
 
@@ -138,11 +158,17 @@ This is a pure client-side Chrome extension with no build process or external de
 1. Make changes to source files directly
 2. Load unpacked extension in Chrome for testing
 3. Use Chrome DevTools for debugging
+4. CSS changes are now in external `styles.css` file for better maintainability
+5. Test favicon error handling and fallback mechanisms
+6. Verify settings UI responsiveness and user experience
 
 ### Testing the Extension
 - Load as unpacked extension in Chrome Developer mode
 - Refresh extension after code changes
 - Check console in both extension context and new tab page
+- Test favicon error handling by checking for console errors
+- Verify settings UI functionality and responsiveness
+- Test external CSS loading and styling consistency
 
 ### Key Functions to Understand
 
@@ -174,6 +200,13 @@ This is a pure client-side Chrome extension with no build process or external de
 - `editBookmark()` - Enhanced dialog for editing bookmarks
 - Collection sorting by name (A-Z, Z-A), lastModified, or user-defined position
 
+#### Favicon Error Handling (`bm.js`)
+- `getSafeIconUrl()` - Validates and cleans problematic favicon URLs
+- `cleanupFaviconUrls()` - Bulk cleanup of favicon URLs in collections
+- `forceCleanupAllFaviconUrls()` - Force cleanup of all existing favicon URLs
+- Global error handlers for image loading failures and unhandled promise rejections
+- Automatic fallback to safe favicon URLs when problematic patterns are detected
+
 #### Spaces Management (`bm.js`)
 - `initializeSpaces()` - Set up spaces functionality
 - `addSpace()` - Add new workspace
@@ -190,6 +223,13 @@ This is a pure client-side Chrome extension with no build process or external de
 - `setBackground()` - Set predefined or custom background
 - `setCustomBackground()` / `removeCustomBackground()` - Custom image management
 - `loadCustomBackgrounds()` / `saveCustomBackgrounds()` - Custom image persistence
+
+#### Enhanced Data Management (`bm.js`)
+- Advanced import/export functionality for tab collections
+- Toby data import support with JSON format compatibility
+- Favicon URL cleanup and validation tools
+- Data integrity checks and validation
+- Backup and restore capabilities with proper error handling
 
 ## Search Functionality
 
@@ -230,10 +270,14 @@ The extension is fully responsive and mobile-optimized:
 1. Identify if feature needs background script communication
 2. Update data structure if needed (`bookmarkManagerData`)
 3. Add UI components in `bm.html` and corresponding logic in `bm.js`
-4. Test drag-and-drop interactions if applicable
-5. Ensure GitHub sync compatibility
-6. Test mobile responsiveness on different screen sizes
-7. Consider zen mode compatibility if applicable
+4. Update external `styles.css` for any styling changes
+5. Test drag-and-drop interactions if applicable
+6. Ensure GitHub sync compatibility
+7. Test mobile responsiveness on different screen sizes
+8. Consider zen mode compatibility if applicable
+9. Test favicon error handling if feature affects bookmarks
+10. Verify settings UI integration and user experience
+11. Test data import/export functionality if applicable
 
 ### Debugging Issues
 - Check browser console for both extension and new tab page contexts
@@ -242,6 +286,10 @@ The extension is fully responsive and mobile-optimized:
 - Check Chrome extension error logs in `chrome://extensions`
 - Test on mobile devices or browser developer tools mobile simulation
 - Verify zen mode functionality and keyboard shortcuts
+- Test favicon error handling and fallback mechanisms
+- Verify external CSS loading and styling consistency
+- Check settings UI responsiveness and user experience
+- Test data import/export functionality and validation
 
 ### Data Migration
 When modifying data structures, ensure backward compatibility in:
@@ -269,8 +317,42 @@ When modifying data structures, ensure backward compatibility in:
 - Enhanced dialog design provides consistent user experience
 - Spaces management allows workspace organization with soft-delete
 - Quick search shortcuts: `?` for Google, `!` for ChatGPT
+- Favicon error handling system provides robust fallback mechanisms
+- External CSS architecture improves maintainability and performance
+- Modern settings UI with card-based design and improved user experience
+- Comprehensive error handling and console log suppression for cleaner debugging
 
 ## Recent Major Updates
+
+### Favicon Error Handling System (Latest)
+- Comprehensive URL validation and cleanup for problematic favicon URLs
+- Automatic detection and replacement of faulty Google favicon service URLs
+- Global error handling for image loading failures with graceful fallbacks
+- Console error suppression for better user experience and cleaner debugging
+- Background service worker with multiple fallback sources and timeout handling
+- Fallback SVG icons for failed favicon loads
+
+### Modern Settings UI Architecture (Latest)
+- Complete redesign with card-based layout and clean visual hierarchy
+- Settings organized into logical sections: Basic Settings, Sync & Backup, Appearance, Data Management, Help & Support
+- Danger zone for destructive actions with clear visual warnings
+- Enhanced form controls with proper labels and descriptions
+- Responsive design that works across all screen sizes
+- Hover effects and smooth transitions for improved user experience
+- External CSS architecture for better maintainability and performance
+
+### External CSS Architecture (Latest)
+- Separation of HTML structure and CSS styling into external files
+- Improved maintainability and performance
+- Better code organization and development workflow
+- Consistent styling across all components
+
+### Enhanced Data Management (Latest)
+- Advanced import/export functionality for tab collections
+- Improved Toby data import with better compatibility
+- Favicon URL cleanup and validation tools
+- Enhanced data integrity checks and validation
+- Better error handling and user feedback
 
 ### Zen Mode Implementation
 - Distraction-free browsing with elegant clock display
