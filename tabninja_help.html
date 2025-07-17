@@ -264,6 +264,7 @@
             <li><strong>Configuring GitHub Sync:</strong> In the left pane under Settings, fill in your GitHub username, repository name, and a Personal Access Token (PAT) to enable synchronization. Click the "How do I create..." link for a guide.</li>
             <li><strong>Initiating a Sync:</strong> Syncing is a <strong>manual process</strong>. After a valid configuration is saved, a sync button (🔄) will appear in the top bar. Click this button to push and pull your data from GitHub. The button will animate while syncing.</li>
             <li><strong>Import/Export:</strong> Back up your collections or import from tools like Toby (now with support for Toby's v4 JSON format).</li>
+            <li><strong>Automatic Backup:</strong> TheTab.Ninja now includes an automatic backup system that saves your data locally to protect against data loss.</li>
             <li><strong>Popup Window:</strong> When you click TheTab.Ninja icon in your browser's toolbar, you can quickly save the current tab. Enter the name of an existing collection or a new name to create a new one, and click "Save current tab".</li>
         </ul>
 
@@ -275,7 +276,126 @@
             <li><strong>Dark mode / Zen mode:</strong> Toggle these modes to customize your visual experience.</li>
         </ul>
 
-        <h2>4. Real-World Workflows</h2>
+        <h2>4. Data Protection & Backup System</h2>
+        
+        <h3>Overview</h3>
+        <p>TheTab.Ninja includes a comprehensive backup system to protect your valuable bookmark collections and settings. This system works independently of GitHub sync and provides local file backups stored in your Downloads folder.</p>
+        
+        <h3>How Automatic Backup Works</h3>
+        <p>The backup system automatically creates JSON files containing all your collections, bookmarks, and settings. These files are saved to your Downloads folder and can be used to restore your data if needed.</p>
+        
+        <h4>Setting Up Automatic Backups</h4>
+        <ol>
+            <li><strong>Access Settings:</strong> Open the left pane and click the "Settings" tab.</li>
+            <li><strong>Navigate to Data Management:</strong> Scroll down to the "Data Management" section.</li>
+            <li><strong>Configure Backup Frequency:</strong> Choose from the dropdown menu:
+                <ul>
+                    <li><strong>Daily:</strong> Creates a backup every day (recommended for active users)</li>
+                    <li><strong>Weekly:</strong> Creates a backup once per week</li>
+                    <li><strong>Disabled:</strong> Turns off automatic backups</li>
+                </ul>
+            </li>
+            <li><strong>Set Retention Period:</strong> Choose how long to keep old backups (3-30 days).</li>
+            <li><strong>Choose Backup Location:</strong> Optionally select a custom subfolder in Downloads.</li>
+        </ol>
+        
+        <h4>Backup Frequency Options</h4>
+        <ul>
+            <li><strong>Daily Backups:</strong> Perfect for users who frequently add or modify collections. Ensures you never lose more than one day's work.</li>
+            <li><strong>Weekly Backups:</strong> Suitable for users who make changes less frequently. Provides good protection while using less storage space.</li>
+            <li><strong>Disabled:</strong> Turns off automatic backups completely. Only recommended if you're using GitHub sync or have another backup strategy.</li>
+        </ul>
+        
+        <h4>Backup Retention & Cleanup</h4>
+        <p>To prevent your Downloads folder from filling up, TheTab.Ninja automatically removes old backup files:</p>
+        <ul>
+            <li><strong>3 days:</strong> Keeps only the most recent backups (minimal storage)</li>
+            <li><strong>7 days:</strong> Provides a good balance of protection and storage (default)</li>
+            <li><strong>14 days:</strong> Keeps two weeks of backup history</li>
+            <li><strong>30 days:</strong> Maximum retention for comprehensive protection</li>
+        </ul>
+        
+        <h4>Customizing Backup Location</h4>
+        <p>By default, backups are saved directly to your Downloads folder. You can organize them better by:</p>
+        <ol>
+            <li><strong>Click "Choose Subfolder":</strong> This opens a dialog where you can specify a custom folder name.</li>
+            <li><strong>Enter Folder Name:</strong> For example, "TheTabNinja" or "MyBackups".</li>
+            <li><strong>Confirm:</strong> All future backups will be saved to <code>Downloads/YourFolderName/</code>.</li>
+            <li><strong>Find Your Backups:</strong> Click "Open Folder" to get instructions on locating your backup files.</li>
+        </ol>
+        
+        <h3>Manual Backup</h3>
+        <p>In addition to automatic backups, you can create manual backups anytime:</p>
+        <ol>
+            <li><strong>Click "Create Backup Now":</strong> This button is in the Data Management section.</li>
+            <li><strong>Wait for Confirmation:</strong> The button will show "Creating backup..." and then "Backup created!"</li>
+            <li><strong>Find Your File:</strong> The backup is saved to your configured location with a timestamp.</li>
+        </ol>
+        
+        <h3>Understanding Backup Files</h3>
+        <p>Backup files are named with timestamps for easy identification:</p>
+        <ul>
+            <li><strong>Format:</strong> <code>tabninja-backup-2024-01-15-14-30-00.json</code></li>
+            <li><strong>Date:</strong> YYYY-MM-DD (2024-01-15 = January 15, 2024)</li>
+            <li><strong>Time:</strong> HH-MM-SS (14-30-00 = 2:30:00 PM)</li>
+            <li><strong>Content:</strong> Complete JSON export of all your data</li>
+        </ul>
+        
+        <h3>Restoring from Backup</h3>
+        <p>To restore your data from a backup file:</p>
+        <ol>
+            <li><strong>Access Import:</strong> In Settings > Data Management, find the "Import Data" section.</li>
+            <li><strong>Select Backup File:</strong> Click "Import Tab Collections" and choose your backup JSON file.</li>
+            <li><strong>Confirm Restoration:</strong> Your collections and settings will be restored from the backup.</li>
+            <li><strong>Verify Data:</strong> Check that your collections and bookmarks are restored correctly.</li>
+        </ol>
+        
+        <div class="pro-tip">
+            <h4>Pro Tip: Backup Strategy</h4>
+            <p>For maximum protection, use a combination of:</p>
+            <ul>
+                <li><strong>Daily automatic backups</strong> for recent changes</li>
+                <li><strong>GitHub sync</strong> for cross-device synchronization</li>
+                <li><strong>Manual backups</strong> before making major changes</li>
+            </ul>
+            <p>This triple protection ensures your data is safe even if your computer crashes or your browser data is corrupted.</p>
+        </div>
+        
+        <div class="new-feature">
+            <h4>New Feature: Smart Backup System</h4>
+            <p>TheTab.Ninja's backup system includes several intelligent features:</p>
+            <ul>
+                <li><strong>Automatic Scheduling:</strong> Backups run in the background using Chrome's alarm system</li>
+                <li><strong>Smart Timing:</strong> Only creates backups when data has actually changed</li>
+                <li><strong>Reliable Storage:</strong> Uses Chrome's Downloads API for maximum compatibility</li>
+                <li><strong>Cross-Session Persistence:</strong> Backup schedule continues even after browser restarts</li>
+            </ul>
+        </div>
+        
+        <h3>Troubleshooting Backup Issues</h3>
+        
+        <h4>Backup Not Created</h4>
+        <ul>
+            <li><strong>Check Settings:</strong> Ensure backup frequency is not set to "Disabled"</li>
+            <li><strong>Verify Permissions:</strong> Make sure Chrome has permission to access your Downloads folder</li>
+            <li><strong>Try Manual Backup:</strong> Use "Create Backup Now" to test the system</li>
+        </ul>
+        
+        <h4>Cannot Find Backup Files</h4>
+        <ul>
+            <li><strong>Check Downloads Folder:</strong> Look in your browser's default Downloads directory</li>
+            <li><strong>Check Subfolder:</strong> If you set a custom folder, look in <code>Downloads/YourFolderName/</code></li>
+            <li><strong>Use "Open Folder" Button:</strong> Click this for specific instructions on your backup location</li>
+        </ul>
+        
+        <h4>Backup File Too Large</h4>
+        <ul>
+            <li><strong>Check Collection Size:</strong> Large collections with many bookmarks create bigger backups</li>
+            <li><strong>Clean Up Unused Data:</strong> Remove old or unnecessary collections before backing up</li>
+            <li><strong>Adjust Retention:</strong> Reduce backup retention period to save storage space</li>
+        </ul>
+
+        <h2>5. Real-World Workflows</h2>
         
         <h3>Scenario 1: "How to Organize Your Most-Used Bookmarks"</h3>
         <ol>
@@ -293,7 +413,7 @@
             <li><strong>Resume Your Work:</strong> The next day, find your collection and click the rocket icon (🚀). All 25 tabs will open neatly in their own tab group, and you can pick up where you left off.</li>
         </ol>
 
-        <h2>5. Frequently Asked Questions (FAQ) & Troubleshooting</h2>
+        <h2>6. Frequently Asked Questions (FAQ) & Troubleshooting</h2>
 
         <h3>1. Why isn't GitHub Sync working?</h3>
         <p><strong>Solution:</strong> Double-check that all three fields (username, repo, PAT) are correctly filled in the settings. Ensure your Personal Access Token (PAT) has <code>repo</code> permissions. The repository must also be created and not empty (a <code>README.md</code> file is sufficient).</p>
@@ -312,8 +432,20 @@
 
         <h3>6. I dragged a tab group to a collection, but nothing happened.</h3>
         <p><strong>Solution:</strong> Make sure you drag the group onto an <strong>existing collection</strong> to add the bookmarks there. If you want to create a <strong>new collection</strong> from the group, drag it to an <strong>empty area</strong> on the page instead (not on top of another collection).</p>
+        
+        <h3>7. My automatic backups aren't working. What should I check?</h3>
+        <p><strong>Solution:</strong> First, ensure that backup frequency is not set to "Disabled" in Settings > Data Management. Check that Chrome has permission to access your Downloads folder. Try creating a manual backup using "Create Backup Now" to test the system. If backups still don't work, your Chrome may be blocking the Downloads API - check your browser's download permissions.</p>
+        
+        <h3>8. I can't find my backup files. Where are they stored?</h3>
+        <p><strong>Solution:</strong> Backup files are saved to your browser's Downloads folder by default. If you set a custom subfolder, look in <code>Downloads/YourFolderName/</code>. Use the "Open Folder" button in Settings > Data Management for specific instructions on your backup location. The files are named with timestamps like <code>tabninja-backup-2024-01-15-14-30-00.json</code>.</p>
+        
+        <h3>9. How do I restore my data from a backup file?</h3>
+        <p><strong>Solution:</strong> Go to Settings > Data Management > Import Data. Click "Import Tab Collections" and select your backup JSON file. This will restore all your collections and settings from the backup. <strong>Warning:</strong> This will overwrite your current data, so make sure you have a recent backup first!</p>
+        
+        <h3>10. My backup files are taking up too much space. How can I manage them?</h3>
+        <p><strong>Solution:</strong> TheTab.Ninja automatically removes old backups based on your retention setting. You can reduce storage usage by: 1) Lowering the retention period (e.g., from 30 days to 7 days), 2) Changing backup frequency from daily to weekly, or 3) Manually deleting old backup files from your Downloads folder.</p>
 
-        <h2>6. Conclusion and Further Reading</h2>
+        <h2>7. Conclusion and Further Reading</h2>
         <p>Thank you for using TheTab.Ninja! We hope it helps you become more organized and productive.</p>
         <ul>
             <li><strong>Official GitHub:</strong> <a href="https://github.com/kodar-ninja/TheTab.Ninja" target="_blank">https://github.com/kodar-ninja/TheTab.Ninja</a> (Here you can view the source code, report bugs, and suggest new features).</li>

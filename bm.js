@@ -15,6 +15,14 @@ let bookmarkManagerData = {
     spaces: ['Everything'], // Default space that cannot be removed
     currentSpace: 'Everything',
     collectionSortOrder: 'userdefined', // New setting for collection sorting
+    autoBackup: {
+        enabled: true, // Default enabled
+        frequency: 'daily', // daily, weekly, disabled
+        keepDays: 7, // Keep backups for 7 days
+        lastBackup: null, // Timestamp of last backup
+        customFolderName: null, // Subfolder name in Downloads (e.g., "MyBackups")
+        useCustomFolder: false // Whether to use custom subfolder
+    },
     githubConfig: {
         username: '',
         repo: '',
@@ -3999,6 +4007,89 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Favicon URLs have been cleaned up and fixed!');
     });
 
+    // Backup settings event listeners
+    document.getElementById('backupFrequency').addEventListener('change', (e) => {
+        bookmarkManagerData.autoBackup.frequency = e.target.value;
+        bookmarkManagerData.autoBackup.enabled = e.target.value !== 'disabled';
+        updateBackupSettingsVisibility();
+        saveToLocalStorage();
+        syncToStorage();
+    });
+
+    document.getElementById('backupRetention').addEventListener('change', (e) => {
+        bookmarkManagerData.autoBackup.keepDays = parseInt(e.target.value);
+        saveToLocalStorage();
+        syncToStorage();
+    });
+
+    document.getElementById('manualBackupButton').addEventListener('click', async () => {
+        const button = document.getElementById('manualBackupButton');
+        const originalText = button.textContent;
+        button.textContent = 'Creating backup...';
+        button.disabled = true;
+        
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: 'createManualBackup',
+                data: bookmarkManagerData
+            });
+            
+            if (response.success) {
+                button.textContent = 'Backup created!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 2000);
+            } else {
+                throw new Error(response.error || 'Failed to create backup');
+            }
+        } catch (error) {
+            alert('Error creating backup: ' + error.message);
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    });
+
+    // Backup folder selection
+    document.getElementById('selectBackupFolder').addEventListener('click', async () => {
+        try {
+            const currentFolder = bookmarkManagerData.autoBackup.customFolderName || 'TheTabNinja';
+            const customPath = prompt('Enter subfolder name for backups (will be created in Downloads):', currentFolder);
+            
+            if (customPath && customPath.trim()) {
+                const folderName = customPath.trim();
+                bookmarkManagerData.autoBackup.useCustomFolder = true;
+                bookmarkManagerData.autoBackup.customFolderName = folderName;
+                
+                // Update UI
+                document.getElementById('backupFolderPath').textContent = `Downloads/${folderName}`;
+                
+                saveToLocalStorage();
+                syncToStorage();
+                
+                alert(`Backups will be saved to: Downloads/${folderName}/`);
+            }
+        } catch (error) {
+            console.error('Error selecting backup folder:', error);
+            alert('Error selecting folder: ' + error.message);
+        }
+    });
+
+    // Open backup folder button
+    document.getElementById('openBackupFolder').addEventListener('click', async () => {
+        try {
+            const folderName = bookmarkManagerData.autoBackup.customFolderName;
+            if (folderName) {
+                alert(`Backup folder: Downloads/${folderName}/\n\nOpen your Downloads folder and look for the "${folderName}" subfolder.`);
+            } else {
+                alert('Backup folder: Downloads/\n\nBackups are saved directly to your Downloads folder.');
+            }
+        } catch (error) {
+            console.error('Error opening backup folder:', error);
+            alert('Error: Could not determine backup folder location.');
+        }
+    });
+
     // GitHub settings event listeners
     document.getElementById('githubUsername').addEventListener('change', (e) => {
         bookmarkManagerData.githubConfig.username = e.target.value;
@@ -4105,11 +4196,56 @@ document.addEventListener('DOMContentLoaded', () => {
         syncButton.style.display = isGitHubConfigValid() ? 'flex' : 'none';
     }
 
+    function updateBackupSettingsVisibility() {
+        const enabled = bookmarkManagerData.autoBackup.frequency !== 'disabled';
+        const retentionSection = document.getElementById('backupRetentionSection');
+        const folderSection = document.getElementById('backupFolderSection');
+        
+        if (retentionSection) {
+            retentionSection.style.display = enabled ? 'block' : 'none';
+        }
+        if (folderSection) {
+            folderSection.style.display = enabled ? 'block' : 'none';
+        }
+    }
+
+    async function syncToStorage() {
+        try {
+            await chrome.storage.local.set({ bookmarkManagerData: bookmarkManagerData });
+        } catch (error) {
+            console.error('Error syncing to storage:', error);
+        }
+    }
+
+    function loadBackupSettings() {
+        const backupFrequency = document.getElementById('backupFrequency');
+        const backupRetention = document.getElementById('backupRetention');
+        const backupFolderPath = document.getElementById('backupFolderPath');
+        
+        if (backupFrequency) {
+            backupFrequency.value = bookmarkManagerData.autoBackup.frequency;
+        }
+        if (backupRetention) {
+            backupRetention.value = bookmarkManagerData.autoBackup.keepDays.toString();
+        }
+        if (backupFolderPath) {
+            const folderDisplay = bookmarkManagerData.autoBackup.useCustomFolder && bookmarkManagerData.autoBackup.customFolderName 
+                ? `Downloads/${bookmarkManagerData.autoBackup.customFolderName}`
+                : 'Downloads';
+            backupFolderPath.textContent = folderDisplay;
+        }
+        
+        updateBackupSettingsVisibility();
+    }
+
     // Initialisera GitHub-fälten och sync-knappens synlighet
     document.getElementById('githubUsername').value = bookmarkManagerData.githubConfig.username || '';
     document.getElementById('githubRepo').value = bookmarkManagerData.githubConfig.repo || '';
     document.getElementById('githubPat').value = bookmarkManagerData.githubConfig.pat || '';
     updateSyncButtonVisibility();
+    
+    // Load backup settings
+    loadBackupSettings();
 
 
     const searchBox = document.getElementById('searchBox');    

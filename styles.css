@@ -14,7 +14,7 @@ body {
     background-repeat: no-repeat;
     background-position: center center;
     background-attachment: fixed;
-    background-size: cover; /* Välj 'cover' eller 'contain' */
+    background-size: cover; /* Vï¿½lj 'cover' eller 'contain' */
     margin: 0;
     padding: 0;
     display: flex;
@@ -275,7 +275,7 @@ body {
     display: none;
 }
 
-/* I zen mode behöver vi kunna scrolla */
+/* I zen mode behï¿½ver vi kunna scrolla */
 body.zen-mode {
     overflow-y: auto;
 }
@@ -289,7 +289,7 @@ body.zen-mode {
     position: relative;
     display: flex;
     flex-direction: column;
-    z-index: 1010; /* Högre än zenSearchContainer (500) för att alltid ligga överst */
+    z-index: 1010; /* Hï¿½gre ï¿½n zenSearchContainer (500) fï¿½r att alltid ligga ï¿½verst */
 }
 #leftPane.closed, #rightPane.closed {
     width: 30px;
@@ -307,7 +307,7 @@ body.zen-mode {
     min-height: 0;
 }
 
-/* För WebKit-baserade webbläsare (Chrome, Safari, Edge) */
+/* Fï¿½r WebKit-baserade webblï¿½sare (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -322,7 +322,7 @@ body.zen-mode {
     border-radius: 4px;
 }
 
-/* Globala inställningar för Firefox (Anv ej nu) */
+/* Globala instï¿½llningar fï¿½r Firefox (Anv ej nu) */
 * {
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
@@ -430,12 +430,12 @@ body.zen-mode {
     margin-right: 10px;
     background-color: #e0e0e0;
     border-radius: 4px;
-    color: #333; /* Mörk färg för ljust läge */
+    color: #333; /* Mï¿½rk fï¿½rg fï¿½r ljust lï¿½ge */
 }
 
 body.dark-mode .drag-handle {
-    background-color: #444; /* Mörkare bakgrund för mörkt läge */
-    color: #ddd; /* Ljusare text för mörkt läge */
+    background-color: #444; /* Mï¿½rkare bakgrund fï¿½r mï¿½rkt lï¿½ge */
+    color: #ddd; /* Ljusare text fï¿½r mï¿½rkt lï¿½ge */
 }
 .dragging {
     opacity: 0.3;
@@ -482,7 +482,7 @@ body.dark-mode .toggle-collection {
     font-size: 18px;
     cursor: pointer;
     padding: 0 10px;
-    color: #fff; /* Ljus färg för mörkt läge */
+    color: #fff; /* Ljus fï¿½rg fï¿½r mï¿½rkt lï¿½ge */
 }
 .add-bookmark {
     background-color: #4CAF50;
@@ -754,8 +754,8 @@ body.dark-mode .delete-collection {
     z-index: 1002;
 }        
 #collections {
-    margin: 10px; /* Lägg till margin runt om */
-    padding: 10px; /* Om du vill ha luft inuti också */
+    margin: 10px; /* Lï¿½gg till margin runt om */
+    padding: 10px; /* Om du vill ha luft inuti ocksï¿½ */
     box-sizing: border-box;
     flex: 1 1 auto;
     overflow-y: auto;
@@ -798,11 +798,26 @@ body.dark-mode .delete-collection {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin: 5px; /* Lägg till marginaler */
+    margin: 5px; /* Lï¿½gg till marginaler */
+    text-decoration: none; /* FÃ¶r label-element */
+}
+
+/* Specifik styling fÃ¶r label.import-button */
+label.import-button {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 5px;
+    text-decoration: none;
+    border: 1px solid #4CAF50; /* LÃ¤gg till border fÃ¶r konsistens */
 }
 
 .delete-button {
-    background-color: #f44336; /* Röd färg för delete-knappen */
+    background-color: #f44336; /* Rï¿½d fï¿½rg fï¿½r delete-knappen */
     display: inline-block;
     padding: 10px 15px;
     color: white;
@@ -810,22 +825,28 @@ body.dark-mode .delete-collection {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin: 5px; /* Lägg till marginaler */            
+    margin: 5px; /* Lï¿½gg till marginaler */            
 }
 
 .delete-button:hover {
-    background-color: #d32f2f; /* Mörkare röd vid hover */
+    background-color: #d32f2f; /* Mï¿½rkare rï¿½d vid hover */
 }
 
 body.dark-mode .delete-button {
-    background-color: #c62828; /* Mörkare röd i dark mode */
+    background-color: #c62828; /* Mï¿½rkare rï¿½d i dark mode */
 }
 
 body.dark-mode .delete-button:hover {
-    background-color: #b71c1c; /* Ännu mörkare röd vid hover i dark mode */
+    background-color: #b71c1c; /* ï¿½nnu mï¿½rkare rï¿½d vid hover i dark mode */
 }
 .import-button:hover {
     background-color: #45a049;
+}
+
+/* Hover fÃ¶r label.import-button */
+label.import-button:hover {
+    background-color: #45a049;
+    border-color: #45a049;
 }
 
 body.dark-mode .import-button {
@@ -834,6 +855,18 @@ body.dark-mode .import-button {
 
 body.dark-mode .import-button:hover {
     background-color: #1b5e20;
+}
+
+/* Dark mode fÃ¶r label.import-button */
+body.dark-mode label.import-button {
+    background-color: #2e7d32;
+    border-color: #2e7d32;
+    color: white;
+}
+
+body.dark-mode label.import-button:hover {
+    background-color: #1b5e20;
+    border-color: #1b5e20;
 }
 
 a[href="https://kodar.ninja"] {
@@ -875,8 +908,8 @@ body.dark-mode .placeholder {
     padding: 10px;
     background: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(8px);
-    border-radius: 8px; /* Uppdaterat från 4px */
-    transition: all 0.3s ease; /* Uppdaterad från ingen transition */
+    border-radius: 8px; /* Uppdaterat frï¿½n 4px */
+    transition: all 0.3s ease; /* Uppdaterad frï¿½n ingen transition */
 }
 
 .collection.dragging {
@@ -925,7 +958,7 @@ body.dark-mode .collection:hover {
     border-color: #666;            
 }
 
-/* GitHub sync styles - lägg till i style-taggen */
+/* GitHub sync styles - lï¿½gg till i style-taggen */
 #githubSettings {
     margin-top: 20px;
     padding-top: 20px;
@@ -1410,11 +1443,11 @@ body.dark-mode #searchBox {
 
 .background-thumbnail:hover,
 .background-thumbnail.selected {
-    border-color: #007bff; /* Exempel på färg för markerad/hover */
+    border-color: #007bff; /* Exempel pï¿½ fï¿½rg fï¿½r markerad/hover */
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Valfri skuggeffekt */
 }
 
-/* Stilar för anpassade bakgrundsbilder */
+/* Stilar fï¿½r anpassade bakgrundsbilder */
 .wallpaper-section {
     margin-bottom: 20px;
 }
@@ -1523,7 +1556,7 @@ body.dark-mode .wallpaper-section h4 {
     background: rgba(244, 67, 54, 1);
 }
 
-/* Dark mode för anpassade bakgrundsbilder */
+/* Dark mode fï¿½r anpassade bakgrundsbilder */
 body.dark-mode .custom-upload-button {
     border-color: #4fc3f7;
     background: rgba(79, 195, 247, 0.1);
@@ -1626,7 +1659,7 @@ body.light-theme .collection-button svg {
 }
 
 body.dark-theme .collection-button svg {
-    color: #fff; /* Ikoner blir vita i mörkt tema */
+    color: #fff; /* Ikoner blir vita i mï¿½rkt tema */
 }
 
 .donation-button {
@@ -1664,7 +1697,7 @@ body.dark-theme .collection-button svg {
     flex-direction: column;
     height: 100%;
     position: relative;
-    z-index: 1010; /* Högre än zenSearchContainer (500) för att alltid ligga överst */
+    z-index: 1010; /* Hï¿½gre ï¿½n zenSearchContainer (500) fï¿½r att alltid ligga ï¿½verst */
 }
 
 .tab-nav {
@@ -1863,13 +1896,13 @@ body.dark-mode .space-item.active {
     transform: scale(1.1);
 }
 
-/* Förhindra att child elements blockerar drop events */
+/* Fï¿½rhindra att child elements blockerar drop events */
 .space-item.drop-zone-active .delete-space-btn,
 .space-item.drop-zone-active .space-name {
     pointer-events: none;
 }
 
-/* Dark mode för spaces */
+/* Dark mode fï¿½r spaces */
 body.dark-mode #newSpaceName {
     background: rgba(60, 60, 60, 0.6);
     border-color: rgba(255, 255, 255, 0.1);
@@ -1889,7 +1922,7 @@ body.dark-mode .add-space-btn:disabled {
 .space-item.drop-zone-active {
     position: relative;
     transition: all 0.3s ease;
-    cursor: copy !important; /* Tvinga copy cursor för drop-zones */
+    cursor: copy !important; /* Tvinga copy cursor fï¿½r drop-zones */
 }
 
 .space-item.drop-zone-active:before {
@@ -1916,7 +1949,7 @@ body.dark-mode .add-space-btn:disabled {
     border-style: solid;
 }
 
-/* Dark mode för drag and drop */
+/* Dark mode fï¿½r drag and drop */
 body.dark-mode .space-item.drag-over {
     background: rgba(76, 175, 80, 0.3) !important;
     box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
@@ -1963,7 +1996,7 @@ body.zen-mode.searching .zen-datetime-display {
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Dark mode för Zen */
+/* Dark mode fï¿½r Zen */
 body.dark-mode .zen-time {
     color: rgba(255, 255, 255, 0.7);
 }
@@ -1972,7 +2005,7 @@ body.dark-mode .zen-date {
     color: rgba(255, 255, 255, 0.5);
 }
 
-/* Zen mode offset för collections */
+/* Zen mode offset fï¿½r collections */
 body.zen-mode #collections {
     margin-top: 100vh;
     transition: margin-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1980,16 +2013,16 @@ body.zen-mode #collections {
 
 body.zen-mode.scrolled #collections,
 body.zen-mode.searching #collections {
-    margin-top: 20px; /* Återgå till normal margin */
+    margin-top: 20px; /* ï¿½tergï¿½ till normal margin */
     padding-top: 74px; /* 20px (searchBox top) + 28px (searchBox height) + 16px (padding 8px*2) + 10px (space below) = 74px */
 }
 
-/* Zen mode för topBar */
+/* Zen mode fï¿½r topBar */
 body.zen-mode #topBar {
     opacity: 0;
     transform: translateY(-20px);
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    /* pointer-events: none; REMOVED - så knappar fungerar i zen initial state */
+    /* pointer-events: none; REMOVED - sï¿½ knappar fungerar i zen initial state */
 }
 
 body.zen-mode.scrolled #topBar,
@@ -1999,7 +2032,7 @@ body.zen-mode.searching #topBar {
     pointer-events: auto;
 }
 
-/* Zen mode för searchBox - alltid synlig */
+/* Zen mode fï¿½r searchBox - alltid synlig */
 body.zen-mode #searchBox {
     opacity: 0.8;
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2012,7 +2045,7 @@ body.zen-mode #searchBox:hover {
     opacity: 1;
 }
 
-/* Smooth scroll behavior för bättre Zen upplevelse - disabled för att förhindra auto-hopp */
+/* Smooth scroll behavior fï¿½r bï¿½ttre Zen upplevelse - disabled fï¿½r att fï¿½rhindra auto-hopp */
 html.zen-smooth-scroll {
     scroll-behavior: smooth;
 }
@@ -2029,7 +2062,7 @@ body.zen-mode {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 500; /* Lägre än UI-element för att inte blockera interaktion */
+    z-index: 500; /* Lï¿½gre ï¿½n UI-element fï¿½r att inte blockera interaktion */
     width: 100%;
     text-align: center;
 }
@@ -2080,7 +2113,7 @@ body.zen-mode #zenSearchBox {
                 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* Dark mode för zen search box */
+/* Dark mode fï¿½r zen search box */
 body.dark-mode #zenSearchBox {
     background-color: rgba(0, 0, 0, 0.2);
     border-color: rgba(255, 255, 255, 0.2);

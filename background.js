@@ -407,3 +407,199 @@ async function handleGitHubPush(config, content) {
     throw error;
   }
 }
+
+// Backup Functions
+async function createAutomaticBackup(data) {
+  try {
+    const timestamp = new Date().toISOString().split('T')[0];
+    const timeString = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+    const filename = `tabninja-backup-${timestamp}-${timeString}.json`;
+    
+    // Create data URL directly (works in service worker)
+    const jsonString = JSON.stringify(data, null, 2);
+    const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
+    
+    // Try to use custom folder if available and supported
+    if (data.autoBackup && data.autoBackup.useCustomFolder && data.autoBackup.customFolderName) {
+      try {
+        const downloadId = await chrome.downloads.download({
+          url: dataUrl,
+          filename: `${data.autoBackup.customFolderName}/${filename}`,
+          saveAs: false
+        });
+        
+        console.log('Backup created successfully in custom folder:', filename);
+        return { success: true, filename, downloadId };
+      } catch (customError) {
+        console.warn('Custom folder backup failed, falling back to Downloads:', customError);
+      }
+    }
+    
+    // Default: use Downloads folder
+    const downloadId = await chrome.downloads.download({
+      url: dataUrl,
+      filename: filename,
+      saveAs: false
+    });
+    
+    console.log('Backup created successfully:', filename);
+    return { success: true, filename, downloadId };
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    throw error;
+  }
+}
+
+async function cleanupOldBackups(keepDays = 7) {
+  try {
+    const downloads = await chrome.downloads.search({
+      filenameRegex: 'tabninja-backup-.*\\.json$'
+    });
+    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - keepDays);
+    
+    for (const download of downloads) {
+      if (download.startTime && new Date(download.startTime) < cutoffDate) {
+        try {
+          await chrome.downloads.erase({ id: download.id });
+          console.log('Cleaned up old backup:', download.filename);
+        } catch (error) {
+          console.warn('Could not clean up backup:', download.filename, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up old backups:', error);
+  }
+}
+
+async function shouldCreateBackup(lastBackup, frequency) {
+  if (!lastBackup) return true;
+  
+  const lastBackupDate = new Date(lastBackup);
+  const now = new Date();
+  
+  switch (frequency) {
+    case 'daily':
+      return now.getDate() !== lastBackupDate.getDate() || 
+             now.getMonth() !== lastBackupDate.getMonth() || 
+             now.getFullYear() !== lastBackupDate.getFullYear();
+    case 'weekly':
+      const weekDiff = Math.floor((now - lastBackupDate) / (7 * 24 * 60 * 60 * 1000));
+      return weekDiff >= 1;
+    default:
+      return false;
+  }
+}
+
+// Setup backup alarm
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'dailyBackup') {
+    try {
+      // Get current data from both storage locations
+      let data = null;
+      
+      // First try chrome.storage.local
+      try {
+        const result = await chrome.storage.local.get(['bookmarkManagerData']);
+        data = result.bookmarkManagerData;
+      } catch (storageError) {
+        console.log('Chrome storage not available, checking tabs for localStorage');
+      }
+      
+      // If no data in chrome.storage, get from active tab's localStorage
+      if (!data) {
+        const tabs = await chrome.tabs.query({ url: 'chrome://newtab/*' });
+        if (tabs.length > 0) {
+          try {
+            const results = await chrome.scripting.executeScript({
+              target: { tabId: tabs[0].id },
+              func: () => {
+                const stored = localStorage.getItem('bookmarkManagerData');
+                return stored ? JSON.parse(stored) : null;
+              }
+            });
+            data = results[0]?.result;
+          } catch (scriptError) {
+            console.error('Error getting data from tab:', scriptError);
+          }
+        }
+      }
+      
+      if (data && data.autoBackup && data.autoBackup.frequency !== 'disabled') {
+        const needsBackup = await shouldCreateBackup(
+          data.autoBackup.lastBackup, 
+          data.autoBackup.frequency
+        );
+        
+        if (needsBackup) {
+          await createAutomaticBackup(data);
+          await cleanupOldBackups(data.autoBackup.keepDays || 7);
+          
+          // Update last backup timestamp
+          data.autoBackup.lastBackup = new Date().toISOString();
+          
+          // Try to update both storage locations
+          try {
+            await chrome.storage.local.set({ bookmarkManagerData: data });
+          } catch (storageError) {
+            console.log('Could not update chrome.storage.local:', storageError);
+          }
+          
+          // Update localStorage in active tab
+          const tabs = await chrome.tabs.query({ url: 'chrome://newtab/*' });
+          if (tabs.length > 0) {
+            try {
+              await chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: (updatedData) => {
+                  localStorage.setItem('bookmarkManagerData', JSON.stringify(updatedData));
+                },
+                args: [data]
+              });
+            } catch (scriptError) {
+              console.error('Error updating localStorage:', scriptError);
+            }
+          }
+          
+          console.log('Automatic backup completed');
+        }
+      }
+    } catch (error) {
+      console.error('Error during automatic backup:', error);
+    }
+  }
+});
+
+// Initialize backup alarm on startup
+chrome.runtime.onStartup.addListener(() => {
+  chrome.alarms.create('dailyBackup', {
+    delayInMinutes: 1,
+    periodInMinutes: 60 // Check every hour
+  });
+});
+
+// Also create alarm on install
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create('dailyBackup', {
+    delayInMinutes: 1,
+    periodInMinutes: 60 // Check every hour
+  });
+});
+
+// Handle manual backup requests
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === 'createManualBackup') {
+    createManualBackup(message.data)
+      .then(sendResponse)
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
+});
+
+// Manual backup function (same as automatic backup)
+async function createManualBackup(data) {
+  // Manual backups use the same logic as automatic backups
+  return await createAutomaticBackup(data);
+}
