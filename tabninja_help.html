@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TheTab.Ninja - User Guide</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+        h1 {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-top: 40px;
+        }
+        h3 {
+            margin-top: 30px;
+        }
+        h4 {
+            color: #34495e;
+        }
+        code {
+            background-color: #ecf0f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9em;
+        }
+        ul, ol {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        strong {
+            color: #34495e;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .interface-diagram {
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .interface-pane {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        .interface-pane:not(:last-child) {
+            border-right: 1px solid #ddd;
+        }
+        .interface-pane strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+        .pro-tip {
+            background-color: #eafaf1;
+            border-left: 4px solid #2ecc71;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .pro-tip h4 {
+            margin-top: 0;
+            color: #27ae60;
+        }
+        .new-feature {
+            background-color: #e8f4fd;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .new-feature h4 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Getting Started with TheTab.Ninja</h1>
+        <p>Welcome to TheTab.Ninja! This guide will help you get up and running quickly, mastering all the features to organize your digital life.</p>
+
+        <h2>1. Introduction: What is TheTab.Ninja?</h2>
+        
+        <h3>Purpose and Background</h3>
+        <p>TheTab.Ninja is a Chrome browser extension that transforms your "new tab" page into a personal and powerful dashboard. In a world where we constantly juggle dozens of tabs and bookmarks, things can get messy. TheTab.Ninja solves this by giving you a central place to organize, manage, and quickly access everything that's important to you.</p>
+
+        <h3>Why Should I Use TheTab.Ninja?</h3>
+        <ul>
+            <li><strong>Full Control:</strong> You decide how your start page looks and functions.</li>
+            <li><strong>Privacy First:</strong> All your data is synced via your own GitHub account. No external servers, no data collection. Your data is your own.</li>
+            <li><strong>Efficiency:</strong> Save time by quickly finding bookmarks and managing open tabs directly from a single view.</li>
+            <li><strong>Collaboration:</strong> Share collections with colleagues or friends through a shared GitHub repository.</li>
+            <li><strong>Open Source:</strong> Completely transparent and developed by the community.</li>
+        </ul>
+
+        <h2>2. Features: A Step-by-Step Guide</h2>
+        <p>Here, we'll walk through the central features of TheTab.Ninja.</p>
+
+        <h3>Custom New Tab Page</h3>
+        <h4>Overview</h4>
+        <p>Your standard, blank "new tab" page is replaced with a living workspace. You can customize the background image, switch between light and dark themes, and arrange your collections exactly as you wish.</p>
+
+        <h4>How to Use It</h4>
+        <p>After installing the extension, every new tab will automatically display TheTab.Ninja. The interface is divided into three main sections:</p>
+        
+        <div class="interface-diagram">
+            <div class="interface-pane">
+                <strong>Left Pane</strong>
+                <span>Workspaces (Spaces) & Settings</span>
+            </div>
+            <div class="interface-pane">
+                <strong>Main Area</strong>
+                <span>📚 Your Collections & Bookmarks</span>
+            </div>
+            <div class="interface-pane">
+                <strong>Right Pane</strong>
+                <span>📋 Your Open Chrome Tabs</span>
+            </div>
+        </div>
+
+        <ul>
+            <li><strong>Panels:</strong> Click the hamburger icon (☰) to hide or show the side panels for more space.</li>
+            <li><strong>Spaces & Settings:</strong> In the left pane, use the <strong>Spaces</strong> tab to organize your collections into workspaces, and the <strong>Settings</strong> tab to change themes, wallpapers, and sync options.</li>
+        </ul>
+        
+        <h4>Customizing Your Background</h4>
+        <p>You can set a personal background by navigating to the left pane and opening the <strong>Settings</strong> tab. Under the "Wallpaper" section, you have two options:</p>
+        <ul>
+            <li><strong>Custom background images:</strong> Click the '<strong>+</strong>' (Add) button to upload your own image (JPEG/PNG). You can add up to 5 custom backgrounds. The extension will optimize them for performance.</li>
+            <li><strong>Predefined background images:</strong> Click any of the provided thumbnails to instantly apply a new look. To remove the background image completely, select the first blank thumbnail.</li>
+        </ul>
+
+        <h4>Tips</h4>
+        <p>Activate <strong>Zen Mode</strong> (🧘) in the settings for a minimalist view with just a clock and search bar. Your collections only appear when you scroll down or start searching. Perfect for when you need to focus!</p>
+        
+        <div class="new-feature">
+            <h4>New Feature: Enhanced Dialog Design</h4>
+            <p>Creating and editing bookmarks now features beautiful, modern dialogs with validation, loading states, and dark mode support. Use <code>Ctrl/Cmd+Enter</code> to quick-save and <code>Escape</code> to cancel.</p>
+        </div>
+
+        <h3>Bookmark Management with "Collections"</h3>
+        <h4>Overview</h4>
+        <p>Instead of a long, messy list of bookmarks, you organize your links into <strong>Collections</strong>. Think of a collection as a folder for a specific project, topic, or hobby.</p>
+
+        <h4>How to Use It</h4>
+        <ol>
+            <li><strong>Create a Collection:</strong> Click the green <strong>"Add Collection"</strong> button. Give it a name, like "Work Projects" or "Recipes."</li>
+            <li><strong>Add Bookmarks:</strong>
+                <ul>
+                    <li>Click the plus icon (+) in a collection's header to add a bookmark manually.</li>
+                    <li><strong>Or even easier:</strong> Drag an open tab from the right pane and drop it directly into a collection!</li>
+                </ul>
+            </li>
+            <li><strong>Manage Collections:</strong> Hover over a collection's header to see the icons:
+                <ul>
+                    <li>🚀 <strong>Launch as Group:</strong> Opens all bookmarks in the collection in a new, neat tab group in Chrome.</li>
+                    <li>➕ <strong>Add Bookmark:</strong> Manual entry.</li>
+                    <li>✏️ <strong>Edit Name:</strong> Change the collection's name.</li>
+                    <li>🏷️ <strong>Manage Spaces:</strong> Link the collection to different workspaces (more on that below).</li>
+                    <li>🗑️ <strong>Delete:</strong> Removes the collection.</li>
+                </ul>
+            </li>
+        </ol>
+        
+        <h4>Using Spaces to Organize Collections</h4>
+        <p>Use <strong>Spaces</strong> to categorize your collections. In the left pane's "Spaces" tab, you can create different workspaces like "Personal," "Work," or "Studies." Then, using the 🏷️ icon on a collection, you can link it to one or more spaces, allowing you to easily filter your view.</p>
+        
+        <div class="pro-tip">
+            <h4>Pro Tip: Quick-Link Collections to Spaces</h4>
+            <p>Here's a fast way to organize: You can drag a collection using its handle (☰) and drop it directly onto a Space in the left pane. This will automatically link the collection to that Space. <strong>Important:</strong> This drag-and-drop linking only works when your 'Collection sort order' is set to 'User defined (position)', as this is when the drag handle is visible.</p>
+        </div>
+        
+        <div class="new-feature">
+            <h4>New Feature: Advanced Collection Sorting</h4>
+            <p>Collections can now be sorted in multiple ways via <code>Settings > Collection sort order</code>:</p>
+            <ul>
+                <li><strong>User defined (position):</strong> Manual drag-and-drop ordering (traditional).</li>
+                <li><strong>Name (A-Z / Z-A):</strong> Alphabetical sorting.</li>
+                <li><strong>Last modified (newest/oldest first):</strong> Sort by recent activity.</li>
+            </ul>
+            <p><strong>Note:</strong> When using automatic sorting (not "User defined"), drag-and-drop reordering and move up/down buttons are disabled to maintain sort consistency.</p>
+        </div>
+        
+        <div class="pro-tip">
+            <h4>Pro Tip: Understanding Manual Sorting in Spaces</h4>
+            <p>When you sort collections with the up/down arrows (in "User defined" sort mode), the sorting is always applied to the master list in the "Everything" space. If you are in a filtered Space (e.g., "Work"), you might have to click an arrow multiple times to see the collection move. This is because the collection is moving past other items in the master list that are not visible in your current view.</p>
+        </div>
+
+        <h3>Tab and Window Management</h3>
+        <h4>Overview</h4>
+        <p>The right pane displays all your open tabs and windows in real-time. This gives you an excellent overview and a powerful way to clean up your tabs.</p>
+
+        <h4>How to Use It</h4>
+        <ul>
+            <li><strong>Overview:</strong> See all your windows, tab groups, and individual tabs.</li>
+            <li><strong>Save Single Tabs:</strong> Click and drag a tab from the right pane to a collection in the main area to save it as a bookmark.</li>
+            <li><strong>Save Entire Groups/Windows:</strong> Click and drag the title of an entire <strong>tab group</strong> or a whole <strong>Chrome window</strong> and drop it onto an empty area in the middle. TheTab.Ninja will automatically create a new collection with all the tabs from that group/window!</li>
+        </ul>
+
+        <h3>Search and Filter Functionality</h3>
+        <h4>Overview</h4>
+        <p>The search bar at the top is your best friend for quickly finding what you're looking for, whether it's a bookmark or a collection.</p>
+        
+        <h4>How to Use It</h4>
+        <p>Type directly into the search bar. Here are some special commands:</p>
+        <ul>
+            <li><code>#work</code>: Searches <strong>only</strong> among the names of your collections.</li>
+            <li><code>%report</code>: Searches globally in <strong>both</strong> collections and bookmarks.</li>
+            <li><code>term1|term2</code>: Finds items containing either "term1" OR "term2".</li>
+            <li><code>?today's weather</code>: Performs a Google search in a new tab.</li>
+            <li><code>!explain quantum computing</code>: Sends a query to ChatGPT in a new tab.</li>
+        </ul>
+        
+        <div class="new-feature">
+            <h4>New Feature: Mobile Optimization</h4>
+            <p>TheTab.Ninja now includes full mobile support with:</p>
+            <ul>
+                <li><strong>Responsive Design:</strong> Touch-optimized layout for smartphones and tablets.</li>
+                <li><strong>Mobile Controls:</strong> Icon-only buttons for space efficiency (+ instead of "Add Collection").</li>
+                <li><strong>Zen Mode Behavior:</strong> Automatically disabled on mobile for an optimal experience.</li>
+                <li><strong>Mobile Navigation:</strong> Pane toggle buttons for easy access to settings and tabs.</li>
+            </ul>
+            <p>Android users can install TheTab.Ninja extension in browsers like Kiwi or Lemur (via the Chrome Web Store).</p>
+        </div>
+
+        <h2>3. Configuration and Customization</h2>
+        <p>You can customize TheTab.Ninja via the <strong>left pane</strong> and the <strong>popup window</strong>.</p>
+        <ul>
+            <li><strong>Configuring GitHub Sync:</strong> In the left pane under Settings, fill in your GitHub username, repository name, and a Personal Access Token (PAT) to enable synchronization. Click the "How do I create..." link for a guide.</li>
+            <li><strong>Initiating a Sync:</strong> Syncing is a <strong>manual process</strong>. After a valid configuration is saved, a sync button (🔄) will appear in the top bar. Click this button to push and pull your data from GitHub. The button will animate while syncing.</li>
+            <li><strong>Import/Export:</strong> Back up your collections or import from tools like Toby (now with support for Toby's v4 JSON format).</li>
+            <li><strong>Automatic Backup:</strong> TheTab.Ninja now includes an automatic backup system that saves your data locally to protect against data loss.</li>
+            <li><strong>Popup Window:</strong> When you click TheTab.Ninja icon in your browser's toolbar, you can quickly save the current tab. Enter the name of an existing collection or a new name to create a new one, and click "Save current tab".</li>
+        </ul>
+
+        <h4>Key Settings Explained</h4>
+        <p>In the Settings tab, you will find these useful options:</p>
+        <ul>
+            <li><strong>Open bookmarks in a new tab:</strong> Ticking this box ensures that every time you click a bookmark, it opens in a brand new tab, leaving your TheTab.Ninja page untouched.</li>
+            <li><strong>Close Chrome tabs when saved:</strong> A powerful productivity feature. When enabled, any open tab you drag into a collection will be automatically closed after it's saved.</li>
+            <li><strong>Dark mode / Zen mode:</strong> Toggle these modes to customize your visual experience.</li>
+        </ul>
+
+        <h2>4. Data Protection & Backup System</h2>
+        
+        <h3>Overview</h3>
+        <p>TheTab.Ninja includes a comprehensive backup system to protect your valuable bookmark collections and settings. This system works independently of GitHub sync and provides local file backups stored in your Downloads folder.</p>
+        
+        <h3>How Automatic Backup Works</h3>
+        <p>The backup system automatically creates JSON files containing all your collections, bookmarks, and settings. These files are saved to your Downloads folder and can be used to restore your data if needed.</p>
+        
+        <h4>Setting Up Automatic Backups</h4>
+        <ol>
+            <li><strong>Access Settings:</strong> Open the left pane and click the "Settings" tab.</li>
+            <li><strong>Navigate to Data Management:</strong> Scroll down to the "Data Management" section.</li>
+            <li><strong>Configure Backup Frequency:</strong> Choose from the dropdown menu:
+                <ul>
+                    <li><strong>Daily:</strong> Creates a backup every day (recommended for active users)</li>
+                    <li><strong>Weekly:</strong> Creates a backup once per week</li>
+                    <li><strong>Disabled:</strong> Turns off automatic backups</li>
+                </ul>
+            </li>
+            <li><strong>Set Retention Period:</strong> Choose how long to keep old backups (3-30 days).</li>
+            <li><strong>Choose Backup Location:</strong> Optionally select a custom subfolder in Downloads.</li>
+        </ol>
+        
+        <h4>Backup Frequency Options</h4>
+        <ul>
+            <li><strong>Daily Backups:</strong> Perfect for users who frequently add or modify collections. Ensures you never lose more than one day's work.</li>
+            <li><strong>Weekly Backups:</strong> Suitable for users who make changes less frequently. Provides good protection while using less storage space.</li>
+            <li><strong>Disabled:</strong> Turns off automatic backups completely. Only recommended if you're using GitHub sync or have another backup strategy.</li>
+        </ul>
+        
+        <h4>Backup Retention & Cleanup</h4>
+        <p>To prevent your Downloads folder from filling up, TheTab.Ninja automatically removes old backup files:</p>
+        <ul>
+            <li><strong>3 days:</strong> Keeps only the most recent backups (minimal storage)</li>
+            <li><strong>7 days:</strong> Provides a good balance of protection and storage (default)</li>
+            <li><strong>14 days:</strong> Keeps two weeks of backup history</li>
+            <li><strong>30 days:</strong> Maximum retention for comprehensive protection</li>
+        </ul>
+        
+        <h4>Customizing Backup Location</h4>
+        <p>By default, backups are saved directly to your Downloads folder. You can organize them better by:</p>
+        <ol>
+            <li><strong>Click "Choose Subfolder":</strong> This opens a dialog where you can specify a custom folder name.</li>
+            <li><strong>Enter Folder Name:</strong> For example, "TheTabNinja" or "MyBackups".</li>
+            <li><strong>Confirm:</strong> All future backups will be saved to <code>Downloads/YourFolderName/</code>.</li>
+            <li><strong>Find Your Backups:</strong> Click "Open Folder" to get instructions on locating your backup files.</li>
+        </ol>
+        
+        <h3>Manual Backup</h3>
+        <p>In addition to automatic backups, you can create manual backups anytime:</p>
+        <ol>
+            <li><strong>Click "Create Backup Now":</strong> This button is in the Data Management section.</li>
+            <li><strong>Wait for Confirmation:</strong> The button will show "Creating backup..." and then "Backup created!"</li>
+            <li><strong>Find Your File:</strong> The backup is saved to your configured location with a timestamp.</li>
+        </ol>
+        
+        <h3>Understanding Backup Files</h3>
+        <p>Backup files are named with timestamps for easy identification:</p>
+        <ul>
+            <li><strong>Format:</strong> <code>tabninja-backup-2024-01-15-14-30-00.json</code></li>
+            <li><strong>Date:</strong> YYYY-MM-DD (2024-01-15 = January 15, 2024)</li>
+            <li><strong>Time:</strong> HH-MM-SS (14-30-00 = 2:30:00 PM)</li>
+            <li><strong>Content:</strong> Complete JSON export of all your data</li>
+        </ul>
+        
+        <h3>Restoring from Backup</h3>
+        <p>To restore your data from a backup file:</p>
+        <ol>
+            <li><strong>Access Import:</strong> In Settings > Data Management, find the "Import Data" section.</li>
+            <li><strong>Select Backup File:</strong> Click "Import Tab Collections" and choose your backup JSON file.</li>
+            <li><strong>Confirm Restoration:</strong> Your collections and settings will be restored from the backup.</li>
+            <li><strong>Verify Data:</strong> Check that your collections and bookmarks are restored correctly.</li>
+        </ol>
+        
+        <div class="pro-tip">
+            <h4>Pro Tip: Backup Strategy</h4>
+            <p>For maximum protection, use a combination of:</p>
+            <ul>
+                <li><strong>Daily automatic backups</strong> for recent changes</li>
+                <li><strong>GitHub sync</strong> for cross-device synchronization</li>
+                <li><strong>Manual backups</strong> before making major changes</li>
+            </ul>
+            <p>This triple protection ensures your data is safe even if your computer crashes or your browser data is corrupted.</p>
+        </div>
+        
+        <div class="new-feature">
+            <h4>New Feature: Smart Backup System</h4>
+            <p>TheTab.Ninja's backup system includes several intelligent features:</p>
+            <ul>
+                <li><strong>Automatic Scheduling:</strong> Backups run in the background using Chrome's alarm system</li>
+                <li><strong>Smart Timing:</strong> Only creates backups when data has actually changed</li>
+                <li><strong>Reliable Storage:</strong> Uses Chrome's Downloads API for maximum compatibility</li>
+                <li><strong>Cross-Session Persistence:</strong> Backup schedule continues even after browser restarts</li>
+            </ul>
+        </div>
+        
+        <h3>Troubleshooting Backup Issues</h3>
+        
+        <h4>Backup Not Created</h4>
+        <ul>
+            <li><strong>Check Settings:</strong> Ensure backup frequency is not set to "Disabled"</li>
+            <li><strong>Verify Permissions:</strong> Make sure Chrome has permission to access your Downloads folder</li>
+            <li><strong>Try Manual Backup:</strong> Use "Create Backup Now" to test the system</li>
+        </ul>
+        
+        <h4>Cannot Find Backup Files</h4>
+        <ul>
+            <li><strong>Check Downloads Folder:</strong> Look in your browser's default Downloads directory</li>
+            <li><strong>Check Subfolder:</strong> If you set a custom folder, look in <code>Downloads/YourFolderName/</code></li>
+            <li><strong>Use "Open Folder" Button:</strong> Click this for specific instructions on your backup location</li>
+        </ul>
+        
+        <h4>Backup File Too Large</h4>
+        <ul>
+            <li><strong>Check Collection Size:</strong> Large collections with many bookmarks create bigger backups</li>
+            <li><strong>Clean Up Unused Data:</strong> Remove old or unnecessary collections before backing up</li>
+            <li><strong>Adjust Retention:</strong> Reduce backup retention period to save storage space</li>
+        </ul>
+
+        <h2>5. Real-World Workflows</h2>
+        
+        <h3>Scenario 1: "How to Organize Your Most-Used Bookmarks"</h3>
+        <ol>
+            <li><strong>Create Context-Based Collections:</strong> Create collections like "Daily Tools," "News Feed," "Project X," and "Read Later."</li>
+            <li><strong>Gather Your Links:</strong> Drag your most important open tabs from the right pane to their respective collections. Use the popup window to quickly save new pages you discover.</li>
+            <li><strong>Use Spaces:</strong> Create a "Work" space and a "Personal" space. Link "Daily Tools" and "Project X" to "Work." Link "News Feed" to both using the 🏷️ icon or by dragging the collection to the space.</li>
+            <li><strong>Result:</strong> Now you can easily switch between your spaces to see only the collections relevant to what you're doing.</li>
+        </ol>
+
+        <h3>Scenario 2: "How to Efficiently Manage Large Tab Sessions"</h3>
+        <ol>
+            <li><strong>Situation:</strong> You have 25 tabs open after a research session on a topic.</li>
+            <li><strong>Save the Session:</strong> In the right pane, find the Chrome window containing your session. Click the window's title, drag it to the middle of the screen, and release.</li>
+            <li><strong>Name and Clean Up:</strong> TheTab.Ninja creates a new collection with all 25 tabs. Rename it to "Research - Quantum Computing." If you have "Close Chrome tabs when saved" active, all tabs will close automatically. Otherwise, you can close them manually.</li>
+            <li><strong>Resume Your Work:</strong> The next day, find your collection and click the rocket icon (🚀). All 25 tabs will open neatly in their own tab group, and you can pick up where you left off.</li>
+        </ol>
+
+        <h2>6. Frequently Asked Questions (FAQ) & Troubleshooting</h2>
+
+        <h3>1. Why isn't GitHub Sync working?</h3>
+        <p><strong>Solution:</strong> Double-check that all three fields (username, repo, PAT) are correctly filled in the settings. Ensure your Personal Access Token (PAT) has <code>repo</code> permissions. The repository must also be created and not empty (a <code>README.md</code> file is sufficient).</p>
+
+        <h3>2. My collections disappeared! Where are they?</h3>
+        <p><strong>Solution:</strong> You've likely switched to a different "Space." Look in the left pane's "Spaces" tab and make sure you've selected the correct workspace, or choose "Everything" to see all your collections regardless of space.</p>
+
+        <h3>3. Why can't I drag and reorder my collections?</h3>
+        <p><strong>Solution:</strong> You can only reorder collections when the sort mode is set to "User defined." Go to <code>Settings -> Collection sort order</code> and select "User defined (position)". The drag handle (☰) will then appear.</p>
+        
+        <h3>4. How do I reset everything to default?</h3>
+        <p><strong>Solution:</strong> In the settings, there is a <strong>"Delete All"</strong> button. It will delete all your collections and restore the default one. <strong>NOTE:</strong> This action cannot be undone. For a total reset, open your browser's developer tools (F12), go to <code>Application -> Local Storage</code>, right-click and select <code>Clear</code>.</p>
+
+        <h3>5. Zen Mode is on, but I only see a clock. How do I access my bookmarks?</h3>
+        <p><strong>Solution:</strong> This is by design! Simply scroll down with your mouse wheel, or start typing in the search bar that appears. The clock will fade out, and your collections will become visible.</p>
+
+        <h3>6. I dragged a tab group to a collection, but nothing happened.</h3>
+        <p><strong>Solution:</strong> Make sure you drag the group onto an <strong>existing collection</strong> to add the bookmarks there. If you want to create a <strong>new collection</strong> from the group, drag it to an <strong>empty area</strong> on the page instead (not on top of another collection).</p>
+        
+        <h3>7. My automatic backups aren't working. What should I check?</h3>
+        <p><strong>Solution:</strong> First, ensure that backup frequency is not set to "Disabled" in Settings > Data Management. Check that Chrome has permission to access your Downloads folder. Try creating a manual backup using "Create Backup Now" to test the system. If backups still don't work, your Chrome may be blocking the Downloads API - check your browser's download permissions.</p>
+        
+        <h3>8. I can't find my backup files. Where are they stored?</h3>
+        <p><strong>Solution:</strong> Backup files are saved to your browser's Downloads folder by default. If you set a custom subfolder, look in <code>Downloads/YourFolderName/</code>. Use the "Open Folder" button in Settings > Data Management for specific instructions on your backup location. The files are named with timestamps like <code>tabninja-backup-2024-01-15-14-30-00.json</code>.</p>
+        
+        <h3>9. How do I restore my data from a backup file?</h3>
+        <p><strong>Solution:</strong> Go to Settings > Data Management > Import Data. Click "Import Tab Collections" and select your backup JSON file. This will restore all your collections and settings from the backup. <strong>Warning:</strong> This will overwrite your current data, so make sure you have a recent backup first!</p>
+        
+        <h3>10. My backup files are taking up too much space. How can I manage them?</h3>
+        <p><strong>Solution:</strong> TheTab.Ninja automatically removes old backups based on your retention setting. You can reduce storage usage by: 1) Lowering the retention period (e.g., from 30 days to 7 days), 2) Changing backup frequency from daily to weekly, or 3) Manually deleting old backup files from your Downloads folder.</p>
+
+        <h2>7. Conclusion and Further Reading</h2>
+        <p>Thank you for using TheTab.Ninja! We hope it helps you become more organized and productive.</p>
+        <ul>
+            <li><strong>Official GitHub:</strong> <a href="https://github.com/kodar-ninja/TheTab.Ninja" target="_blank">https://github.com/kodar-ninja/TheTab.Ninja</a> (Here you can view the source code, report bugs, and suggest new features).</li>
+            <li><strong>Support & Contact:</strong> Visit <a href="https://kodar.ninja/" target="_blank">kodar.ninja</a> for more information and contact details.</li>
+            <li><strong>Enjoy the tool?</strong> Please consider supporting development via the "Buy Me a Coffee" button in the extension.</li>
+        </ul>
+    </div>
+
+</body>
+</html>
