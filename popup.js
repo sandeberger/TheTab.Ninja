@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         title: currentTab.title,
         url: currentTab.url,
         description: "",
-        icon: currentTab.favIconUrl || "default-icon.png",
+        icon: currentTab.favIconUrl || "assets/icons/default-icon.png",
         lastModified: Date.now(),
         deleted: false,
         position: matchedCollection.bookmarks.length

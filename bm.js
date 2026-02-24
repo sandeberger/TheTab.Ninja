@@ -15,6 +15,15 @@ let bookmarkManagerData = {
     spaces: ['Everything'], // Default space that cannot be removed
     currentSpace: 'Everything',
     collectionSortOrder: 'userdefined', // New setting for collection sorting
+    autoBackup: {
+        enabled: true, // Default enabled
+        frequency: 'daily', // daily, weekly, disabled
+        keepDays: 7, // Keep backups for 7 days
+        lastBackup: null, // Timestamp of last backup
+        customFolder: null, // File system directory handle
+        folderPath: 'Downloads', // Display path for user
+        useCustomFolder: false // Whether to use custom folder
+    },
     githubConfig: {
         username: '',
         repo: '',
@@ -26,11 +35,16 @@ let bookmarkManagerData = {
 let draggedItem = null;
 let placeholder = null;
 
+// Fallback icon paths (extracted from inline base64 SVGs)
+const FALLBACK_ICON = 'assets/icons/fallback-icon.svg';
+const FALLBACK_ICON_LIGHT = 'assets/icons/fallback-icon-light.svg';
+const FALLBACK_ICON_DARK = 'assets/icons/fallback-icon-dark.svg';
+
 // Function to validate and clean favicon URLs
 function getSafeIconUrl(iconUrl) {
     // Return fallback immediately if no URL provided
-    if (!iconUrl || iconUrl === 'default-icon.png') {
-        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+    if (!iconUrl || iconUrl === 'assets/icons/default-icon.png') {
+        return FALLBACK_ICON;
     }
     
     // If it's already a data URL, return as is
@@ -62,7 +76,7 @@ function getSafeIconUrl(iconUrl) {
                 }
             } catch (e) {
                 // If URL parsing fails, return fallback
-                return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                return FALLBACK_ICON;
             }
         }
     }
@@ -133,7 +147,7 @@ window.addEventListener('error', function(e) {
         // If it doesn't already have a fallback, set a generic one
         if (!e.target.dataset.fallbackApplied) {
             e.target.dataset.fallbackApplied = 'true';
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzk5OTk5OSIvPgo8cGF0aCBkPSJNMTAgMTBIMjJWMTJIMTBWMTBaTTEwIDE1SDIyVjE3SDEwVjE1Wk0xMCAyMEgyMlYyMkgxMFYyMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPg==';
+            e.target.src = FALLBACK_ICON_LIGHT;
         }
         return false;
     }
@@ -256,7 +270,7 @@ function setBackground(imageName, type = 'predefined') {
     } else if (imageName === 'wp_none.png') {
         document.body.style.backgroundImage = 'none';
     } else {
-        document.body.style.backgroundImage = `url("large_${imageName}")`;
+        document.body.style.backgroundImage = `url("assets/wallpapers/large_${imageName}")`;
     }
 }
 
@@ -383,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Generera miniatyrer och lägg till event listeners
     backgroundImages.forEach(imageName => {
         const thumbnailImg = document.createElement('img');
-        thumbnailImg.src = `${imageName}`; // Sökväg till miniatyrbilden
+        thumbnailImg.src = `assets/wallpapers/${imageName}`; // Sökväg till miniatyrbilden
         thumbnailImg.alt = `Bakgrundsbild ${imageName}`;
         thumbnailImg.className = 'background-thumbnail';
         thumbnailImg.dataset.imageName = imageName; // Lagra bildnamnet i data-attributet
@@ -714,7 +728,7 @@ function removeCustomBackground(imageId) {
                 'wp_img02.png',
                 'wp_img03.png',
                 'wp_img05.png',
-                'wp_img06.png',
+                'wp_img16.png',
                 'wp_img07.png',
                 'wp_img08.png',
                 'wp_img09.png',
@@ -1187,7 +1201,7 @@ function createCollectionFromTabGroup(tabGroupData) {
                 title: tab.title || 'Untitled',
                 url: tab.url,
                 description: "",
-                icon: tab.favIconUrl || 'default-icon.png',
+                icon: tab.favIconUrl || 'assets/icons/default-icon.png',
                 lastModified: Date.now(),
                 deleted: false,
                 position: position++
@@ -1353,7 +1367,7 @@ async function importTobyBookmarks() {
                                 title: card.customTitle || card.title || 'Untitled Bookmark', // Fallback för titel
                                 url: card.url || '#', // Fallback för URL
                                 description: card.customDescription || card.description || '',
-                                icon: card.favIconUrl || (card.url ? await getFavicon(card.url) : 'default-icon.png') // Använd befintlig favIconUrl om den finns
+                                icon: card.favIconUrl || (card.url ? await getFavicon(card.url) : 'assets/icons/default-icon.png') // Använd befintlig favIconUrl om den finns
                             });
                         }));
                         newCollection.bookmarks = newCollection.bookmarks.filter(b => b !== null); // Ta bort null-värden (från överhoppade kort)
@@ -1764,7 +1778,7 @@ function loadFromLocalStorage() {
                                 title: tab.title,
                                 url: tab.url,
                                 description: "",
-                                icon: tab.favIconUrl || "default-icon.png",
+                                icon: tab.favIconUrl || "assets/icons/default-icon.png",
                                 lastModified: Date.now(),
                                 deleted: false,
                                 position: collection.bookmarks.length
@@ -1804,7 +1818,7 @@ function loadFromLocalStorage() {
             // Handle favicon loading errors gracefully
             bookmarkIcon.onerror = function() {
                 // Fallback to a generic icon if loading fails
-                this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                this.src = FALLBACK_ICON;
                 this.onerror = null; // Prevent infinite loops
             };
 
@@ -1937,7 +1951,7 @@ function loadFromLocalStorage() {
                     
                     if (chrome.runtime.lastError) {
                         // Fallback to embedded SVG icon on communication error
-                        const fallbackUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                        const fallbackUrl = FALLBACK_ICON;
                         resolve(fallbackUrl);
                         return;
                     }
@@ -1946,7 +1960,7 @@ function loadFromLocalStorage() {
                         resolve(response.faviconUrl);
                     } else {
                         // Fallback to embedded SVG icon if no response
-                        const fallbackUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+                        const fallbackUrl = FALLBACK_ICON;
                         resolve(fallbackUrl);
                     }
                 });
@@ -2001,7 +2015,7 @@ function loadFromLocalStorage() {
             } catch (error) {
                 console.error('Error fetching favicon:', error);
             }
-            return 'default-icon.png';
+            return 'assets/icons/default-icon.png';
         }
 // Helper function to enrich a single bookmark
 function enrichBookmark(bookmark) {
@@ -3396,7 +3410,7 @@ function dropBookmarkContainer(e) {
                     title: tab.title,
                     url: tab.url,
                     description: "",
-                    icon: tab.favIconUrl || 'default-icon.png',
+                    icon: tab.favIconUrl || 'assets/icons/default-icon.png',
                     lastModified: Date.now(),
                     deleted: false,
                     position: collection.bookmarks.length
@@ -3427,7 +3441,7 @@ function dropBookmarkContainer(e) {
                     title: tab.title,
                     url: tab.url,
                     description: "",
-                    icon: tab.favIconUrl || 'default-icon.png',
+                    icon: tab.favIconUrl || 'assets/icons/default-icon.png',
                     lastModified: Date.now(),
                     deleted: false,
                     position: collection.bookmarks.length
@@ -3460,7 +3474,7 @@ function dropBookmarkContainer(e) {
                 title: draggedItem.data.title,
                 url: draggedItem.data.url,
                 description: '',
-                icon: draggedItem.data.icon || 'default-icon.png',
+                icon: draggedItem.data.icon || 'assets/icons/default-icon.png',
                 lastModified: Date.now(),
                 deleted: false,
                 position: collection.bookmarks.length
@@ -3512,7 +3526,7 @@ function createChromeTabElement(tab, windowId) {
     // Handle tab favicon loading errors gracefully
     tabIcon.onerror = function() {
         // Fallback to a generic tab icon if loading fails
-        this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzY2NjY2NiIvPgo8cGF0aCBkPSJNMTAgMTBIMjJWMTJIMTBWMTBaTTEwIDE1SDIyVjE3SDEwVjE1Wk0xMCAyMEgyMlYyMkgxMFYyMFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPg==';
+        this.src = FALLBACK_ICON_DARK;
         this.onerror = null; // Prevent infinite loops
     };
     
@@ -3999,6 +4013,102 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Favicon URLs have been cleaned up and fixed!');
     });
 
+    // Backup settings event listeners
+    document.getElementById('autoBackupEnabled').addEventListener('change', (e) => {
+        bookmarkManagerData.autoBackup.enabled = e.target.checked;
+        updateBackupSettingsVisibility();
+        saveToLocalStorage();
+        syncToStorage();
+    });
+
+    document.getElementById('backupFrequency').addEventListener('change', (e) => {
+        bookmarkManagerData.autoBackup.frequency = e.target.value;
+        bookmarkManagerData.autoBackup.enabled = e.target.value !== 'disabled';
+        document.getElementById('autoBackupEnabled').checked = bookmarkManagerData.autoBackup.enabled;
+        updateBackupSettingsVisibility();
+        saveToLocalStorage();
+        syncToStorage();
+    });
+
+    document.getElementById('backupRetention').addEventListener('change', (e) => {
+        bookmarkManagerData.autoBackup.keepDays = parseInt(e.target.value);
+        saveToLocalStorage();
+        syncToStorage();
+    });
+
+    document.getElementById('manualBackupButton').addEventListener('click', async () => {
+        const button = document.getElementById('manualBackupButton');
+        const originalText = button.textContent;
+        button.textContent = 'Creating backup...';
+        button.disabled = true;
+        
+        try {
+            const response = await chrome.runtime.sendMessage({
+                action: 'createManualBackup',
+                data: bookmarkManagerData
+            });
+            
+            if (response.success) {
+                button.textContent = 'Backup created!';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }, 2000);
+            } else {
+                throw new Error(response.error || 'Failed to create backup');
+            }
+        } catch (error) {
+            alert('Error creating backup: ' + error.message);
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    });
+
+    // Backup folder selection
+    document.getElementById('selectBackupFolder').addEventListener('click', async () => {
+        try {
+            if ('showDirectoryPicker' in window) {
+                const dirHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite',
+                    startIn: 'downloads'
+                });
+                
+                // Store the directory handle (note: this may not persist across sessions)
+                bookmarkManagerData.autoBackup.customFolder = dirHandle;
+                bookmarkManagerData.autoBackup.useCustomFolder = true;
+                bookmarkManagerData.autoBackup.folderPath = dirHandle.name;
+                
+                // Update UI
+                document.getElementById('backupFolderPath').textContent = dirHandle.name;
+                
+                saveToLocalStorage();
+                syncToStorage();
+                
+                alert('Backup folder updated to: ' + dirHandle.name);
+            } else {
+                // Fallback for browsers without File System Access API
+                const customPath = prompt('Enter custom subfolder name (will be created in Downloads):', 'TheTabNinja');
+                if (customPath && customPath.trim()) {
+                    bookmarkManagerData.autoBackup.useCustomFolder = true;
+                    bookmarkManagerData.autoBackup.folderPath = 'Downloads/' + customPath.trim();
+                    bookmarkManagerData.autoBackup.customFolderName = customPath.trim();
+                    
+                    document.getElementById('backupFolderPath').textContent = bookmarkManagerData.autoBackup.folderPath;
+                    
+                    saveToLocalStorage();
+                    syncToStorage();
+                    
+                    alert('Backups will be saved to: ' + bookmarkManagerData.autoBackup.folderPath);
+                }
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Error selecting backup folder:', error);
+                alert('Error selecting folder: ' + error.message);
+            }
+        }
+    });
+
     // GitHub settings event listeners
     document.getElementById('githubUsername').addEventListener('change', (e) => {
         bookmarkManagerData.githubConfig.username = e.target.value;
@@ -4105,11 +4215,61 @@ document.addEventListener('DOMContentLoaded', () => {
         syncButton.style.display = isGitHubConfigValid() ? 'flex' : 'none';
     }
 
+    function updateBackupSettingsVisibility() {
+        const enabled = bookmarkManagerData.autoBackup.enabled;
+        const frequencySection = document.getElementById('backupFrequencySection');
+        const retentionSection = document.getElementById('backupRetentionSection');
+        const folderSection = document.getElementById('backupFolderSection');
+        
+        if (frequencySection) {
+            frequencySection.style.display = enabled ? 'block' : 'none';
+        }
+        if (retentionSection) {
+            retentionSection.style.display = enabled ? 'block' : 'none';
+        }
+        if (folderSection) {
+            folderSection.style.display = enabled ? 'block' : 'none';
+        }
+    }
+
+    async function syncToStorage() {
+        try {
+            await chrome.storage.local.set({ bookmarkManagerData: bookmarkManagerData });
+        } catch (error) {
+            console.error('Error syncing to storage:', error);
+        }
+    }
+
+    function loadBackupSettings() {
+        const autoBackupEnabled = document.getElementById('autoBackupEnabled');
+        const backupFrequency = document.getElementById('backupFrequency');
+        const backupRetention = document.getElementById('backupRetention');
+        const backupFolderPath = document.getElementById('backupFolderPath');
+        
+        if (autoBackupEnabled) {
+            autoBackupEnabled.checked = bookmarkManagerData.autoBackup.enabled;
+        }
+        if (backupFrequency) {
+            backupFrequency.value = bookmarkManagerData.autoBackup.frequency;
+        }
+        if (backupRetention) {
+            backupRetention.value = bookmarkManagerData.autoBackup.keepDays.toString();
+        }
+        if (backupFolderPath) {
+            backupFolderPath.textContent = bookmarkManagerData.autoBackup.folderPath || 'Downloads';
+        }
+        
+        updateBackupSettingsVisibility();
+    }
+
     // Initialisera GitHub-fälten och sync-knappens synlighet
     document.getElementById('githubUsername').value = bookmarkManagerData.githubConfig.username || '';
     document.getElementById('githubRepo').value = bookmarkManagerData.githubConfig.repo || '';
     document.getElementById('githubPat').value = bookmarkManagerData.githubConfig.pat || '';
     updateSyncButtonVisibility();
+    
+    // Load backup settings
+    loadBackupSettings();
 
 
     const searchBox = document.getElementById('searchBox');    
