@@ -128,6 +128,44 @@
                                     Data Management
                                 </h3>
                                 <div class="setting-item-vertical">
+                                    <label>Auto Backup</label>
+                                    <div class="setting-item-horizontal">
+                                        <label class="switch">
+                                            <input type="checkbox" id="autoBackupEnabled">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span>Enable automatic daily backups</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item-vertical" id="backupFrequencySection">
+                                    <label>Backup Frequency</label>
+                                    <select id="backupFrequency">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="disabled">Disabled</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item-vertical" id="backupRetentionSection">
+                                    <label>Keep Backups</label>
+                                    <select id="backupRetention">
+                                        <option value="3">3 days</option>
+                                        <option value="7">7 days</option>
+                                        <option value="14">14 days</option>
+                                        <option value="30">30 days</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item-vertical" id="backupFolderSection">
+                                    <label>Backup Folder</label>
+                                    <div class="setting-item-horizontal">
+                                        <span id="backupFolderPath">Downloads</span>
+                                        <button id="selectBackupFolder" class="import-button">Change Folder</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item-vertical">
+                                    <label>Manual Backup</label>
+                                    <button id="manualBackupButton" class="import-button">Create Backup Now</button>
+                                </div>
+                                <div class="setting-item-vertical">
                                     <label>Export Data</label>
                                     <button id="exportButton" class="import-button">Export Tab Collections</button>
                                 </div>
@@ -236,6 +274,18 @@
         </a>
     </div>
     
-    <script src="bm.js"></script>    
+    <script src="js/globals.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/favicon.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/ui-dialogs.js"></script>
+    <script src="js/drag-drop.js"></script>
+    <script src="js/ui-render.js"></script>
+    <script src="js/background-manager.js"></script>
+    <script src="js/spaces.js"></script>
+    <script src="js/zen.js"></script>
+    <script src="js/confetti.js"></script>
+    <script src="js/init.js"></script>
 </body>
 </html>
