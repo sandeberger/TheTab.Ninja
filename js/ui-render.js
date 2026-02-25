@@ -22,6 +22,7 @@ function applyFilter(searchTerm) {
         const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
         if (!collectionData) return;
         const bookmarksContainer = collectionElement.querySelector('.bookmarks');
+        if (!bookmarksContainer) return;
         const bookmarkElements = bookmarksContainer.querySelectorAll('.bookmark');
         let showCollection = false;
         let hasVisibleBookmarks = false;
@@ -102,11 +103,15 @@ function applyFilter(searchTerm) {
 // Set background image
 function setBackground(imageName, type = 'predefined') {
     if (type === 'custom') {
+        // Only allow data:image/ URLs for custom backgrounds
+        if (!imageName || !imageName.startsWith('data:image/')) return;
         document.body.style.backgroundImage = `url("${imageName}")`;
     } else if (imageName === 'wp_none.png') {
         document.body.style.backgroundImage = 'none';
     } else {
-        document.body.style.backgroundImage = `url("assets/wallpapers/large_${imageName}")`;
+        // Sanitize predefined image name to prevent path traversal
+        const sanitized = imageName.replace(/[^a-zA-Z0-9_.]/g, '');
+        document.body.style.backgroundImage = `url("assets/wallpapers/large_${sanitized}")`;
     }
 }
 
@@ -279,7 +284,16 @@ function renderCollections() {
         searchBox.dispatchEvent(event);
     }
 
-    saveToLocalStorage();
+}
+
+// Validate that a URL uses a safe protocol
+function isSafeUrl(url) {
+    try {
+        const parsed = new URL(url);
+        return ['http:', 'https:', 'ftp:'].includes(parsed.protocol);
+    } catch {
+        return false;
+    }
 }
 
 // Open all tabs in a collection
@@ -287,14 +301,14 @@ function launchAllTabs(collectionId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
     if (collection) {
         const urls = collection.bookmarks
-            .filter(bookmark => !bookmark.deleted)
+            .filter(bookmark => !bookmark.deleted && isSafeUrl(bookmark.url))
             .map(bookmark => bookmark.url);
 
         urls.forEach(url => {
             chrome.tabs.create({ url: url });
         });
     } else {
-        console.error(`Collection med id ${collectionId} hittades inte.`);
+        console.error(`Collection with id ${collectionId} not found.`);
     }
 }
 
@@ -310,10 +324,14 @@ function createButton(className, text, tooltipText) {
 }
 
 // Fetch all Chrome tabs into a collection
-async function fetchAllTabs(collectionId) {
-    try {
-        const selfUrl = chrome.runtime.getURL("bm.html");
-        chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+function fetchAllTabs(collectionId) {
+    const selfUrl = chrome.runtime.getURL("bm.html");
+    chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+        try {
+            if (chrome.runtime.lastError) {
+                console.error("Error fetching tabs:", chrome.runtime.lastError);
+                return;
+            }
             if (response && response.length > 0) {
                 let allTabs = [];
                 response.forEach(windowData => {
@@ -346,10 +364,10 @@ async function fetchAllTabs(collectionId) {
                 renderCollections();
                 saveToLocalStorage();
             }
-        });
-    } catch (error) {
-        console.error("Error in fetchAllTabs:", error);
-    }
+        } catch (error) {
+            console.error("Error in fetchAllTabs:", error);
+        }
+    });
 }
 
 // Create a bookmark DOM element
@@ -438,7 +456,6 @@ function addCollection() {
     if (name) {
         bookmarkManagerData.collections.forEach(c => {
             c.position++;
-            c.lastModified = Date.now();
         });
 
         const currentSpace = bookmarkManagerData.currentSpace || 'Everything';
@@ -494,15 +511,20 @@ function deleteCollection(collectionId) {
 // Open a bookmark URL
 function openBookmark(collectionId, bookmarkId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-    if (collection) {
-        const bookmark = collection.bookmarks.find(b => b.id === bookmarkId);
-        if (bookmark) {
-            if (bookmarkManagerData.openInNewTab) {
-                window.open(bookmark.url, '_blank');
-            } else {
-                window.location.href = bookmark.url;
-            }
-        }
+    if (!collection) return;
+    const bookmark = collection.bookmarks.find(b => b.id === bookmarkId);
+    if (!bookmark) return;
+
+    // Block javascript: and other unsafe protocols
+    if (!isSafeUrl(bookmark.url)) {
+        console.warn('Blocked navigation to unsafe URL:', bookmark.url);
+        return;
+    }
+
+    if (bookmarkManagerData.openInNewTab) {
+        window.open(bookmark.url, '_blank', 'noopener,noreferrer');
+    } else {
+        window.location.href = bookmark.url;
     }
 }
 
@@ -510,7 +532,7 @@ function openBookmark(collectionId, bookmarkId) {
 function launchCollection(collectionId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
     if (collection) {
-        const urls = collection.bookmarks.filter(b => !b.deleted).map(bookmark => bookmark.url);
+        const urls = collection.bookmarks.filter(b => !b.deleted && isSafeUrl(b.url)).map(bookmark => bookmark.url);
         const extensionId = extId;
 
         chrome.runtime.sendMessage({ action: 'launchCollection', urls: urls, collectionName: collection.name },
@@ -540,7 +562,6 @@ function moveCollection(collectionId, direction) {
 
         bookmarkManagerData.collections.forEach((collection, index) => {
             collection.position = index;
-            collection.lastModified = Date.now();
         });
 
         renderCollections();

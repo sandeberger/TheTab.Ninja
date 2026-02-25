@@ -167,7 +167,6 @@ function dropCollection(e) {
 
     bookmarkManagerData.collections.forEach((collection, index) => {
         collection.position = index;
-        collection.lastModified = Date.now();
     });
 
     saveToLocalStorage();
@@ -265,6 +264,7 @@ function dropBookmark(e) {
     if (!draggedItem || draggedItem.type !== 'bookmark') return;
 
     const targetCollection = this.closest('.collection');
+    if (!targetCollection) return;
     const fromCollectionId = draggedItem.collectionId;
     const toCollectionId = targetCollection.dataset.collectionId;
 
@@ -317,6 +317,7 @@ function dropBookmarkContainer(e) {
 
     if (draggedItem) {
         const collectionElement = this.closest('.collection');
+        if (!collectionElement) return;
         const collectionId = collectionElement.dataset.collectionId;
         const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
         if (!collection) return;

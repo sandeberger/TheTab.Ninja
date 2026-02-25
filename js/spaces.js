@@ -183,15 +183,15 @@ function initializeSpaces() {
 
 // Show drop zones on space items for collection drag
 function showSpaceDropZones() {
+    // Always clean up existing listeners first to prevent accumulation
+    hideSpaceDropZones();
+
     const spacesTab = document.getElementById('spaces-tab');
     if (!spacesTab || !spacesTab.classList.contains('active')) {
         return;
     }
 
-    console.log('Showing space drop zones');
-
     const spaceItems = document.querySelectorAll('.space-item');
-    console.log('Found space items:', spaceItems.length);
 
     spaceItems.forEach(spaceItem => {
         spaceItem.classList.add('drop-zone-active');
@@ -204,8 +204,6 @@ function showSpaceDropZones() {
 
 // Hide drop zones on space items
 function hideSpaceDropZones() {
-    console.log('Hiding space drop zones');
-
     const spaceItems = document.querySelectorAll('.space-item');
     spaceItems.forEach(spaceItem => {
         spaceItem.classList.remove('drop-zone-active', 'drag-over');
@@ -220,24 +218,19 @@ function hideSpaceDropZones() {
 function spaceDragEnter(e) {
     if (draggedItem && draggedItem.type === 'collection') {
         e.preventDefault();
-        console.log('Drag enter on space:', this.textContent);
     }
 }
 
 // Space drag over handler
 function spaceDragOver(e) {
-    console.log('Drag over space - effectAllowed:', e.dataTransfer.effectAllowed);
-
     if (draggedItem && draggedItem.type === 'collection') {
         e.preventDefault();
         e.stopPropagation();
         e.dataTransfer.dropEffect = 'copy';
         this.classList.add('drag-over');
-        console.log('Drop allowed - dropEffect set to copy, target:', this.textContent.trim());
         return false;
     } else {
         e.dataTransfer.dropEffect = 'none';
-        console.log('Drop not allowed - wrong drag type');
     }
 }
 
@@ -250,13 +243,11 @@ function spaceDragLeave(e) {
 
 // Space drop handler - add collection to space
 function spaceDropHandler(e) {
-    console.log('Drop handler called!');
     e.preventDefault();
     e.stopPropagation();
     this.classList.remove('drag-over');
 
     if (!draggedItem || draggedItem.type !== 'collection') {
-        console.log('Invalid drop - no draggedItem or wrong type');
         return;
     }
 

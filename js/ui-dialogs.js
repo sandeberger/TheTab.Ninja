@@ -103,7 +103,7 @@ function editCollection(collectionId) {
     });
 
     function closeDialog() {
-        document.body.removeChild(overlay);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
     }
 
     function saveCollection() {
@@ -217,6 +217,13 @@ function editCollectionSpaces(collectionId) {
         saveBtn.style.backgroundColor = '#4CAF50';
     });
 
+    function closeSpacesDialog() {
+        const dialog = document.getElementById('spacesDialog');
+        const overlay = document.getElementById('spacesOverlay');
+        if (dialog && dialog.parentNode) dialog.parentNode.removeChild(dialog);
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+
     document.getElementById('saveSpaces').addEventListener('click', () => {
         const checkboxes = document.querySelectorAll('#spacesDialog input[type="checkbox"]');
         const selectedSpaces = Array.from(checkboxes)
@@ -232,19 +239,11 @@ function editCollectionSpaces(collectionId) {
         saveToLocalStorage();
         renderCollections();
 
-        document.getElementById('spacesDialog').remove();
-        document.getElementById('spacesOverlay').remove();
+        closeSpacesDialog();
     });
 
-    document.getElementById('cancelSpaces').addEventListener('click', () => {
-        document.getElementById('spacesDialog').remove();
-        document.getElementById('spacesOverlay').remove();
-    });
-
-    document.getElementById('spacesOverlay').addEventListener('click', () => {
-        document.getElementById('spacesDialog').remove();
-        document.getElementById('spacesOverlay').remove();
-    });
+    document.getElementById('cancelSpaces').addEventListener('click', closeSpacesDialog);
+    document.getElementById('spacesOverlay').addEventListener('click', closeSpacesDialog);
 }
 
 // Add bookmark dialog
@@ -368,7 +367,7 @@ async function addBookmark(collectionId) {
     });
 
     function closeDialog() {
-        document.body.removeChild(overlay);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
     }
 
     async function saveBookmark() {
@@ -384,6 +383,14 @@ async function addBookmark(collectionId) {
                 urlInput.style.borderColor = '#f44336';
                 urlInput.focus();
             }
+            return;
+        }
+
+        // Validate URL protocol
+        if (typeof isSafeUrl === 'function' && !isSafeUrl(newUrl)) {
+            urlInput.style.borderColor = '#f44336';
+            urlInput.focus();
+            handleBookmarkError(new Error('Only http, https, and ftp URLs are allowed.'));
             return;
         }
 
@@ -581,7 +588,7 @@ async function editBookmark(collectionId, bookmarkId) {
     });
 
     function closeDialog() {
-        document.body.removeChild(overlay);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
     }
 
     async function saveBookmark() {
@@ -597,6 +604,13 @@ async function editBookmark(collectionId, bookmarkId) {
                 urlInput.style.borderColor = '#f44336';
                 urlInput.focus();
             }
+            return;
+        }
+
+        // Validate URL protocol
+        if (typeof isSafeUrl === 'function' && !isSafeUrl(newUrl)) {
+            urlInput.style.borderColor = '#f44336';
+            urlInput.focus();
             return;
         }
 
@@ -765,7 +779,7 @@ function showDeleteConfirmation(title, message, subtitle, onConfirm) {
     });
 
     function closeDialog() {
-        document.body.removeChild(overlay);
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
     }
 
     function handleConfirm() {

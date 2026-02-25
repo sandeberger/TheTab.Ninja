@@ -203,9 +203,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let fetchTabsInterval = setInterval(fetchChromeTabs, 5000);
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            clearInterval(fetchTabsInterval);
-            fetchTabsInterval = null;
+            if (fetchTabsInterval) {
+                clearInterval(fetchTabsInterval);
+                fetchTabsInterval = null;
+            }
         } else {
+            // Clear any existing interval before creating a new one
+            if (fetchTabsInterval) clearInterval(fetchTabsInterval);
             fetchChromeTabs();
             fetchTabsInterval = setInterval(fetchChromeTabs, 5000);
         }
@@ -294,6 +298,14 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Favicon URLs have been cleaned up and fixed!');
     });
 
+    // Ensure autoBackup object exists (backwards compatibility)
+    if (!bookmarkManagerData.autoBackup) {
+        bookmarkManagerData.autoBackup = {
+            enabled: false, frequency: 'daily', keepDays: 7,
+            lastBackup: null, customFolder: null, folderPath: 'Downloads', useCustomFolder: false
+        };
+    }
+
     // Backup settings event listeners
     document.getElementById('autoBackupEnabled').addEventListener('change', (e) => {
         bookmarkManagerData.autoBackup.enabled = e.target.checked;
@@ -330,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: bookmarkManagerData
             });
 
-            if (response.success) {
+            if (response && response.success) {
                 button.textContent = 'Backup created!';
                 setTimeout(() => {
                     button.textContent = originalText;
