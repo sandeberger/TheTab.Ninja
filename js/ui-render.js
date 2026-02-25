@@ -550,17 +550,23 @@ function launchCollection(collectionId) {
     }
 }
 
-// Move collection up or down
+// Move collection up or down (skips soft-deleted collections)
 function moveCollection(collectionId, direction) {
-    const currentIndex = bookmarkManagerData.collections.findIndex(c => c.id === collectionId);
+    const collections = bookmarkManagerData.collections;
+    const currentIndex = collections.findIndex(c => c.id === collectionId);
     if (currentIndex === -1) return;
 
-    const newIndex = currentIndex + direction;
-    if (newIndex >= 0 && newIndex < bookmarkManagerData.collections.length) {
-        const [movedCollection] = bookmarkManagerData.collections.splice(currentIndex, 1);
-        bookmarkManagerData.collections.splice(newIndex, 0, movedCollection);
+    // Find the next non-deleted collection in the given direction
+    let targetIndex = currentIndex + direction;
+    while (targetIndex >= 0 && targetIndex < collections.length && collections[targetIndex].deleted) {
+        targetIndex += direction;
+    }
 
-        bookmarkManagerData.collections.forEach((collection, index) => {
+    if (targetIndex >= 0 && targetIndex < collections.length) {
+        const [movedCollection] = collections.splice(currentIndex, 1);
+        collections.splice(targetIndex, 0, movedCollection);
+
+        collections.forEach((collection, index) => {
             collection.position = index;
         });
 
@@ -651,10 +657,15 @@ function displayFallbackContent(contentDiv) {
 }
 
 // Fetch and display Chrome tabs in the right pane
-async function fetchChromeTabs() {
+function fetchChromeTabs() {
     try {
         chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('Error fetching tabs:', chrome.runtime.lastError);
+                return;
+            }
             const contentDiv = document.getElementById('content');
+            if (!contentDiv) return;
             contentDiv.innerHTML = '';
 
             if (response && response.length > 0) {
@@ -802,6 +813,8 @@ async function fetchChromeTabs() {
                         saveToLocalStorage();
                     });
                 });
+            } else {
+                displayFallbackContent(contentDiv);
             }
         });
     } catch (error) {

@@ -36,6 +36,9 @@ function enrichCollection(collection) {
 
 // Helper function to enrich a single space
 function enrichSpace(space) {
+    if (!space) {
+        return { name: 'Unnamed Space', deleted: false, lastModified: Date.now() };
+    }
     if (typeof space === 'string') {
         return {
             name: space,

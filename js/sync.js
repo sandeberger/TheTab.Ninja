@@ -89,10 +89,10 @@ async function synchronizeWithGitHub(retryCount = 0) {
             })
         ]);
 
-        const remoteData = rawRemoteData ? {
+        const remoteData = (rawRemoteData && typeof rawRemoteData === 'object') ? {
             ...rawRemoteData,
-            collections: (rawRemoteData.collections || []).map(enrichCollection),
-            spaces: (rawRemoteData.spaces || []).map(enrichSpace)
+            collections: Array.isArray(rawRemoteData.collections) ? rawRemoteData.collections.map(enrichCollection) : [],
+            spaces: Array.isArray(rawRemoteData.spaces) ? rawRemoteData.spaces.map(enrichSpace) : []
         } : null;
 
         if (localData && !validateDataStructure(localData)) {
@@ -150,8 +150,11 @@ async function synchronizeWithGitHub(retryCount = 0) {
 
     } catch (error) {
         console.error('Sync error:', error);
-        if (retryCount < 2) {
-            console.log(`Retrying sync (attempt ${retryCount + 1})`);
+        const isConflict = error.message && (error.message.includes('409') || error.message.includes('422') || error.message.includes('not a fast-forward'));
+        const maxRetries = isConflict ? 3 : 2;
+        if (retryCount < maxRetries) {
+            console.log(`Retrying sync (attempt ${retryCount + 1})${isConflict ? ' due to conflict' : ''}`);
+            isSyncing = false;
             await synchronizeWithGitHub(retryCount + 1);
         } else {
             alert(`Sync failed after ${retryCount + 1} attempts: ${error.message}`);

@@ -108,8 +108,8 @@ function dragOverCollection(e) {
         }
     });
 
-    if (placeholder) {
-        placeholder.remove();
+    if (placeholder && placeholder.parentNode) {
+        placeholder.parentNode.removeChild(placeholder);
     }
 
     if (!placeholder) {
