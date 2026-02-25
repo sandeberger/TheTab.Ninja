@@ -24,6 +24,9 @@ function editCollection(collectionId) {
     `;
 
     const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-label', 'Edit Collection Name');
     dialog.style.cssText = `
         background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 350px; max-width: 500px;
@@ -267,6 +270,9 @@ async function addBookmark(collectionId) {
     `;
 
     const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-label', 'Create Bookmark');
     dialog.style.cssText = `
         background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 400px; max-width: 600px;
@@ -487,6 +493,9 @@ async function editBookmark(collectionId, bookmarkId) {
     `;
 
     const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-label', 'Edit Bookmark');
     dialog.style.cssText = `
         background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 400px; max-width: 600px;
@@ -707,6 +716,9 @@ function showDeleteConfirmation(title, message, subtitle, onConfirm) {
     `;
 
     const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'alertdialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-label', title);
     dialog.style.cssText = `
         background: ${dialogBg}; color: ${textColor}; padding: 25px; border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 350px; max-width: 500px;

@@ -159,7 +159,7 @@ function stopZenMode() {
 
 // Update zen mode clock display
 function updateZenDateTime() {
-    const now = new Date();
+    const currentDate = new Date();
     const timeElement = document.querySelector('.zen-time');
     const dateElement = document.querySelector('.zen-date');
 
@@ -176,8 +176,12 @@ function updateZenDateTime() {
             day: 'numeric'
         };
 
-        timeElement.textContent = now.toLocaleTimeString('sv-SE', timeOptions);
-        dateElement.textContent = now.toLocaleDateString('sv-SE', dateOptions);
+        timeElement.textContent = currentDate.toLocaleTimeString('sv-SE', timeOptions);
+        dateElement.textContent = currentDate.toLocaleDateString('sv-SE', dateOptions);
+    } else if (zenDateTimeInterval) {
+        // Clean up interval if DOM elements are gone
+        clearInterval(zenDateTimeInterval);
+        zenDateTimeInterval = null;
     }
 }
 

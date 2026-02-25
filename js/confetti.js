@@ -21,6 +21,13 @@ function startConfetti(options = {}) {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+    // Handle window resize during animation
+    function onResize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', onResize);
+
     const particles = [];
     for (let i = 0; i < particleCount; i++) {
         particles.push(createParticle(origin, canvas.width, canvas.height));
@@ -54,6 +61,7 @@ function startConfetti(options = {}) {
         if (elapsed < duration) {
             requestAnimationFrame(animate);
         } else {
+            window.removeEventListener('resize', onResize);
             if (canvas.parentNode) {
                 canvas.parentNode.removeChild(canvas);
             }

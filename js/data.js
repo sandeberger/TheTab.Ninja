@@ -161,6 +161,11 @@ function deleteAllCollections() {
 
 // Import bookmarks from JSON file
 function importBookmarksFromFile(file) {
+    // Reject files larger than 50MB to prevent browser freezing
+    if (file.size > 50 * 1024 * 1024) {
+        alert('File is too large to import (max 50MB).');
+        return;
+    }
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
@@ -199,6 +204,11 @@ async function importTobyBookmarks() {
     const file = fileInput.files[0];
 
     if (file) {
+        // Reject files larger than 50MB to prevent browser freezing
+        if (file.size > 50 * 1024 * 1024) {
+            alert('File is too large to import (max 50MB).');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = async function (e) {
             try {
