@@ -35,7 +35,11 @@ function getSafeIconUrl(iconUrl) {
                 if (urlMatch) {
                     const decodedUrl = decodeURIComponent(urlMatch[1]);
                     const domain = new URL(decodedUrl).hostname;
-                    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+                    // Build URL safely using URL constructor
+                    const safeUrl = new URL('https://www.google.com/s2/favicons');
+                    safeUrl.searchParams.set('domain', domain);
+                    safeUrl.searchParams.set('sz', '32');
+                    return safeUrl.toString();
                 }
             } catch (e) {
                 // If URL parsing fails, return fallback
@@ -52,7 +56,7 @@ function getSafeIconUrl(iconUrl) {
 function cleanupFaviconUrls(collections) {
     return collections.map(collection => ({
         ...collection,
-        bookmarks: collection.bookmarks.map(bookmark => ({
+        bookmarks: (collection.bookmarks || []).map(bookmark => ({
             ...bookmark,
             icon: getSafeIconUrl(bookmark.icon)
         }))
@@ -65,13 +69,12 @@ function forceCleanupAllFaviconUrls() {
 
     if (bookmarkManagerData.collections && Array.isArray(bookmarkManagerData.collections)) {
         bookmarkManagerData.collections = bookmarkManagerData.collections.map(collection => {
-            const cleanedBookmarks = collection.bookmarks.map(bookmark => {
+            const cleanedBookmarks = (collection.bookmarks || []).map(bookmark => {
                 const originalIcon = bookmark.icon;
                 const cleanedIcon = getSafeIconUrl(bookmark.icon);
 
                 if (originalIcon !== cleanedIcon) {
                     hasChanges = true;
-                    console.log('Cleaned favicon URL:', originalIcon, '->', cleanedIcon);
                 }
 
                 return {
@@ -88,42 +91,37 @@ function forceCleanupAllFaviconUrls() {
     }
 
     if (hasChanges) {
-        console.log('Favicon URLs cleaned and saved to localStorage');
+        saveToLocalStorage();
     }
 }
 
-// Global error handling for resource loading
+// Global error handling for resource loading - only for favicon images
 window.addEventListener('error', function(e) {
-    // Check if it's an image loading error (favicon, background images, etc.)
     if (e.target && e.target.tagName === 'IMG') {
-        // Check if it's a problematic favicon URL
         const src = e.target.src;
-        if (src && (src.includes('faviconV2') || src.includes('t2.gstatic.com') ||
-                   src.includes('t1.gstatic.com') || src.includes('t3.gstatic.com'))) {
-            console.debug('Blocked problematic favicon URL:', src);
-        }
+        // Only handle favicon-related image errors, not wallpapers/backgrounds
+        const isFavicon = e.target.closest('.bookmark, .tab-item, .chrome-tab') ||
+                          src.includes('favicon') || src.includes('s2/favicons') ||
+                          src.includes('gstatic.com');
 
-        // Suppress error from console for image loading failures
+        if (!isFavicon) return; // Let non-favicon image errors propagate normally
+
         e.preventDefault();
         e.stopPropagation();
 
-        // If it doesn't already have a fallback, set a generic one
         if (!e.target.dataset.fallbackApplied) {
             e.target.dataset.fallbackApplied = 'true';
             e.target.src = FALLBACK_ICON_LIGHT;
         }
         return false;
     }
-}, true); // Use capture phase to catch before it bubbles
+}, true);
 
-// Suppress unhandled promise rejection warnings for favicon fetches
+// Suppress unhandled promise rejection warnings for favicon fetches only
 window.addEventListener('unhandledrejection', function(e) {
-    // Check if it's a favicon-related error
     if (e.reason && e.reason.message &&
-        (e.reason.message.includes('favicon') ||
-         e.reason.message.includes('Favicon fetch timeout') ||
-         e.reason.message.includes('icon'))) {
-        // Suppress the error from console
+        (e.reason.message === 'Favicon fetch timeout' ||
+         e.reason.message.startsWith('Favicon '))) {
         e.preventDefault();
         console.debug('Favicon fetch failed (suppressed):', e.reason.message);
     }
@@ -147,8 +145,8 @@ function findFavicon(url, callback) {
     let found = false;
 
     function testNext() {
-        if (potentialFavicons.length === 0) {
-            callback(null);
+        if (potentialFavicons.length === 0 || found) {
+            if (!found) callback(null);
             return;
         }
 
@@ -174,29 +172,36 @@ function findFavicon(url, callback) {
     testNext();
 }
 
-// Get favicon via background service worker
+// Get favicon via background service worker (with graceful degradation)
 function getFavicon(url) {
-    const extensionId = extId;
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
+        let settled = false;
+
         const timeout = setTimeout(() => {
-            reject(new Error('Favicon fetch timeout'));
+            if (!settled) {
+                settled = true;
+                resolve(FALLBACK_ICON);
+            }
         }, 5000);
 
-        chrome.runtime.sendMessage({ action: 'fetchFavicon', url }, (response) => {
-            clearTimeout(timeout);
+        try {
+            chrome.runtime.sendMessage({ action: 'fetchFavicon', url }, (response) => {
+                clearTimeout(timeout);
+                if (settled) return;
+                settled = true;
 
-            if (chrome.runtime.lastError) {
-                const fallbackUrl = FALLBACK_ICON;
-                resolve(fallbackUrl);
-                return;
-            }
-
-            if (response && response.faviconUrl) {
+                if (chrome.runtime.lastError || !response || !response.faviconUrl) {
+                    resolve(FALLBACK_ICON);
+                    return;
+                }
                 resolve(response.faviconUrl);
-            } else {
-                const fallbackUrl = FALLBACK_ICON;
-                resolve(fallbackUrl);
+            });
+        } catch (e) {
+            clearTimeout(timeout);
+            if (!settled) {
+                settled = true;
+                resolve(FALLBACK_ICON);
             }
-        });
+        }
     });
 }

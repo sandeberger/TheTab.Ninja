@@ -54,7 +54,9 @@ function startConfetti(options = {}) {
         if (elapsed < duration) {
             requestAnimationFrame(animate);
         } else {
-            document.body.removeChild(canvas);
+            if (canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+            }
         }
     }
 

@@ -20,6 +20,7 @@ function applyFilter(searchTerm) {
     collections.forEach(collectionElement => {
         const collectionId = collectionElement.dataset.collectionId;
         const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
+        if (!collectionData) return;
         const bookmarksContainer = collectionElement.querySelector('.bookmarks');
         const bookmarkElements = bookmarksContainer.querySelectorAll('.bookmark');
         let showCollection = false;
@@ -48,6 +49,7 @@ function applyFilter(searchTerm) {
             bookmarkElements.forEach(bookmarkElement => {
                 const bookmarkId = bookmarkElement.dataset.bookmarkId;
                 const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
+                if (!bookmarkData) return;
                 const bookmarkMatch = globalSearchTerms.some(term =>
                     bookmarkData.title.toLowerCase().includes(term) ||
                     bookmarkData.url.toLowerCase().includes(term)
@@ -66,6 +68,7 @@ function applyFilter(searchTerm) {
             bookmarkElements.forEach(bookmarkElement => {
                 const bookmarkId = bookmarkElement.dataset.bookmarkId;
                 const bookmarkData = collectionData.bookmarks.find(b => b.id === bookmarkId);
+                if (!bookmarkData) return;
                 const bookmarkMatch = searchTerms.some(term =>
                     bookmarkData.title.toLowerCase().includes(term) ||
                     bookmarkData.url.toLowerCase().includes(term)
@@ -267,13 +270,14 @@ function renderCollections() {
         collectionsContainer.appendChild(collectionElement);
 
         addCollectionDragListeners(collectionElement);
+    }); // end of sortedCollections.forEach
 
-        const searchBox = document.getElementById('searchBox');
-        if (searchBox) {
-            const event = new Event('input');
-            searchBox.dispatchEvent(event);
-        }
-    });
+    // Re-apply search filter after rendering (moved outside loop)
+    const searchBox = document.getElementById('searchBox');
+    if (searchBox && searchBox.value) {
+        const event = new Event('input');
+        searchBox.dispatchEvent(event);
+    }
 
     saveToLocalStorage();
 }
@@ -390,9 +394,26 @@ function createBookmarkElement(bookmark, collectionId) {
     bookmarkElement.appendChild(editIcon);
     bookmarkElement.appendChild(deleteIcon);
 
-    bookmarkElement.addEventListener('dragstart', dragStartBookmark);
-    bookmarkElement.addEventListener('dragend', dragEnd);
-    bookmarkElement.addEventListener('dragover', dragOverBookmark);
+    bookmarkElement.addEventListener('dragstart', function(e) {
+        dragStartBookmark.call(this, e);
+        this.style.opacity = '0.5';
+        this.style.transform = 'scale(0.95)';
+    });
+    bookmarkElement.addEventListener('dragend', function(e) {
+        dragEnd.call(this, e);
+        this.style.opacity = '1';
+        this.style.transform = 'scale(1)';
+        this.style.zIndex = 'auto';
+    });
+    bookmarkElement.addEventListener('dragover', function(e) {
+        dragOverBookmark.call(this, e);
+        this.style.transform = 'scale(1.02)';
+        this.style.zIndex = '1000';
+    });
+    bookmarkElement.addEventListener('dragleave', function(e) {
+        this.style.transform = 'scale(1)';
+        this.style.zIndex = 'auto';
+    });
     bookmarkElement.addEventListener('drop', dropBookmark);
 
     editIcon.addEventListener('click', (e) => {
@@ -407,27 +428,6 @@ function createBookmarkElement(bookmark, collectionId) {
 
     bookmarkElement.addEventListener('click', () => openBookmark(collectionId, bookmark.id));
 
-    bookmarkElement.addEventListener('dragover', function(e) {
-        this.style.transform = 'scale(1.02)';
-        this.style.zIndex = '1000';
-    });
-
-    bookmarkElement.addEventListener('dragleave', function(e) {
-        this.style.transform = 'scale(1)';
-        this.style.zIndex = 'auto';
-    });
-
-    bookmarkElement.addEventListener('dragstart', function(e) {
-        this.style.opacity = '0.5';
-        this.style.transform = 'scale(0.95)';
-    });
-
-    bookmarkElement.addEventListener('dragend', function(e) {
-        this.style.opacity = '1';
-        this.style.transform = 'scale(1)';
-        this.style.zIndex = 'auto';
-    });
-
     return bookmarkElement;
 }
 
@@ -441,6 +441,7 @@ function addCollection() {
             c.lastModified = Date.now();
         });
 
+        const currentSpace = bookmarkManagerData.currentSpace || 'Everything';
         const newCollection = {
             id: generateUUID(),
             name: name,
@@ -448,6 +449,7 @@ function addCollection() {
             lastModified: Date.now(),
             deleted: false,
             position: 0,
+            spaces: currentSpace === 'Everything' ? ['Everything'] : ['Everything', currentSpace],
             bookmarks: []
         };
         bookmarkManagerData.collections.push(newCollection);
@@ -694,7 +696,7 @@ async function fetchChromeTabs() {
                             draggedItem = {
                                 type: 'chromeTabGroup',
                                 data: {
-                                    title: groupInfo.title,
+                                    title: groupInfo ? groupInfo.title : 'Tab Group',
                                     tabs: groupTabs
                                 }
                             };
@@ -755,7 +757,8 @@ async function fetchChromeTabs() {
                         });
                     }
 
-                    ungroupedTabs.className = 'ungrouped-tabs';
+                    const ungroupedTabsContainer = document.createElement('div');
+                    ungroupedTabsContainer.className = 'ungrouped-tabs';
                     ungroupedTabs.forEach(tabData => {
                         const tabDiv = createChromeTabElement({
                             id: tabData.tabId,
@@ -763,8 +766,9 @@ async function fetchChromeTabs() {
                             url: tabData.url,
                             favIconUrl: tabData.favIconUrl
                         }, windowData.windowId);
-                        tabsList.appendChild(tabDiv);
+                        ungroupedTabsContainer.appendChild(tabDiv);
                     });
+                    tabsList.appendChild(ungroupedTabsContainer);
 
                     windowDiv.appendChild(windowTitle);
                     windowDiv.appendChild(tabsList);

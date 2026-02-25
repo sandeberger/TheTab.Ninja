@@ -7,7 +7,7 @@
 function enrichBookmark(bookmark) {
     return {
         ...bookmark,
-        parentCollection: bookmark.parentCollection || generateUUID(),
+        parentCollection: bookmark.parentCollection || null,
         id: bookmark.id || generateUUID(),
         lastModified: bookmark.lastModified || Date.now(),
         deleted: bookmark.deleted || false
@@ -53,35 +53,15 @@ function enrichSpace(space) {
 
 // Validate data structure for sync
 function validateDataStructure(data) {
-    if (!data || data === null) return true;
-    if (data.collections && !Array.isArray(data.collections)) return false;
-
-    return data.collections.every(c => {
+    if (!data) return false;
+    if (!data.collections) return true;
+    if (!Array.isArray(data.collections)) return false;
+    // Fix collections that are missing required fields
+    data.collections.forEach(c => {
         if (typeof c.id !== 'string') c.id = generateUUID();
         if (!Array.isArray(c.bookmarks)) c.bookmarks = [];
-        return true;
     });
-}
-
-// Merge property helper
-function mergeProperty(current, incoming) {
-    return current === incoming ? current :
-        (current || incoming);
-}
-
-// Get latest bookmark version for merge
-function getLatestBookmark(local, remote) {
-    if (!local) return remote?.deleted ? null : remote;
-    if (!remote) return local?.deleted ? null : local;
-
-    if (local.deleted && !remote.deleted) {
-        return local.lastModified > remote.lastModified ? local : remote;
-    }
-    if (!local.deleted && remote.deleted) {
-        return remote.lastModified > local.lastModified ? remote : local;
-    }
-
-    return local.lastModified > remote.lastModified ? local : remote;
+    return true;
 }
 
 // Create collection from Chrome tab group data
@@ -141,11 +121,9 @@ function createCollectionFromTabGroup(tabGroupData) {
     if (bookmarkManagerData.closeWhenSaveTab && tabGroupData.tabs) {
         tabGroupData.tabs.forEach(tab => {
             if ((tab.tabId || tab.id) && tab.url !== selfUrl && tab.url && !tab.url.startsWith('chrome://')) {
-                try {
-                    chrome.tabs.remove(tab.tabId || tab.id);
-                } catch (error) {
+                chrome.tabs.remove(tab.tabId || tab.id).catch(error => {
                     console.warn('Could not close tab:', error);
-                }
+                });
             }
         });
     }
@@ -190,6 +168,11 @@ function importBookmarksFromFile(file) {
             }
 
             const enrichedCollections = importedData.collections.map(enrichCollection);
+
+            if (!confirm('This will REPLACE all existing collections with the imported data. This cannot be undone. Continue?')) {
+                return;
+            }
+
             bookmarkManagerData.collections = enrichedCollections;
 
             renderCollections();
@@ -305,6 +288,9 @@ function saveToLocalStorage() {
         console.log('Saved data to localStorage');
     } catch (error) {
         console.error('Error saving to local storage:', error);
+        if (error.name === 'QuotaExceededError' || error.code === 22) {
+            alert('Storage is full. Please remove some data (custom backgrounds, old collections) to continue saving.');
+        }
     }
 }
 
@@ -342,10 +328,14 @@ function loadFromLocalStorage() {
             saveToLocalStorage();
         }
 
-        document.getElementById('openInNewTab').checked = bookmarkManagerData.openInNewTab;
-        document.getElementById('closeWhenSaveTab').checked = bookmarkManagerData.closeWhenSaveTab;
-        document.getElementById('darkMode').checked = bookmarkManagerData.darkMode;
-        document.getElementById('collectionSortOrder').value = bookmarkManagerData.collectionSortOrder || 'userdefined';
+        const openInNewTabEl = document.getElementById('openInNewTab');
+        if (openInNewTabEl) openInNewTabEl.checked = bookmarkManagerData.openInNewTab;
+        const closeWhenSaveTabEl = document.getElementById('closeWhenSaveTab');
+        if (closeWhenSaveTabEl) closeWhenSaveTabEl.checked = bookmarkManagerData.closeWhenSaveTab;
+        const darkModeEl = document.getElementById('darkMode');
+        if (darkModeEl) darkModeEl.checked = bookmarkManagerData.darkMode;
+        const sortOrderEl = document.getElementById('collectionSortOrder');
+        if (sortOrderEl) sortOrderEl.value = bookmarkManagerData.collectionSortOrder || 'userdefined';
 
         if (bookmarkManagerData.darkMode) {
             document.body.classList.add('dark-mode');
@@ -353,7 +343,9 @@ function loadFromLocalStorage() {
             document.body.classList.remove('dark-mode');
         }
 
-        applyPaneStates();
+        if (typeof applyPaneStates === 'function') {
+            applyPaneStates();
+        }
         console.log('Loaded data from localStorage');
         return parsedData || bookmarkManagerData;
     } catch (error) {

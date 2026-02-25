@@ -21,7 +21,7 @@ function startZenMode() {
 
     const zenSearchBox = document.getElementById('zenSearchBox');
     if (zenSearchBox) {
-        zenSearchBox.addEventListener('input', function(event) {
+        zenSearchBoxInputListener = function(event) {
             const searchValue = event.target.value;
             const mainSearchBox = document.getElementById('searchBox');
 
@@ -43,9 +43,10 @@ function startZenMode() {
                     console.log("Focused main search box");
                 }, 100);
             }
-        });
+        };
+        zenSearchBox.addEventListener('input', zenSearchBoxInputListener);
 
-        zenSearchBox.addEventListener('keydown', function(event) {
+        zenSearchBoxKeydownListener = function(event) {
             if (event.key === 'Enter') {
                 const searchTerm = this.value.trim();
                 if (searchTerm.startsWith('?') && searchTerm.length > 1) {
@@ -78,7 +79,8 @@ function startZenMode() {
                     event.preventDefault();
                 }
             }
-        });
+        };
+        zenSearchBox.addEventListener('keydown', zenSearchBoxKeydownListener);
 
         setTimeout(() => {
             zenSearchBox.focus();
@@ -118,12 +120,19 @@ function stopZenMode() {
             searchBox.removeEventListener('input', zenSearchListener);
         }
 
-        const zenSearchBox = document.getElementById('zenSearchBox');
-        if (zenSearchBox) {
-            zenSearchBox.removeEventListener('input', zenSearchListener);
-        }
-
         zenSearchListener = null;
+    }
+
+    const zenSearchBox = document.getElementById('zenSearchBox');
+    if (zenSearchBox) {
+        if (zenSearchBoxInputListener) {
+            zenSearchBox.removeEventListener('input', zenSearchBoxInputListener);
+            zenSearchBoxInputListener = null;
+        }
+        if (zenSearchBoxKeydownListener) {
+            zenSearchBox.removeEventListener('keydown', zenSearchBoxKeydownListener);
+            zenSearchBoxKeydownListener = null;
+        }
     }
 
     if (zenKeyboardListener) {

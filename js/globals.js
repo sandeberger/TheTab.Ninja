@@ -3,10 +3,6 @@
  * Must be loaded first before all other modules.
  */
 
-//const extId = 'ekincidnpifabcbbchcapcahaoeoccgp' //test
-const extId = 'bnmjmbmlfohkaghofdaadenippkgpmab'; //1.08
-//https://wallpapersden.com/
-
 let bookmarkManagerData = {
     collections: [],
     openInNewTab: false,
@@ -62,3 +58,7 @@ let zenSearchListener = null;
 let zenKeyboardListener = null;
 let zenClickListener = null;
 let zenUserHasScrolled = false;
+
+// Zen search box listener references (for proper cleanup)
+let zenSearchBoxInputListener = null;
+let zenSearchBoxKeydownListener = null;

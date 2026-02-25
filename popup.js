@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const collectionsList = document.getElementById('collectionsList');
   const saveTabButton = document.getElementById('saveTabButton');
 
-  // Hämta bookmarkManagerData från extensionens localStorage
+  // Fetch bookmarkManagerData from the extension's localStorage
   let rawData = localStorage.getItem('bookmarkManagerData');
   if (!rawData) return;
 
@@ -11,14 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     bookmarkManagerData = JSON.parse(rawData);
   } catch (error) {
-    console.error("Fel vid parsing av bookmarkManagerData:", error);
+    console.error("Error parsing bookmarkManagerData:", error);
     return;
   }
 
-  // Filtrera bort raderade collections
+  // Filter out deleted collections
   const validCollections = (bookmarkManagerData.collections || []).filter(c => !c.deleted);
 
-  // Fyll datalistan med befintliga collection-namn
+  // Fill the datalist with existing collection names
   validCollections.forEach(collection => {
     const optionEl = document.createElement('option');
     optionEl.value = collection.name || "Unnamed";
@@ -32,17 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Hitta collection med matchande namn (case-insensitive)
+    // Find collection with matching name (case-insensitive)
     let matchedCollection = validCollections.find(c => c.name.toLowerCase() === inputName.toLowerCase());
 
-    // Om den inte finns, fråga om vi ska skapa en ny
+    // If not found, ask if we should create a new one
     if (!matchedCollection) {
       const createNew = confirm(`Collection "${inputName}" finns inte. Vill du skapa en ny?`);
       if (!createNew) {
         window.close();
         return;
       }
-      // Skapa en ny collection
+      // Create a new collection with spaces property
       matchedCollection = {
         id: generateUUID(),
         name: inputName,
@@ -50,25 +50,26 @@ document.addEventListener('DOMContentLoaded', () => {
         bookmarks: [],
         lastModified: Date.now(),
         deleted: false,
-        position: bookmarkManagerData.collections.length
+        position: bookmarkManagerData.collections.length,
+        spaces: ['Everything']
       };
-      // Lägg till den nya collectionen i den totala listan
+      // Add the new collection to the total list
       bookmarkManagerData.collections.push(matchedCollection);
       validCollections.push(matchedCollection);
-      // Lägg även till i datalistan så att den syns nästa gång
+      // Also add to datalist so it shows next time
       const optionEl = document.createElement('option');
       optionEl.value = matchedCollection.name;
       collectionsList.appendChild(optionEl);
     }
 
-    // Hämta den aktiva tabben
+    // Get the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       if (!tabs || !tabs.length) {
         window.close();
         return;
       }
       const currentTab = tabs[0];
-      // Skapa ett nytt bokmärke
+      // Create a new bookmark
       const newBookmark = {
         id: generateUUID(),
         title: currentTab.title,
@@ -80,15 +81,22 @@ document.addEventListener('DOMContentLoaded', () => {
         position: matchedCollection.bookmarks.length
       };
 
-      matchedCollection.bookmarks.push(newBookmark);
-      matchedCollection.lastModified = Date.now();
+      // Re-read fresh data from localStorage before writing back to avoid overwriting concurrent changes
+      const freshRaw = localStorage.getItem('bookmarkManagerData');
+      const freshData = freshRaw ? JSON.parse(freshRaw) : bookmarkManagerData;
+      // Find or add the collection in fresh data
+      let freshCollection = freshData.collections.find(c => c.id === matchedCollection.id);
+      if (!freshCollection) {
+        freshData.collections.push(matchedCollection);
+        freshCollection = matchedCollection;
+      }
+      freshCollection.bookmarks.push(newBookmark);
+      freshCollection.lastModified = Date.now();
+      localStorage.setItem('bookmarkManagerData', JSON.stringify(freshData));
 
-      // Spara tillbaka all data
-      localStorage.setItem('bookmarkManagerData', JSON.stringify(bookmarkManagerData));
-
-      // Om inställningen "closeWhenSaveTab" är satt, stäng tabben
-      if (bookmarkManagerData.closeWhenSaveTab) {
-          // Visa meddelande i popupen
+      // If the setting "closeWhenSaveTab" is set, close the tab
+      if (freshData.closeWhenSaveTab) {
+          // Show message in popup
           const msgEl = document.createElement('div');
           msgEl.textContent = "Tab is moved to collection!\nYou may need to refresh the\nthetab.ninja webpage to see the change.'";
           msgEl.style.padding = "10px";
@@ -98,21 +106,24 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => {
             chrome.tabs.remove(currentTab.id, function() {
               if (chrome.runtime.lastError) {
-                console.error("Fel vid borttagning av tab:", chrome.runtime.lastError);
+                console.error("Error removing tab:", chrome.runtime.lastError);
               }
-              // Efter att den aktuella tabben stängts, hämta den aktiva tabben i fönstret
-              chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-                if (tabs && tabs[0]) {
-                  // Tvinga om-laddning på den aktiva tabben
-                  chrome.tabs.reload(tabs[0].id);
+              // After the current tab is closed, get the active tab in the window
+              chrome.tabs.query({ active: true, currentWindow: true }, function(activeTabs) {
+                if (activeTabs && activeTabs[0]) {
+                  const tab = activeTabs[0];
+                  // Only reload if it's an extension page
+                  if (tab.url && tab.url.startsWith(chrome.runtime.getURL(''))) {
+                    chrome.tabs.reload(tab.id);
+                  }
                 }
-                // Stäng popupen efter en kort fördröjning
+                // Close the popup after a short delay
                 setTimeout(() => window.close(), 100);
               });
             });
           }, 2000);
 
-        
+
       } else {
         const msgEl = document.createElement('div');
           msgEl.textContent = "Tab copied successfully!\nYou may need to refresh the\nthetab.ninja webpage to see the change.'";
@@ -120,13 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
           msgEl.style.background = "#e0ffe0";
           msgEl.style.textAlign = "center";
           document.body.appendChild(msgEl);
-          setTimeout(() => window.close(), 2000);        
+          setTimeout(() => window.close(), 2000);
       }
     });
   });
 });
 
-// Enkel UUID-generator
+// Simple UUID generator
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0,
@@ -134,4 +145,3 @@ function generateUUID() {
     return v.toString(16);
   });
 }
-

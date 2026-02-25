@@ -3,12 +3,17 @@
  * Pure helper functions with no side effects.
  */
 
-// Generate unique UUID
+// HTML escape function to prevent XSS when inserting user data into innerHTML
+function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// Generate unique UUID using crypto API
 function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+    return crypto.randomUUID();
 }
 
 // Generate unique collection name (avoids duplicates)
@@ -20,7 +25,7 @@ function generateUniqueCollectionName(baseName) {
     let name = baseName;
     let counter = 2;
 
-    while (bookmarkManagerData.collections.some(c => !c.deleted && c.name.toLowerCase() === name.toLowerCase())) {
+    while (bookmarkManagerData.collections.some(c => !c.deleted && c.name && c.name.toLowerCase() === name.toLowerCase())) {
         name = `${baseName}${counter}`;
         counter++;
     }
@@ -30,6 +35,9 @@ function generateUniqueCollectionName(baseName) {
 
 // Format date as YYYY-MM-DD
 function formatDate(date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return new Date().toISOString().split('T')[0];
+    }
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -42,7 +50,7 @@ function debounce(func, wait) {
     return function executedFunction(...args) {
         const later = () => {
             clearTimeout(timeout);
-            func(...args);
+            func.apply(this, args);
         };
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);

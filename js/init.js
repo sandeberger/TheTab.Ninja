@@ -24,14 +24,19 @@ function initializeLeftPaneTabs() {
 }
 
 function switchLeftTab(tabName) {
+    const validTabs = ['spaces', 'settings'];
+    if (!validTabs.includes(tabName)) tabName = 'spaces';
+
     bookmarkManagerData.activeLeftTab = tabName;
     saveToLocalStorage();
 
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
 
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+    const tabButton = document.querySelector(`[data-tab="${tabName}"]`);
+    const tabPane = document.getElementById(`${tabName}-tab`);
+    if (tabButton) tabButton.classList.add('active');
+    if (tabPane) tabPane.classList.add('active');
 }
 
 // First DOMContentLoaded: Background thumbnails, pane toggles, mobile
@@ -40,7 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const manifestData = chrome.runtime.getManifest();
     const version = manifestData.version;
     const versionDisplay = document.getElementById('versionDisplay');
-    versionDisplay.textContent = `TheTab.ninja version: ${version}`;
+    if (versionDisplay) {
+        versionDisplay.textContent = `TheTab.ninja version: ${version}`;
+    }
 
     // Background thumbnails
     const backgroundThumbnailsContainer = document.getElementById('backgroundThumbnails');
@@ -99,13 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (leftPane.classList.contains('open') &&
                 !leftPane.contains(e.target) &&
-                !mobileLeftToggle.contains(e.target)) {
+                (!mobileLeftToggle || !mobileLeftToggle.contains(e.target))) {
                 leftPane.classList.remove('open');
             }
 
             if (rightPane.classList.contains('open') &&
                 !rightPane.contains(e.target) &&
-                !mobileRightToggle.contains(e.target)) {
+                (!mobileRightToggle || !mobileRightToggle.contains(e.target))) {
                 rightPane.classList.remove('open');
             }
         }
@@ -193,7 +200,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderCollections();
     fetchChromeTabs();
-    setInterval(fetchChromeTabs, 5000);
+    let fetchTabsInterval = setInterval(fetchChromeTabs, 5000);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            clearInterval(fetchTabsInterval);
+            fetchTabsInterval = null;
+        } else {
+            fetchChromeTabs();
+            fetchTabsInterval = setInterval(fetchChromeTabs, 5000);
+        }
+    });
 
     // Initialize spaces functionality
     initializeSpaces();
@@ -296,7 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('backupRetention').addEventListener('change', (e) => {
-        bookmarkManagerData.autoBackup.keepDays = parseInt(e.target.value);
+        const keepDays = parseInt(e.target.value, 10);
+        bookmarkManagerData.autoBackup.keepDays = isNaN(keepDays) ? 7 : keepDays;
         saveToLocalStorage();
         syncToStorage();
     });
@@ -338,7 +355,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     startIn: 'downloads'
                 });
 
-                bookmarkManagerData.autoBackup.customFolder = dirHandle;
+                // Store handle separately (not serializable to JSON)
+                window._customFolderHandle = dirHandle;
                 bookmarkManagerData.autoBackup.useCustomFolder = true;
                 bookmarkManagerData.autoBackup.folderPath = dirHandle.name;
 
@@ -608,19 +626,20 @@ document.addEventListener('DOMContentLoaded', () => {
 // Support button confetti listeners (run after DOM is ready)
 document.addEventListener('DOMContentLoaded', () => {
     const supportButton = document.getElementById('supportButton');
+    if (supportButton) {
+        supportButton.addEventListener('mouseenter', function(e) {
+            const origin = {
+                x: e.clientX / window.innerWidth,
+                y: e.clientY / window.innerHeight
+            };
 
-    supportButton.addEventListener('mouseenter', function(e) {
-        const origin = {
-            x: e.clientX / window.innerWidth,
-            y: e.clientY / window.innerHeight
-        };
+            confettiTimeout = setTimeout(() => {
+                startConfetti({ particleCount: 100, duration: 3000, origin: origin });
+            }, 1000);
+        });
 
-        confettiTimeout = setTimeout(() => {
-            startConfetti({ particleCount: 100, duration: 3000, origin: origin });
-        }, 1000);
-    });
-
-    supportButton.addEventListener('mouseleave', function() {
-        clearTimeout(confettiTimeout);
-    });
+        supportButton.addEventListener('mouseleave', function() {
+            clearTimeout(confettiTimeout);
+        });
+    }
 });

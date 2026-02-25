@@ -16,6 +16,7 @@ function renderSpaces() {
 
     activeSpaces.forEach(spaceObj => {
         const spaceName = spaceObj.name;
+        const escapedName = escapeHtml(spaceName);
         const spaceItem = document.createElement('div');
         spaceItem.className = 'space-item';
         if (spaceName === bookmarkManagerData.currentSpace) {
@@ -23,8 +24,8 @@ function renderSpaces() {
         }
 
         spaceItem.innerHTML = `
-            <span class="space-name">${spaceName}</span>
-            ${spaceName !== 'Everything' ? '<button class="delete-space-btn" data-space="' + spaceName + '">\u00D7</button>' : ''}
+            <span class="space-name">${escapedName}</span>
+            ${spaceName !== 'Everything' ? '<button class="delete-space-btn" data-space="' + escapedName + '">\u00D7</button>' : ''}
         `;
 
         spaceItem.addEventListener('click', (e) => {

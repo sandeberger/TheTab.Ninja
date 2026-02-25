@@ -5,8 +5,12 @@
 
 // Validate GitHub configuration
 function isGitHubConfigValid() {
-    const { username, repo, pat } = bookmarkManagerData.githubConfig;
-    return username && repo && pat;
+    const { username, repo, pat, filepath } = bookmarkManagerData.githubConfig;
+    if (!username || !repo || !pat) return false;
+    const safePattern = /^[a-zA-Z0-9._-]+$/;
+    if (!safePattern.test(username) || !safePattern.test(repo)) return false;
+    if (filepath && !/^[a-zA-Z0-9._\-\/]+$/.test(filepath)) return false;
+    return true;
 }
 
 // Fetch data from GitHub via background.js
@@ -35,8 +39,10 @@ async function pushToGitHub(content) {
         config: bookmarkManagerData.githubConfig,
         content: content
     });
-
-    return response.success;
+    if (response && response.error) {
+        throw new Error(response.error);
+    }
+    return response && response.success;
 }
 
 // Sanitize data for sync (exclude PAT)
@@ -67,7 +73,7 @@ async function synchronizeWithGitHub(retryCount = 0) {
     }
 
     const syncButton = document.getElementById('syncButton');
-    syncButton.classList.add('syncing');
+    syncButton?.classList.add('syncing');
     isSyncing = true;
 
     try {
@@ -144,14 +150,15 @@ async function synchronizeWithGitHub(retryCount = 0) {
 
     } catch (error) {
         console.error('Sync error:', error);
-        alert(`Sync failed: ${error.message}`);
         if (retryCount < 2) {
             console.log(`Retrying sync (attempt ${retryCount + 1})`);
             await synchronizeWithGitHub(retryCount + 1);
+        } else {
+            alert(`Sync failed after ${retryCount + 1} attempts: ${error.message}`);
         }
     } finally {
         isSyncing = false;
-        syncButton.classList.remove('syncing');
+        syncButton?.classList.remove('syncing');
     }
 }
 
@@ -207,40 +214,6 @@ function mergeDatasets(localCollections, remoteCollections) {
             .filter(b => !b.deleted)
             .sort((a, b) => a.position - b.position)
     }));
-}
-
-// Merge bookmarks arrays
-function mergeBookmarks(localBookmarks, remoteBookmarks) {
-    const bookmarkMap = new Map();
-
-    for (const bookmark of localBookmarks) {
-        const existing = bookmarkMap.get(bookmark.id);
-        if (!existing || existing.lastModified < bookmark.lastModified) {
-            bookmarkMap.set(bookmark.id, bookmark);
-        }
-    }
-
-    for (const bookmark of remoteBookmarks) {
-        const existing = bookmarkMap.get(bookmark.id);
-        if (!existing) {
-            bookmarkMap.set(bookmark.id, bookmark);
-        } else {
-            const merged = mergeBookmarkVersions(existing, bookmark);
-            bookmarkMap.set(merged.id, merged);
-        }
-    }
-
-    return Array.from(bookmarkMap.values());
-}
-
-// Merge two versions of the same bookmark
-function mergeBookmarkVersions(local, remote) {
-    if (local.deleted || remote.deleted) {
-        const latest = local.lastModified > remote.lastModified ? local : remote;
-        return {...latest, deleted: true};
-    }
-
-    return local.lastModified > remote.lastModified ? local : remote;
 }
 
 // Merge spaces arrays

@@ -35,7 +35,7 @@ function editCollection(collectionId) {
         <h3 style="color: ${textColor}; margin-top: 0; margin-bottom: 20px; font-size: 18px;">Edit Collection Name</h3>
         <div style="margin: 15px 0;">
             <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">Collection Name:</label>
-            <input type="text" id="collectionNameInput" value="${collection.name}" style="
+            <input type="text" id="collectionNameInput" value="${escapeHtml(collection.name)}" style="
                 width: 100%; padding: 12px; border: 2px solid ${inputBorder};
                 border-radius: 6px; font-size: 14px; box-sizing: border-box;
                 background: ${inputBg}; color: ${textColor};
@@ -57,14 +57,17 @@ function editCollection(collectionId) {
         </div>
     `;
 
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-    `;
-    document.head.appendChild(style);
+    if (!document.querySelector('style[data-dialog-animation]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-dialog-animation', 'true');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
@@ -101,7 +104,6 @@ function editCollection(collectionId) {
 
     function closeDialog() {
         document.body.removeChild(overlay);
-        document.head.removeChild(style);
     }
 
     function saveCollection() {
@@ -152,10 +154,11 @@ function editCollectionSpaces(collectionId) {
     const spacesHtml = availableSpaces.map(space => {
         const checked = currentSpaces.includes(space) ? 'checked' : '';
         const disabled = space === 'Everything' ? 'disabled' : '';
+        const escapedSpace = escapeHtml(space);
         return `
             <label style="display: block; margin: 5px 0; color: ${labelColor}; cursor: pointer;">
-                <input type="checkbox" value="${space}" ${checked} ${disabled} style="margin-right: 8px;">
-                ${space}
+                <input type="checkbox" value="${escapedSpace}" ${checked} ${disabled} style="margin-right: 8px;">
+                ${escapedSpace}
                 ${space === 'Everything' ? ' (always included)' : ''}
             </label>
         `;
@@ -173,7 +176,7 @@ function editCollectionSpaces(collectionId) {
             box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; min-width: 300px;
             max-height: 400px; overflow-y: auto; border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
         ">
-            <h3 style="color: ${textColor}; margin-top: 0;">Select Spaces for "${collection.name}"</h3>
+            <h3 style="color: ${textColor}; margin-top: 0;">Select Spaces for "${escapeHtml(collection.name)}"</h3>
             <div style="margin: 15px 0;">
                 ${spacesHtml}
             </div>
@@ -488,7 +491,7 @@ async function editBookmark(collectionId, bookmarkId) {
         <h3 style="color: ${textColor}; margin-top: 0; margin-bottom: 20px; font-size: 18px;">Edit Bookmark</h3>
         <div style="margin: 15px 0;">
             <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">Title:</label>
-            <input type="text" id="bookmarkTitleInput" value="${bookmark.title || ''}" style="
+            <input type="text" id="bookmarkTitleInput" value="${escapeHtml(bookmark.title || '')}" style="
                 width: 100%; padding: 12px; border: 2px solid ${inputBorder};
                 border-radius: 6px; font-size: 14px; box-sizing: border-box;
                 background: ${inputBg}; color: ${textColor};
@@ -497,7 +500,7 @@ async function editBookmark(collectionId, bookmarkId) {
         </div>
         <div style="margin: 15px 0;">
             <label style="display: block; margin-bottom: 8px; color: ${textColor}; font-weight: 500;">URL:</label>
-            <input type="url" id="bookmarkUrlInput" value="${bookmark.url || ''}" style="
+            <input type="url" id="bookmarkUrlInput" value="${escapeHtml(bookmark.url || '')}" style="
                 width: 100%; padding: 12px; border: 2px solid ${inputBorder};
                 border-radius: 6px; font-size: 14px; box-sizing: border-box;
                 background: ${inputBg}; color: ${textColor};
@@ -511,7 +514,7 @@ async function editBookmark(collectionId, bookmarkId) {
                 border-radius: 6px; font-size: 14px; box-sizing: border-box;
                 background: ${inputBg}; color: ${textColor}; resize: vertical;
                 min-height: 80px; transition: border-color 0.2s ease;
-            " placeholder="Enter description (optional)">${bookmark.description || ''}</textarea>
+            " placeholder="Enter description (optional)">${escapeHtml(bookmark.description || '')}</textarea>
         </div>
         <div style="margin-top: 25px; text-align: right;">
             <button id="cancelEditBookmark" style="
@@ -706,9 +709,9 @@ function showDeleteConfirmation(title, message, subtitle, onConfirm) {
                 display: flex; align-items: center; justify-content: center;
                 font-size: 24px; color: white;
             ">&#9888;&#65039;</div>
-            <h3 style="color: ${textColor}; margin: 0 0 10px 0; font-size: 18px;">${title}</h3>
-            <p style="color: ${textColor}; margin: 0 0 8px 0; font-size: 14px; line-height: 1.4;">${message}</p>
-            ${subtitle ? `<p style="color: ${subtitleColor}; margin: 0; font-size: 12px; font-style: italic;">${subtitle}</p>` : ''}
+            <h3 style="color: ${textColor}; margin: 0 0 10px 0; font-size: 18px;">${escapeHtml(title)}</h3>
+            <p style="color: ${textColor}; margin: 0 0 8px 0; font-size: 14px; line-height: 1.4;">${escapeHtml(message)}</p>
+            ${subtitle ? `<p style="color: ${subtitleColor}; margin: 0; font-size: 12px; font-style: italic;">${escapeHtml(subtitle)}</p>` : ''}
         </div>
         <div style="display: flex; gap: 12px; justify-content: center;">
             <button id="cancelDelete" style="

@@ -1,26 +1,81 @@
 console.log('Background service worker starting...');
-//chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+
+// Helper: Decode base64 to UTF-8 (replaces deprecated escape/unescape)
+function base64ToUtf8(base64) {
+  const binaryStr = atob(base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+// Helper: Encode UTF-8 to base64 (replaces deprecated escape/unescape)
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Helper: SSRF protection - validate that URL is public and uses http(s)
+function isPublicUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
+    const hostname = url.hostname;
+    if (/^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.|localhost|::1|\[::1\])/.test(hostname)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// SINGLE unified onMessage listener for all actions
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Message received in background:', message);
+
   if (message.action === "fetchFromGitHub") {
     handleGitHubFetch(message.config).then(sendResponse).catch(error => {
       sendResponse({ error: error.message });
     });
     return true;
+
   } else if (message.action === "pushToGitHub") {
     handleGitHubPush(message.config, message.content).then(sendResponse).catch(error => {
       sendResponse({ error: error.message });
     });
     return true;
+
   } else if (message.action === "getTabs") {
     chrome.windows.getAll({ populate: true }, async (windows) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error getting windows:', chrome.runtime.lastError);
+        sendResponse([]);
+        return;
+      }
       const result = [];
-      // För varje fönster hämtas även tab-grupper
       for (const window of windows) {
-        const groups = await new Promise((resolve) => {
-          chrome.tabGroups.query({ windowId: window.id }, resolve);
-        });
-        const mappedGroups = groups.map(g => ({
+        let groups = [];
+        try {
+          groups = await new Promise((resolve, reject) => {
+            chrome.tabGroups.query({ windowId: window.id }, (result) => {
+              if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError);
+              } else {
+                resolve(result || []);
+              }
+            });
+          });
+        } catch (e) {
+          console.warn('Could not query tab groups for window:', window.id, e);
+          groups = [];
+        }
+        const mappedGroups = (groups || []).map(g => ({
           groupId: g.id,
           title: g.title,
           color: g.color
@@ -41,24 +96,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(result);
     });
     return true;
+
   } else if (message.action === 'switchToTab') {
     chrome.windows.update(parseInt(message.windowId), { focused: true }, () => {
+      if (chrome.runtime.lastError) {
+        console.error("Error focusing window:", chrome.runtime.lastError);
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+        return;
+      }
       chrome.tabs.update(parseInt(message.tabId), { active: true }, () => {
         if (chrome.runtime.lastError) {
           console.error("Error updating tab:", chrome.runtime.lastError);
+          sendResponse({ success: false, error: chrome.runtime.lastError.message });
+          return;
         }
         sendResponse({ success: true });
       });
     });
     return true;
-  }else if (message.action === 'fetchFavicon') {
+
+  } else if (message.action === 'fetchFavicon') {
     const { url } = message;
+
+    // SSRF protection: validate URL before fetching
+    if (!isPublicUrl(url)) {
+      sendResponse({
+        faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
+      });
+      return true;
+    }
 
     // Improved favicon fetching with multiple fallbacks
     async function fetchGoogleFavicon(url) {
       try {
         const domain = new URL(url).hostname;
-        
+
         // Try multiple favicon sources in order of reliability
         const faviconSources = [
           `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
@@ -67,7 +139,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           // Fallback to a generic icon if all fail
           'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+'
         ];
-        
+
         // Try each source until one works
         for (const faviconUrl of faviconSources) {
           try {
@@ -76,17 +148,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               sendResponse({ faviconUrl });
               return;
             }
-            
+
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
-            
-            const response = await fetch(faviconUrl, { 
+
+            const response = await fetch(faviconUrl, {
               method: 'HEAD', // Only check if resource exists
               signal: controller.signal
             });
-            
+
             clearTimeout(timeoutId);
-            
+
             if (response.ok) {
               sendResponse({ faviconUrl });
               return;
@@ -105,62 +177,60 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             continue;
           }
         }
-        
+
         // If all sources fail, use the embedded SVG fallback
-        sendResponse({ 
+        sendResponse({
           faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
         });
-        
+
       } catch (error) {
         console.error('Error fetching favicon:', error);
         // Return embedded SVG as ultimate fallback
-        sendResponse({ 
+        sendResponse({
           faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
         });
       }
     }
 
-    // Anropa funktionen för att hämta favicon
     fetchGoogleFavicon(url);
+    return true;
 
-    return true; // Behöver returnera true för att indikera asynkron hantering
   } else if (message.action === 'launchCollection') {
     const urls = message.urls;
     const collectionName = message.collectionName;
 
+    let tabsProcessed = 0;
+    let firstError = null;
     const tabIds = [];
-    let tabsCreated = 0;
 
-    // Öppna varje URL i en ny tab och samla deras tabIds
+    if (!urls || !Array.isArray(urls) || urls.length === 0) {
+      sendResponse({ success: false, error: 'No URLs provided' });
+      return true;
+    }
+
     urls.forEach((url) => {
-      chrome.tabs.create({ url: url }, (tab) => {
+      chrome.tabs.create({ url }, (tab) => {
+        tabsProcessed++;
         if (chrome.runtime.lastError) {
-          console.error('Error creating tab:', chrome.runtime.lastError);
-          sendResponse({ success: false, error: chrome.runtime.lastError });
-          return;
+          if (!firstError) firstError = chrome.runtime.lastError.message;
+        } else {
+          tabIds.push(tab.id);
         }
-        tabIds.push(tab.id);
-        tabsCreated++;
-
-        // När alla tabbar har skapats
-        if (tabsCreated === urls.length) {
-          // Gruppera dem
-          chrome.tabs.group({ tabIds: tabIds }, (groupId) => {
+        if (tabsProcessed === urls.length) {
+          if (tabIds.length === 0) {
+            sendResponse({ success: false, error: firstError });
+            return;
+          }
+          chrome.tabs.group({ tabIds }, (groupId) => {
             if (chrome.runtime.lastError) {
-              console.error('Error grouping tabs:', chrome.runtime.lastError);
-              sendResponse({ success: false, error: chrome.runtime.lastError });
+              sendResponse({ success: false, error: chrome.runtime.lastError.message });
               return;
             }
-            // Uppdatera gruppens titel och färg
             chrome.tabGroups.update(groupId, {
-              title: collectionName,
-              color: "blue",
-              collapsed: true
+              title: collectionName, color: "blue", collapsed: true
             }, () => {
               if (chrome.runtime.lastError) {
                 console.error('Error updating tab group:', chrome.runtime.lastError);
-                sendResponse({ success: false, error: chrome.runtime.lastError });
-                return;
               }
               sendResponse({ success: true });
             });
@@ -170,107 +240,126 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
 
     return true;
+
+  } else if (message.action === 'createManualBackup') {
+    createManualBackup(message.data)
+      .then(sendResponse)
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
   }
 });
 
 chrome.tabs.onCreated.addListener((tab) => {
   if (tab.pendingUrl === "chrome://newtab/" || tab.url === "chrome://newtab/") {
-    chrome.tabs.update(tab.id, { url: "bm.html" });    
+    chrome.tabs.update(tab.id, { url: "bm.html" });
   }
 });
 
 async function handleGitHubFetch(config) {
   const { username, repo, pat, filepath } = config;
-  try {
-    // Testa repository access
-    const repoResponse = await fetch(
-      `https://api.github.com/repos/${username}/${repo}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${pat}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+
+  // Test repository access
+  const repoResponse = await fetch(
+    `https://api.github.com/repos/${username}/${repo}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${pat}`,
+        'Accept': 'application/vnd.github.v3+json'
       }
-    );
-    if (!repoResponse.ok) {
-      if (repoResponse.status === 404) {
-        throw new Error(`Repository "${username}/${repo}" not found`);
-      } else if (repoResponse.status === 401) {
-        throw new Error('Authentication failed');
-      }
-      throw new Error(`Could not reach repository: ${repoResponse.statusText}`);
     }
-
-    // Hämta filinnehåll via Contents API:t
-    const fileResponse = await fetch(
-      `https://api.github.com/repos/${username}/${repo}/contents/${filepath}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${pat}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      }
-    );
-
-    if (!fileResponse.ok) {
-      if (fileResponse.status === 404) {
-        return { content: null };
-      }
-      throw new Error(`Could not download the file: ${fileResponse.statusText}`);
+  );
+  if (!repoResponse.ok) {
+    if (repoResponse.status === 404) {
+      throw new Error(`Repository "${username}/${repo}" not found`);
+    } else if (repoResponse.status === 401) {
+      throw new Error('Authentication failed');
     }
+    throw new Error(`Could not reach repository: ${repoResponse.statusText}`);
+  }
 
-    const fileData = await fileResponse.json();
+  // Fetch file content via Contents API
+  const fileResponse = await fetch(
+    `https://api.github.com/repos/${username}/${repo}/contents/${filepath}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${pat}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    }
+  );
 
-    // Om filinnehållet finns direkt (filens storlek är under gränsen)
-    if (fileData.content) {
-      const decodedContent = decodeURIComponent(escape(atob(fileData.content)));
+  if (!fileResponse.ok) {
+    if (fileResponse.status === 404) {
+      return { content: null };
+    }
+    throw new Error(`Could not download the file: ${fileResponse.statusText}`);
+  }
+
+  const fileData = await fileResponse.json();
+
+  // If file content is available directly (file size is under the limit)
+  if (fileData.content) {
+    const decodedContent = base64ToUtf8(fileData.content);
+    return { content: JSON.parse(decodedContent) };
+  }
+
+  // If content is missing but download_url exists (file is over 1 MB)
+  if (fileData.download_url) {
+    // Try to fetch via download_url with Authorization header
+    let downloadResponse = await fetch(fileData.download_url, {
+      headers: {
+        'Authorization': `Bearer ${pat}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (downloadResponse.ok) {
+      const rawContent = await downloadResponse.text();
+      return { content: JSON.parse(rawContent) };
+    } else {
+      // On 404 or other errors - try fetching via Git Blobs API
+      const blobResponse = await fetch(
+        `https://api.github.com/repos/${username}/${repo}/git/blobs/${fileData.sha}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${pat}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        }
+      );
+      if (!blobResponse.ok) {
+        throw new Error(`Failed to retrieve blob: ${blobResponse.statusText}`);
+      }
+      const blobData = await blobResponse.json();
+      const decodedContent = base64ToUtf8(blobData.content);
       return { content: JSON.parse(decodedContent) };
     }
-
-    // Om content saknas men download_url finns (filen är t.ex. över 1 MB)
-    if (fileData.download_url) {
-      // Försök hämta via download_url med Authorization-header
-      let downloadResponse = await fetch(fileData.download_url, {
-        headers: {
-          'Authorization': `Bearer ${pat}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      if (downloadResponse.ok) {
-        const rawContent = await downloadResponse.text();
-        return { content: JSON.parse(rawContent) };
-      } else {
-        // Vid 404 eller andra fel – försök hämta via Git Blobs API:t
-        const blobResponse = await fetch(
-          `https://api.github.com/repos/${username}/${repo}/git/blobs/${fileData.sha}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${pat}`,
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          }
-        );
-        if (!blobResponse.ok) {
-          throw new Error(`Failed to retrieve blob: ${blobResponse.statusText}`);
-        }
-        const blobData = await blobResponse.json();
-        const decodedContent = decodeURIComponent(escape(atob(blobData.content)));
-        return { content: JSON.parse(decodedContent) };
-      }
-    }
-    throw new Error('The file contains neither content nor download_url');
-  } catch (error) {
-    throw error;
   }
+  throw new Error('The file contains neither content nor download_url');
 }
 
 
 async function handleGitHubPush(config, content) {
   const { username, repo, pat, filepath } = config;
   try {
+    // Fetch repo metadata to get default branch
+    const repoResponse = await fetch(
+      `https://api.github.com/repos/${username}/${repo}`,
+      {
+        headers: {
+          'Authorization': `token ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+    if (!repoResponse.ok) {
+      throw new Error(`Failed to fetch repo metadata: ${repoResponse.status} ${repoResponse.statusText}`);
+    }
+    const repoData = await repoResponse.json();
+    const defaultBranch = repoData.default_branch || 'main';
+
     // Get latest commit SHA
     const refResponse = await fetch(
-      `https://api.github.com/repos/${username}/${repo}/git/ref/heads/main`,
+      `https://api.github.com/repos/${username}/${repo}/git/ref/heads/${defaultBranch}`,
       {
         headers: {
           'Authorization': `Bearer ${pat}`,
@@ -278,11 +367,11 @@ async function handleGitHubPush(config, content) {
         }
       }
     );
-    
+
     if (!refResponse.ok) {
       throw new Error(`Failed to fetch ref: ${refResponse.status} ${refResponse.statusText}`);
     }
-    
+
     const refData = await refResponse.json();
     const latestCommitSha = refData.object.sha;
 
@@ -296,11 +385,11 @@ async function handleGitHubPush(config, content) {
         }
       }
     );
-    
+
     if (!commitResponse.ok) {
       throw new Error(`Failed to fetch commit data: ${commitResponse.status} ${commitResponse.statusText}`);
     }
-    
+
     const commitData = await commitResponse.json();
     const baseTreeSha = commitData.tree.sha;
 
@@ -315,7 +404,7 @@ async function handleGitHubPush(config, content) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+          content: utf8ToBase64(JSON.stringify(content, null, 2)),
           encoding: 'base64'
         })
       }
@@ -380,9 +469,9 @@ async function handleGitHubPush(config, content) {
 
     const newCommitData = await commitCreateResponse.json();
 
-    // Update reference
+    // Update reference (force: false to avoid overwriting concurrent changes)
     const updateRefResponse = await fetch(
-      `https://api.github.com/repos/${username}/${repo}/git/refs/heads/main`,
+      `https://api.github.com/repos/${username}/${repo}/git/refs/heads/${defaultBranch}`,
       {
         method: 'PATCH',
         headers: {
@@ -392,7 +481,7 @@ async function handleGitHubPush(config, content) {
         },
         body: JSON.stringify({
           sha: newCommitData.sha,
-          force: true
+          force: false
         })
       }
     );
@@ -404,6 +493,262 @@ async function handleGitHubPush(config, content) {
     return { success: true };
   } catch (error) {
     console.error('Detailed error in handleGitHubPush:', error);
+    throw error;
+  }
+}
+
+// Backup Functions
+async function createAutomaticBackup(data) {
+  try {
+    const timestamp = new Date().toISOString().split('T')[0];
+    const timeString = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+    const filename = `tabninja-backup-${timestamp}-${timeString}.json`;
+
+    // Create data URL directly (works in service worker)
+    const jsonString = JSON.stringify(data, null, 2);
+    const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
+
+    // Try to use custom folder if available and supported
+    if (data.autoBackup && data.autoBackup.useCustomFolder && data.autoBackup.customFolderName) {
+      try {
+        const downloadId = await chrome.downloads.download({
+          url: dataUrl,
+          filename: `${data.autoBackup.customFolderName}/${filename}`,
+          saveAs: false
+        });
+
+        console.log('Backup created successfully in custom folder:', filename);
+        return { success: true, filename, downloadId };
+      } catch (customError) {
+        console.warn('Custom folder backup failed, falling back to Downloads:', customError);
+      }
+    }
+
+    // Default: use Downloads folder
+    const downloadId = await chrome.downloads.download({
+      url: dataUrl,
+      filename: filename,
+      saveAs: false
+    });
+
+    console.log('Backup created successfully:', filename);
+    return { success: true, filename, downloadId };
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    throw error;
+  }
+}
+
+async function cleanupOldBackups(keepDays = 7) {
+  try {
+    const downloads = await chrome.downloads.search({
+      filenameRegex: 'tabninja-backup-.*\\.json$'
+    });
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - keepDays);
+
+    for (const download of downloads) {
+      if (download.startTime && new Date(download.startTime) < cutoffDate) {
+        try {
+          // First try to remove the actual file from disk
+          try {
+            await new Promise((resolve, reject) => {
+              chrome.downloads.removeFile(download.id, () => {
+                if (chrome.runtime.lastError) {
+                  // File may already be deleted, continue anyway
+                  resolve();
+                } else {
+                  resolve();
+                }
+              });
+            });
+          } catch (e) { /* ignore - file may already be gone */ }
+          // Then erase the download record
+          await new Promise(resolve => chrome.downloads.erase({ id: download.id }, resolve));
+          console.log('Cleaned up old backup:', download.filename);
+        } catch (error) {
+          console.warn('Could not clean up backup:', download.filename, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up old backups:', error);
+  }
+}
+
+async function shouldCreateBackup(lastBackup, frequency) {
+  if (!lastBackup) return true;
+
+  const lastBackupDate = new Date(lastBackup);
+  const now = new Date();
+
+  switch (frequency) {
+    case 'daily':
+      return now.getDate() !== lastBackupDate.getDate() ||
+             now.getMonth() !== lastBackupDate.getMonth() ||
+             now.getFullYear() !== lastBackupDate.getFullYear();
+    case 'weekly':
+      const weekDiff = Math.floor((now - lastBackupDate) / (7 * 24 * 60 * 60 * 1000));
+      return weekDiff >= 1;
+    default:
+      return false;
+  }
+}
+
+// Setup backup alarm
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  if (alarm.name === 'dailyBackup') {
+    try {
+      // Get current data from both storage locations
+      let data = null;
+
+      // First try chrome.storage.local
+      try {
+        const result = await chrome.storage.local.get(['bookmarkManagerData']);
+        data = result.bookmarkManagerData;
+      } catch (storageError) {
+        console.log('Chrome storage not available, checking tabs for localStorage');
+      }
+
+      // If no data in chrome.storage, get from active tab's localStorage
+      if (!data) {
+        const tabs = await chrome.tabs.query({ url: chrome.runtime.getURL('bm.html') });
+        if (tabs.length > 0) {
+          try {
+            const results = await chrome.scripting.executeScript({
+              target: { tabId: tabs[0].id },
+              func: () => {
+                const stored = localStorage.getItem('bookmarkManagerData');
+                return stored ? JSON.parse(stored) : null;
+              }
+            });
+            data = results[0]?.result;
+          } catch (scriptError) {
+            console.error('Error getting data from tab:', scriptError);
+          }
+        }
+      }
+
+      if (data && data.autoBackup && data.autoBackup.enabled) {
+        const needsBackup = await shouldCreateBackup(
+          data.autoBackup.lastBackup,
+          data.autoBackup.frequency
+        );
+
+        if (needsBackup) {
+          await createAutomaticBackup(data);
+          await cleanupOldBackups(data.autoBackup.keepDays || 7);
+
+          // Update last backup timestamp
+          data.autoBackup.lastBackup = new Date().toISOString();
+
+          // Try to update both storage locations
+          try {
+            await chrome.storage.local.set({ bookmarkManagerData: data });
+          } catch (storageError) {
+            console.log('Could not update chrome.storage.local:', storageError);
+          }
+
+          // Update localStorage in active tab
+          const tabs = await chrome.tabs.query({ url: chrome.runtime.getURL('bm.html') });
+          if (tabs.length > 0) {
+            try {
+              await chrome.scripting.executeScript({
+                target: { tabId: tabs[0].id },
+                func: (updatedData) => {
+                  localStorage.setItem('bookmarkManagerData', JSON.stringify(updatedData));
+                },
+                args: [data]
+              });
+            } catch (scriptError) {
+              console.error('Error updating localStorage:', scriptError);
+            }
+          }
+
+          console.log('Automatic backup completed');
+        }
+      }
+    } catch (error) {
+      console.error('Error during automatic backup:', error);
+    }
+  }
+});
+
+// Initialize backup alarm on startup
+chrome.runtime.onStartup.addListener(() => {
+  chrome.alarms.create('dailyBackup', {
+    delayInMinutes: 1,
+    periodInMinutes: 60 // Check every hour
+  });
+});
+
+// Also create alarm on install
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create('dailyBackup', {
+    delayInMinutes: 1,
+    periodInMinutes: 60 // Check every hour
+  });
+});
+
+// Manual backup function with File System Access API support
+async function createManualBackup(data) {
+  try {
+    const timestamp = new Date().toISOString().split('T')[0];
+    const timeString = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+    const filename = `tabninja-backup-${timestamp}-${timeString}.json`;
+
+    // For manual backups, try to use File System Access API from the current tab
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tabs.length > 0) {
+      try {
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tabs[0].id },
+          func: async (data, filename) => {
+            // Try to use stored directory handle if available
+            const storedData = localStorage.getItem('bookmarkManagerData');
+            const parsedData = storedData ? JSON.parse(storedData) : null;
+
+            if (parsedData && parsedData.autoBackup && parsedData.autoBackup.useCustomFolder && parsedData.autoBackup.customFolder) {
+              try {
+                // This won't work because directory handles don't persist
+                // But we can try to use showDirectoryPicker again
+                if ('showDirectoryPicker' in window) {
+                  const dirHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite',
+                    startIn: 'downloads'
+                  });
+
+                  const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+                  const writable = await fileHandle.createWritable();
+                  await writable.write(JSON.stringify(data, null, 2));
+                  await writable.close();
+
+                  return { success: true, filename, method: 'filesystem' };
+                }
+              } catch (fsError) {
+                console.warn('File System Access failed:', fsError);
+              }
+            }
+
+            // Fallback to download
+            return { success: false, fallback: true };
+          },
+          args: [data, filename]
+        });
+
+        if (results[0]?.result?.success) {
+          return results[0].result;
+        }
+      } catch (scriptError) {
+        console.warn('Script execution failed:', scriptError);
+      }
+    }
+
+    // Fallback to automatic backup method
+    return await createAutomaticBackup(data);
+  } catch (error) {
+    console.error('Error creating manual backup:', error);
     throw error;
   }
 }

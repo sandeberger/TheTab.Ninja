@@ -30,7 +30,9 @@ function dragStartCollection(e) {
 function dragStartBookmark(e) {
     console.debug('dragStartBookmark initiated!');
     const bookmarkElement = this;
-    const collectionId = bookmarkElement.closest('.collection').dataset.collectionId;
+    const collectionElement = bookmarkElement.closest('.collection');
+    if (!collectionElement) return;
+    const collectionId = collectionElement.dataset.collectionId;
     const bookmarkId = bookmarkElement.dataset.bookmarkId;
 
     draggedItem = {
