@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "TheTab.Ninja – Smart new tab start page & bookmark manager",
+  "name": "TheTab.Ninja - New tab bookmark manager, tab organizer & GitHub sync",
+  "short_name": "TheTab.Ninja",
   "version": "1.2",
-  "description": "New tab page & bookmark manager that becomes your personal launchpad. Sync privately via GitHub. Organize tabs & bookmarks fast.",
+  "description": "Replace your new tab with a powerful bookmark manager. Organize tabs, collections & workspaces. Sync via GitHub or Google Drive. Import from Toby. Dark mode.",
 
   "icons": {
     "128": "assets/light-128.png"
@@ -10,11 +11,11 @@
 
   "action": {
     "default_popup": "popup.html",
-    
+
     "default_icon": {
       "128": "assets/light-128.png"
     },
-    
+
     "theme_icons": [
       {
         "light": "assets/light-128.png",
