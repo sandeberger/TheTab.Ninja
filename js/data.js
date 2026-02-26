@@ -79,7 +79,7 @@ function createCollectionFromTabGroup(tabGroupData) {
     if (tabGroupData.title && tabGroupData.title.trim() !== '') {
         baseName = tabGroupData.title;
     } else if (tabGroupData.windowId) {
-        baseName = `Chrome Window ${tabGroupData.windowId}`;
+        baseName = generateWindowName(tabGroupData.windowId);
     } else {
         baseName = 'Tab Group';
     }
@@ -294,17 +294,33 @@ async function importTobyBookmarks() {
     }
 }
 
-// Save data to localStorage
-function saveToLocalStorage() {
+// Immediate save implementation (used by debounced wrapper and flush)
+function _saveToLocalStorageImmediate() {
     try {
         localStorage.setItem('bookmarkManagerData', JSON.stringify(bookmarkManagerData));
-        console.log('Saved data to localStorage');
     } catch (error) {
         console.error('Error saving to local storage:', error);
         if (error.name === 'QuotaExceededError' || error.code === 22) {
             alert('Storage is full. Please remove some data (custom backgrounds, old collections) to continue saving.');
         }
     }
+    // Also mirror to chrome.storage.local so the background service worker can access data
+    try {
+        if (chrome?.storage?.local) {
+            chrome.storage.local.set({ bookmarkManagerData });
+        }
+    } catch (e) {
+        // Silently ignore - chrome.storage may not be available in all contexts
+    }
+}
+
+// Debounced save: batches rapid calls within a 250ms window
+const saveToLocalStorage = debounce(_saveToLocalStorageImmediate, 250);
+
+// Flush: forces an immediate save (use before sync, export, or page unload)
+function flushSaveToLocalStorage() {
+    saveToLocalStorage.cancel();
+    _saveToLocalStorageImmediate();
 }
 
 // Load data from localStorage
@@ -455,6 +471,9 @@ function migrateSpacesToObjectFormat() {
         });
     }
 }
+
+// Flush pending saves before page unload
+window.addEventListener('beforeunload', flushSaveToLocalStorage);
 
 // Listen for storage changes from other tabs/windows
 window.addEventListener('storage', (event) => {

@@ -51,6 +51,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
 
+  } else if (message.action === "getCurrentWindowId") {
+    // Use sender.tab.windowId to identify which window the request came from
+    const windowId = sender && sender.tab ? sender.tab.windowId : null;
+    sendResponse({ windowId: windowId });
+    return false;
+
   } else if (message.action === "getTabs") {
     chrome.windows.getAll({ populate: true }, async (windows) => {
       if (chrome.runtime.lastError) {
@@ -254,6 +260,34 @@ chrome.tabs.onCreated.addListener((tab) => {
     chrome.tabs.update(tab.id, { url: "bm.html" });
   }
 });
+
+// Debounced notification: broadcast tab changes to all bm.html pages
+let _tabChangeTimeout = null;
+function notifyTabsChanged() {
+  if (_tabChangeTimeout) clearTimeout(_tabChangeTimeout);
+  _tabChangeTimeout = setTimeout(async () => {
+    _tabChangeTimeout = null;
+    try {
+      const bmTabs = await chrome.tabs.query({ url: chrome.runtime.getURL('bm.html') });
+      for (const t of bmTabs) {
+        chrome.tabs.sendMessage(t.id, { action: 'tabsChanged' }).catch(() => {});
+      }
+    } catch (e) {
+      // Extension context may be invalidated
+    }
+  }, 300);
+}
+
+chrome.tabs.onCreated.addListener(notifyTabsChanged);
+chrome.tabs.onRemoved.addListener(notifyTabsChanged);
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
+  if (changeInfo.status === 'complete' || changeInfo.title) {
+    notifyTabsChanged();
+  }
+});
+chrome.tabs.onMoved.addListener(notifyTabsChanged);
+chrome.tabs.onAttached.addListener(notifyTabsChanged);
+chrome.tabs.onDetached.addListener(notifyTabsChanged);
 
 async function handleGitHubFetch(config) {
   const { username, repo, pat, filepath } = config;
@@ -611,24 +645,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         console.log('Chrome storage not available, checking tabs for localStorage');
       }
 
-      // If no data in chrome.storage, get from active tab's localStorage
-      if (!data) {
-        const tabs = await chrome.tabs.query({ url: chrome.runtime.getURL('bm.html') });
-        if (tabs.length > 0) {
-          try {
-            const results = await chrome.scripting.executeScript({
-              target: { tabId: tabs[0].id },
-              func: () => {
-                const stored = localStorage.getItem('bookmarkManagerData');
-                return stored ? JSON.parse(stored) : null;
-              }
-            });
-            data = results[0]?.result;
-          } catch (scriptError) {
-            console.error('Error getting data from tab:', scriptError);
-          }
-        }
-      }
+      // chrome.storage.local is the single source of truth for the service worker.
+      // The front-end (bm.html) mirrors data here on every save.
 
       if (data && data.autoBackup && data.autoBackup.enabled) {
         const needsBackup = await shouldCreateBackup(
@@ -648,22 +666,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
             await chrome.storage.local.set({ bookmarkManagerData: data });
           } catch (storageError) {
             console.log('Could not update chrome.storage.local:', storageError);
-          }
-
-          // Update localStorage in active tab
-          const tabs = await chrome.tabs.query({ url: chrome.runtime.getURL('bm.html') });
-          if (tabs.length > 0) {
-            try {
-              await chrome.scripting.executeScript({
-                target: { tabId: tabs[0].id },
-                func: (updatedData) => {
-                  localStorage.setItem('bookmarkManagerData', JSON.stringify(updatedData));
-                },
-                args: [data]
-              });
-            } catch (scriptError) {
-              console.error('Error updating localStorage:', scriptError);
-            }
           }
 
           console.log('Automatic backup completed');
@@ -691,61 +693,9 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Manual backup function with File System Access API support
+// Manual backup function - uses the download-based backup approach
 async function createManualBackup(data) {
   try {
-    const timestamp = new Date().toISOString().split('T')[0];
-    const timeString = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
-    const filename = `tabninja-backup-${timestamp}-${timeString}.json`;
-
-    // For manual backups, try to use File System Access API from the current tab
-    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tabs.length > 0) {
-      try {
-        const results = await chrome.scripting.executeScript({
-          target: { tabId: tabs[0].id },
-          func: async (data, filename) => {
-            // Try to use stored directory handle if available
-            const storedData = localStorage.getItem('bookmarkManagerData');
-            const parsedData = storedData ? JSON.parse(storedData) : null;
-
-            if (parsedData && parsedData.autoBackup && parsedData.autoBackup.useCustomFolder && parsedData.autoBackup.customFolder) {
-              try {
-                // This won't work because directory handles don't persist
-                // But we can try to use showDirectoryPicker again
-                if ('showDirectoryPicker' in window) {
-                  const dirHandle = await window.showDirectoryPicker({
-                    mode: 'readwrite',
-                    startIn: 'downloads'
-                  });
-
-                  const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-                  const writable = await fileHandle.createWritable();
-                  await writable.write(JSON.stringify(data, null, 2));
-                  await writable.close();
-
-                  return { success: true, filename, method: 'filesystem' };
-                }
-              } catch (fsError) {
-                console.warn('File System Access failed:', fsError);
-              }
-            }
-
-            // Fallback to download
-            return { success: false, fallback: true };
-          },
-          args: [data, filename]
-        });
-
-        if (results[0]?.result?.success) {
-          return results[0].result;
-        }
-      } catch (scriptError) {
-        console.warn('Script execution failed:', scriptError);
-      }
-    }
-
-    // Fallback to automatic backup method
     return await createAutomaticBackup(data);
   } catch (error) {
     console.error('Error creating manual backup:', error);

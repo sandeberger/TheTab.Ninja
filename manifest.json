@@ -37,8 +37,7 @@
     "tabGroups",
     "downloads",
     "alarms",
-    "storage",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "https://www.google.com/*",
