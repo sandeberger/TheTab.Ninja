@@ -3,6 +3,12 @@
  * Manages favicon URL cleanup, fallback mechanisms, and global error handlers.
  */
 
+// Cache for getSafeIconUrl results to avoid re-processing the same URLs
+const _safeIconUrlCache = new Map();
+
+// Single regex for all problematic favicon URL patterns
+const _problematicFaviconPattern = /faviconV2\?client=SOCIAL|t[0-3]\.gstatic\.com\/faviconV2|fallback_opts=TYPE,SIZE,URL/;
+
 // Function to validate and clean favicon URLs
 function getSafeIconUrl(iconUrl) {
     // Return fallback immediately if no URL provided
@@ -15,41 +21,39 @@ function getSafeIconUrl(iconUrl) {
         return iconUrl;
     }
 
-    // Check for problematic URLs that commonly cause 404s
-    const problematicPatterns = [
-        'faviconV2?client=SOCIAL',
-        't0.gstatic.com/faviconV2',
-        't1.gstatic.com/faviconV2',
-        't2.gstatic.com/faviconV2',
-        't3.gstatic.com/faviconV2',
-        'faviconV2?client=SOCIAL&type=FAVICON',
-        'fallback_opts=TYPE,SIZE,URL'
-    ];
+    // Check cache first
+    const cached = _safeIconUrlCache.get(iconUrl);
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    let result = iconUrl;
 
     // If URL contains problematic patterns, replace with safe Google favicon service
-    for (const pattern of problematicPatterns) {
-        if (iconUrl.includes(pattern)) {
-            try {
-                // Extract domain from the problematic URL
-                const urlMatch = iconUrl.match(/url=([^&]+)/);
-                if (urlMatch) {
-                    const decodedUrl = decodeURIComponent(urlMatch[1]);
-                    const domain = new URL(decodedUrl).hostname;
-                    // Build URL safely using URL constructor
-                    const safeUrl = new URL('https://www.google.com/s2/favicons');
-                    safeUrl.searchParams.set('domain', domain);
-                    safeUrl.searchParams.set('sz', '32');
-                    return safeUrl.toString();
-                }
-            } catch (e) {
-                // If URL parsing fails, return fallback
-                return FALLBACK_ICON;
+    if (_problematicFaviconPattern.test(iconUrl)) {
+        try {
+            const urlMatch = iconUrl.match(/url=([^&]+)/);
+            if (urlMatch) {
+                const decodedUrl = decodeURIComponent(urlMatch[1]);
+                const domain = new URL(decodedUrl).hostname;
+                const safeUrl = new URL('https://www.google.com/s2/favicons');
+                safeUrl.searchParams.set('domain', domain);
+                safeUrl.searchParams.set('sz', '32');
+                result = safeUrl.toString();
+            } else {
+                result = FALLBACK_ICON;
             }
+        } catch (e) {
+            result = FALLBACK_ICON;
         }
     }
 
-    // Return the original URL if it seems safe
-    return iconUrl;
+    // Cache the result (cap at 5000 entries to prevent unbounded growth)
+    if (_safeIconUrlCache.size > 5000) {
+        _safeIconUrlCache.clear();
+    }
+    _safeIconUrlCache.set(iconUrl, result);
+    return result;
 }
 
 // Function to clean up existing problematic favicon URLs in collections

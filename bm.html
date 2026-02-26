@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google" content="notranslate">
     <title>TheTab.Ninja</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500&family=JetBrains+Mono:wght@200;300&family=Playfair+Display:wght@200;300;400&display=swap" rel="stylesheet">
 </head>
 <body>    
     <div id="leftPane">
@@ -67,6 +71,102 @@
                                             <div class="setting-description">Minimalist interface showing only clock until you scroll</div>
                                         </div>
                                         <input type="checkbox" id="zenMode" class="setting-checkbox">
+                                    </div>
+                                    <!-- Zen Mode Sub-settings -->
+                                    <div id="zenModeSettings" class="zen-mode-settings" style="display: none;">
+                                        <div class="setting-item">
+                                            <div class="setting-label">
+                                                <label for="zenGreetingEnabled">Show greeting</label>
+                                                <div class="setting-description">Display a time-of-day greeting</div>
+                                            </div>
+                                            <input type="checkbox" id="zenGreetingEnabled" class="setting-checkbox" checked>
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="zenGreetingLocale">Greeting language</label>
+                                            <select id="zenGreetingLocale" class="setting-select">
+                                                <option value="auto">Auto (browser language)</option>
+                                                <option value="ar">العربية</option>
+                                                <option value="bn">বাংলা</option>
+                                                <option value="bg">Български</option>
+                                                <option value="ca">Català</option>
+                                                <option value="cs">Čeština</option>
+                                                <option value="da">Dansk</option>
+                                                <option value="de">Deutsch</option>
+                                                <option value="el">Ελληνικά</option>
+                                                <option value="en">English</option>
+                                                <option value="es">Español</option>
+                                                <option value="et">Eesti</option>
+                                                <option value="fa">فارسی</option>
+                                                <option value="fi">Suomi</option>
+                                                <option value="fr">Français</option>
+                                                <option value="he">עברית</option>
+                                                <option value="hi">हिन्दी</option>
+                                                <option value="hr">Hrvatski</option>
+                                                <option value="hu">Magyar</option>
+                                                <option value="id">Bahasa Indonesia</option>
+                                                <option value="is">Íslenska</option>
+                                                <option value="it">Italiano</option>
+                                                <option value="ja">日本語</option>
+                                                <option value="ko">한국어</option>
+                                                <option value="lt">Lietuvių</option>
+                                                <option value="lv">Latviešu</option>
+                                                <option value="ms">Bahasa Melayu</option>
+                                                <option value="nl">Nederlands</option>
+                                                <option value="no">Norsk</option>
+                                                <option value="pl">Polski</option>
+                                                <option value="pt">Português</option>
+                                                <option value="ro">Română</option>
+                                                <option value="ru">Русский</option>
+                                                <option value="sk">Slovenčina</option>
+                                                <option value="sl">Slovenščina</option>
+                                                <option value="sr">Српски</option>
+                                                <option value="sv">Svenska</option>
+                                                <option value="sw">Kiswahili</option>
+                                                <option value="th">ไทย</option>
+                                                <option value="tl">Filipino</option>
+                                                <option value="tr">Türkçe</option>
+                                                <option value="uk">Українська</option>
+                                                <option value="vi">Tiếng Việt</option>
+                                                <option value="zh">中文</option>
+                                            </select>
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="zenClockFormat">Clock format</label>
+                                            <select id="zenClockFormat" class="setting-select">
+                                                <option value="24h">24-hour</option>
+                                                <option value="12h">12-hour</option>
+                                            </select>
+                                        </div>
+                                        <div class="setting-item">
+                                            <div class="setting-label">
+                                                <label for="zenShowSeconds">Show seconds</label>
+                                            </div>
+                                            <input type="checkbox" id="zenShowSeconds" class="setting-checkbox">
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="zenClockStyle">Clock style</label>
+                                            <select id="zenClockStyle" class="setting-select">
+                                                <option value="digital">Digital</option>
+                                                <option value="analog">Analog</option>
+                                            </select>
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="zenClockFont">Clock typography</label>
+                                            <select id="zenClockFont" class="setting-select">
+                                                <option value="system">System (default)</option>
+                                                <option value="mono">Monospace</option>
+                                                <option value="serif">Serif</option>
+                                                <option value="handwritten">Handwritten</option>
+                                            </select>
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="zenAmbientAnimation">Ambient animation</label>
+                                            <select id="zenAmbientAnimation" class="setting-select">
+                                                <option value="none">None</option>
+                                                <option value="gradient">Gradient</option>
+                                                <option value="particles">Particles</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="setting-item">
                                         <div class="setting-label">
@@ -412,9 +512,19 @@
             <input type="text" id="zenSearchBox" placeholder="Search..." >
         </div>
         <div id="zenDateTime" class="zen-datetime-display">
-            <div class="zen-time"></div>
+            <div class="zen-greeting"></div>
+            <div class="zen-time-wrapper">
+                <div class="zen-time"></div>
+                <canvas id="zenAnalogClock" class="zen-analog-clock" width="200" height="200"></canvas>
+            </div>
             <div class="zen-date"></div>
-        </div>            
+            <div class="zen-focus-container">
+                <input type="text" id="zenFocusInput" class="zen-focus-input"
+                       placeholder="What is your focus today?" maxlength="120">
+                <button id="zenFocusClear" class="zen-focus-clear" title="Clear focus">&times;</button>
+            </div>
+        </div>
+        <div id="zenAmbientCanvas" class="zen-ambient-layer"></div>
         <div id="collections"></div>
     </div>
     <div id="rightPane">

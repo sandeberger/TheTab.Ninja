@@ -1,5 +1,10 @@
 console.log('Background service worker starting...');
 
+// Favicon domain cache: domain -> faviconUrl (persists for service worker lifetime)
+const _faviconCache = new Map();
+const FAVICON_CACHE_MAX = 2000;
+const FAVICON_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 // Helper: Decode base64 to UTF-8 (replaces deprecated escape/unescape)
 function base64ToUtf8(base64) {
   const binaryStr = atob(base64);
@@ -135,77 +140,66 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.action === 'fetchFavicon') {
     const { url } = message;
 
+    const SVG_FALLBACK = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+';
+
     // SSRF protection: validate URL before fetching
     if (!isPublicUrl(url)) {
-      sendResponse({
-        faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
-      });
+      sendResponse({ faviconUrl: SVG_FALLBACK });
       return true;
     }
 
-    // Improved favicon fetching with multiple fallbacks
+    // Improved favicon fetching with domain-level caching
     async function fetchGoogleFavicon(url) {
       try {
         const domain = new URL(url).hostname;
+
+        // Check cache first
+        const cacheEntry = _faviconCache.get(domain);
+        if (cacheEntry && (Date.now() - cacheEntry.time < FAVICON_CACHE_TTL)) {
+          sendResponse({ faviconUrl: cacheEntry.url });
+          return;
+        }
 
         // Try multiple favicon sources in order of reliability
         const faviconSources = [
           `https://www.google.com/s2/favicons?domain=${domain}&sz=32`,
           `https://favicons.githubusercontent.com/${domain}`,
           `https://${domain}/favicon.ico`,
-          // Fallback to a generic icon if all fail
-          'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+'
         ];
 
         // Try each source until one works
         for (const faviconUrl of faviconSources) {
           try {
-            // For data URLs, skip the fetch and use directly
-            if (faviconUrl.startsWith('data:')) {
-              sendResponse({ faviconUrl });
-              return;
-            }
-
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
 
             const response = await fetch(faviconUrl, {
-              method: 'HEAD', // Only check if resource exists
+              method: 'HEAD',
               signal: controller.signal
             });
 
             clearTimeout(timeoutId);
 
             if (response.ok) {
+              // Cache successful result
+              if (_faviconCache.size > FAVICON_CACHE_MAX) _faviconCache.clear();
+              _faviconCache.set(domain, { url: faviconUrl, time: Date.now() });
               sendResponse({ faviconUrl });
               return;
             }
           } catch (err) {
-            // Classify and handle different types of network errors silently
-            if (err.name === 'AbortError') {
-              console.debug('Favicon fetch timeout (suppressed):', faviconUrl);
-            } else if (err.message && err.message.includes('ERR_CONNECTION_TIMED_OUT')) {
-              console.debug('Connection timeout (suppressed):', faviconUrl);
-            } else if (err.message && err.message.includes('ERR_NAME_NOT_RESOLVED')) {
-              console.debug('DNS resolution failed (suppressed):', faviconUrl);
-            } else {
-              console.debug('Favicon fetch failed (suppressed):', err.message || 'Unknown error');
-            }
+            console.debug('Favicon fetch failed (suppressed):', err.name || err.message);
             continue;
           }
         }
 
-        // If all sources fail, use the embedded SVG fallback
-        sendResponse({
-          faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
-        });
+        // All sources failed - cache the fallback too to avoid re-fetching
+        if (_faviconCache.size > FAVICON_CACHE_MAX) _faviconCache.clear();
+        _faviconCache.set(domain, { url: SVG_FALLBACK, time: Date.now() });
+        sendResponse({ faviconUrl: SVG_FALLBACK });
 
       } catch (error) {
-        console.error('Error fetching favicon:', error);
-        // Return embedded SVG as ultimate fallback
-        sendResponse({
-          faviconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0iIzQ1NmJmNiIvPgo8cGF0aCBkPSJNOCAxMkgxNlY4SDE4VjEySDI0VjE0SDI0VjIwSDI0VjI0SDhWMjBIOFYxNEg4VjEyWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+',
-        });
+        sendResponse({ faviconUrl: SVG_FALLBACK });
       }
     }
 

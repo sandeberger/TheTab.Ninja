@@ -338,7 +338,7 @@ function loadFromLocalStorage() {
 
             if (Array.isArray(parsedData.collections)) {
                 parsedData.collections = parsedData.collections.map(enrichCollection);
-                parsedData.collections = cleanupFaviconUrls(parsedData.collections);
+                // Favicon cleanup is handled by forceCleanupAllFaviconUrls() in init.js
             }
 
             const existingPat = bookmarkManagerData.githubConfig?.pat;
@@ -360,7 +360,11 @@ function loadFromLocalStorage() {
                     ...bookmarkManagerData.localDriveConfig,
                     ...(parsedData.localDriveConfig || {})
                 },
-                syncProvider: parsedData.syncProvider || bookmarkManagerData.syncProvider || 'none'
+                syncProvider: parsedData.syncProvider || bookmarkManagerData.syncProvider || 'none',
+                zenConfig: {
+                    ...bookmarkManagerData.zenConfig,
+                    ...(parsedData.zenConfig || {})
+                }
             };
 
             // Backward compatibility: auto-detect GitHub if configured but no syncProvider set
@@ -431,24 +435,24 @@ function createDefaultCollection() {
         isOpen: true,
         bookmarks: [
             {
-                title: "ThrustMe!",
-                url: "https://kodarninja.itch.io/thrustme",
-                description: "Thrust Me is a thrilling space adventure with danger and treasure!",
-                icon: "https://kodarninja.itch.io/favicon.ico",
-                id: "8c3c7744-9e1c-48f5-8e95-251a2effef80",
+                title: "TheFile.Ninja",
+                url: "https://thefile.ninja/",
+                description: "A fast file manager powered by Everything search and AI. Find any file instantly, automate tasks with ai-actions, and let AI help you organize your digital chaos.",
+                icon: "https://thefile.ninja/favicon.ico",
+                id: "2b9eea23-644a-4def-b94a-b4fc8fc6cddb",
                 deleted: false,
                 lastModified: 1737456756973,
                 position: 0
             },
             {
-                title: "TheFile.Ninja",
-                url: "https://thefile.ninja/",
-                description: "A superfast, future-ready file manager powered by Everything.",
-                icon: "https://thefile.ninja/favicon.ico",
-                id: "2b9eea23-644a-4def-b94a-b4fc8fc6cddb",
+                title: "AquaZens",
+                url: "https://aquazens.com/",
+                description: "Snap a photo of your test strip. Get instant, AI-powered water analysis with clear dosing instructions for your pool or spa.",
+                icon: "https://aquazens.com/favicon.ico",
+                id: "a3f1c8d2-7b4e-4a91-9c56-8d2e1f3a5b7c",
                 deleted: false,
                 lastModified: 1737456756973,
-                position: 5
+                position: 1
             },
             {
                 title: "Labs.Kodar.Ninja",
@@ -458,17 +462,7 @@ function createDefaultCollection() {
                 id: "2b9eea24-144a-4dff-b94a-b4fc8fc6cddb",
                 deleted: false,
                 lastModified: 1737456756973,
-                position: 6
-            },
-            {
-                id: "1b82111d-5f1b-43d0-b188-a5cdaac95ced",
-                title: "kodar.ninja - itch.io",
-                url: "https://kodarninja.itch.io/",
-                description: "",
-                icon: "https://kodarninja.itch.io/favicon.ico",
-                lastModified: 1737456756973,
-                deleted: false,
-                position: 14
+                position: 2
             }
         ],
         id: "b7fea125-d5be-4068-84a5-040f57c70637",

@@ -139,6 +139,7 @@ function mergeSettings(localData, remoteData) {
         zenMode: source.zenMode,
         hideCoffeeButton: source.hideCoffeeButton || false,
         collectionSortOrder: source.collectionSortOrder || 'userdefined',
+        zenConfig: source.zenConfig || {},
         settingsLastModified: Math.max(localSettingsTime, remoteSettingsTime)
     };
 }

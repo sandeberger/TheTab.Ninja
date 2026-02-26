@@ -443,6 +443,8 @@ function createBookmarkElement(bookmark, collectionId) {
     let iconSrc = getSafeIconUrl(bookmark.icon);
     bookmarkIcon.src = iconSrc;
     bookmarkIcon.alt = 'Icon';
+    bookmarkIcon.loading = 'lazy';
+    bookmarkIcon.decoding = 'async';
 
     bookmarkIcon.onerror = function() {
         this.src = FALLBACK_ICON;
@@ -633,6 +635,8 @@ function createChromeTabElement(tab, windowId) {
 
     let iconSrc = getSafeIconUrl(tab.favIconUrl);
     tabIcon.src = iconSrc;
+    tabIcon.loading = 'lazy';
+    tabIcon.decoding = 'async';
 
     tabIcon.onerror = function() {
         this.src = FALLBACK_ICON_DARK;

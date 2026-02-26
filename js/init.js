@@ -80,6 +80,34 @@ function updateAutoSyncDelayVisibility() {
     }
 }
 
+// Helper: Show/hide zen mode sub-settings
+function updateZenSettingsVisibility() {
+    const zenModeSettings = document.getElementById('zenModeSettings');
+    if (zenModeSettings) {
+        zenModeSettings.style.display = bookmarkManagerData.zenMode ? 'block' : 'none';
+    }
+}
+
+// Helper: Restore zen settings UI controls from data
+function loadZenSettingsUI() {
+    const config = bookmarkManagerData.zenConfig || {};
+    const greetingEnabled = document.getElementById('zenGreetingEnabled');
+    const greetingLocale = document.getElementById('zenGreetingLocale');
+    const clockFormat = document.getElementById('zenClockFormat');
+    const showSeconds = document.getElementById('zenShowSeconds');
+    const clockStyle = document.getElementById('zenClockStyle');
+    const clockFont = document.getElementById('zenClockFont');
+    const ambientAnimation = document.getElementById('zenAmbientAnimation');
+
+    if (greetingEnabled) greetingEnabled.checked = config.greetingEnabled !== false;
+    if (greetingLocale) greetingLocale.value = config.greetingLocale || 'auto';
+    if (clockFormat) clockFormat.value = config.clockFormat || '24h';
+    if (showSeconds) showSeconds.checked = !!config.showSeconds;
+    if (clockStyle) clockStyle.value = config.clockStyle || 'digital';
+    if (clockFont) clockFont.value = config.clockFont || 'system';
+    if (ambientAnimation) ambientAnimation.value = config.ambientAnimation || 'none';
+}
+
 // Helper: Update backup settings visibility
 function updateBackupSettingsVisibility() {
     const enabled = bookmarkManagerData.autoBackup.enabled;
@@ -379,6 +407,62 @@ document.addEventListener('DOMContentLoaded', () => {
             stopZenMode();
         }
         saveToLocalStorage();
+        updateZenSettingsVisibility();
+    });
+
+    // Zen mode sub-settings event listeners
+    document.getElementById('zenGreetingEnabled').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.greetingEnabled = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    document.getElementById('zenGreetingLocale').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.greetingLocale = e.target.value;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    document.getElementById('zenClockFormat').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.clockFormat = e.target.value;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    document.getElementById('zenShowSeconds').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.showSeconds = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    document.getElementById('zenClockStyle').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.clockStyle = e.target.value;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    document.getElementById('zenClockFont').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.clockFont = e.target.value;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+        applyZenClockFont();
+    });
+
+    document.getElementById('zenAmbientAnimation').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.zenConfig) bookmarkManagerData.zenConfig = {};
+        bookmarkManagerData.zenConfig.ambientAnimation = e.target.value;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+        // Restart animation if zen mode is active
+        if (bookmarkManagerData.zenMode && document.body.classList.contains('zen-mode')) {
+            startZenAmbient();
+        }
     });
 
     // Initialize zen mode if enabled (but not on mobile)
@@ -392,6 +476,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('zen-mode');
     }
 
+    // Restore zen settings UI from bookmarkManagerData
+    loadZenSettingsUI();
+    updateZenSettingsVisibility();
+
     // Monitor window resize to disable zen mode on mobile
     window.addEventListener('resize', () => {
         if (window.innerWidth <= 768 && bookmarkManagerData.zenMode) {
@@ -401,6 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('zen-mode');
             stopZenMode();
             saveToLocalStorage();
+            updateZenSettingsVisibility();
         }
     });
 

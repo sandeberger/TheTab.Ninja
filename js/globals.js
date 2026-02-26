@@ -13,6 +13,15 @@ let bookmarkManagerData = {
     closeWhenSaveTab: false,
     activeLeftTab: 'spaces',
     zenMode: false,
+    zenConfig: {
+        clockFormat: '24h',        // '12h' | '24h'
+        showSeconds: false,
+        clockStyle: 'digital',     // 'digital' | 'analog'
+        clockFont: 'system',       // 'system' | 'mono' | 'serif' | 'handwritten'
+        greetingEnabled: true,
+        greetingLocale: 'auto',    // 'auto' | 'sv' | 'en' | 'de' | 'fr' | 'es' | 'no' | 'da' | 'fi'
+        ambientAnimation: 'none',  // 'none' | 'gradient' | 'particles'
+    },
     spaces: ['Everything'], // Default space that cannot be removed
     currentSpace: 'Everything',
     collectionSortOrder: 'userdefined', // New setting for collection sorting
@@ -84,3 +93,15 @@ let zenUserHasScrolled = false;
 // Zen search box listener references (for proper cleanup)
 let zenSearchBoxInputListener = null;
 let zenSearchBoxKeydownListener = null;
+
+// Zen ambient animation frame reference
+let zenAmbientAnimationFrame = null;
+
+// Zen ambient particle resize listener (for cleanup)
+let zenParticleResizeListener = null;
+
+// Zen focus input listener references (for proper cleanup)
+let zenFocusKeydownListener = null;
+let zenFocusBlurListener = null;
+let zenFocusClickListener = null;
+let zenFocusClearClickListener = null;
