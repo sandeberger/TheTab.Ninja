@@ -19,16 +19,12 @@ function dragStartCollection(e) {
         e.dataTransfer.setData('text/plain', collectionId);
         e.dataTransfer.setData('application/json', JSON.stringify({type: 'collection', id: collectionId}));
 
-        console.log('Starting collection drag, calling showSpaceDropZones');
         showSpaceDropZones();
-    } else {
-        console.warn('Collection element not found for drag start');
     }
 }
 
 // Start dragging a bookmark
 function dragStartBookmark(e) {
-    console.debug('dragStartBookmark initiated!');
     const bookmarkElement = this;
     const collectionElement = bookmarkElement.closest('.collection');
     if (!collectionElement) return;
@@ -51,22 +47,123 @@ function dragEnd(e) {
     if (draggedItem && draggedItem.element) {
         draggedItem.element.classList.remove('dragging');
     }
+    removePlaceholder();
+    hideSpaceDropZones();
+    draggedItem = null;
+}
+
+// Remove placeholder from DOM
+function removePlaceholder() {
     if (placeholder && placeholder.parentNode) {
         placeholder.parentNode.removeChild(placeholder);
-        placeholder = null;
+    }
+    placeholder = null;
+}
+
+// Create bookmark-sized placeholder for flex-wrap grid
+function ensureBookmarkPlaceholder() {
+    if (!placeholder) {
+        placeholder = document.createElement('div');
+        placeholder.className = 'bookmark-placeholder';
+    }
+    return placeholder;
+}
+
+// Find the best insertion index among bookmarks in a flex-wrap container.
+// Uses both X and Y to work with multi-row grids.
+function findInsertionIndex(container, mouseX, mouseY, excludeElement) {
+    const bookmarks = Array.from(container.children).filter(
+        el => el.classList.contains('bookmark') && el !== excludeElement && !el.classList.contains('dragging')
+    );
+
+    if (bookmarks.length === 0) return 0;
+
+    // Measure all bookmark rects
+    const rects = bookmarks.map(el => el.getBoundingClientRect());
+
+    // Determine row height from the gap between first two different-Y bookmarks
+    const rowCenters = [];
+    let currentRowY = null;
+    for (const r of rects) {
+        const cy = r.top + r.height / 2;
+        if (currentRowY === null || Math.abs(cy - currentRowY) > r.height * 0.3) {
+            rowCenters.push(cy);
+            currentRowY = cy;
+        }
     }
 
-    hideSpaceDropZones();
+    // Find which row the mouse is closest to
+    let bestRow = 0;
+    let bestRowDist = Infinity;
+    for (let i = 0; i < rowCenters.length; i++) {
+        const dist = Math.abs(mouseY - rowCenters[i]);
+        if (dist < bestRowDist) {
+            bestRowDist = dist;
+            bestRow = i;
+        }
+    }
 
-    draggedItem = null;
-    console.log('Drag ended, draggedItem reset');
+    // If mouse is well below all rows, insert at end
+    const lastRect = rects[rects.length - 1];
+    if (mouseY > lastRect.bottom + 20) {
+        return bookmarks.length;
+    }
+
+    // Filter bookmarks on that row
+    const rowY = rowCenters[bestRow];
+    const rowBookmarks = [];
+    const rowIndices = [];
+    for (let i = 0; i < bookmarks.length; i++) {
+        const cy = rects[i].top + rects[i].height / 2;
+        if (Math.abs(cy - rowY) < rects[i].height * 0.3) {
+            rowBookmarks.push(bookmarks[i]);
+            rowIndices.push(i);
+        }
+    }
+
+    if (rowBookmarks.length === 0) return bookmarks.length;
+
+    // Check if mouse is before the first bookmark in the row
+    const firstRowRect = rowBookmarks[0].getBoundingClientRect();
+    if (mouseX < firstRowRect.left + firstRowRect.width / 2) {
+        return rowIndices[0];
+    }
+
+    // Check each bookmark in the row
+    for (let i = 0; i < rowBookmarks.length; i++) {
+        const rect = rowBookmarks[i].getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+
+        if (mouseX < midX) {
+            return rowIndices[i];
+        }
+    }
+
+    // Mouse is after the last bookmark in the row — insert after it
+    return rowIndices[rowIndices.length - 1] + 1;
+}
+
+// Insert placeholder at a given index among bookmark children
+function insertPlaceholderAt(container, index, excludeElement) {
+    const ph = ensureBookmarkPlaceholder();
+    const bookmarks = Array.from(container.children).filter(
+        el => el.classList.contains('bookmark') && el !== excludeElement && !el.classList.contains('dragging')
+    );
+
+    if (ph.parentNode === container) {
+        container.removeChild(ph);
+    }
+
+    if (index >= bookmarks.length) {
+        container.appendChild(ph);
+    } else {
+        container.insertBefore(ph, bookmarks[index]);
+    }
 }
 
 // Handle dragging over collections container
 function dragOverCollection(e) {
-    if (!draggedItem) {
-        return;
-    }
+    if (!draggedItem) return;
 
     if (draggedItem.type === 'chromeTabGroup' ||
         draggedItem.type === 'chromeWindow' ||
@@ -76,9 +173,7 @@ function dragOverCollection(e) {
         return;
     }
 
-    if (draggedItem.type !== 'collection') {
-        return;
-    }
+    if (draggedItem.type !== 'collection') return;
 
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -108,6 +203,7 @@ function dragOverCollection(e) {
         }
     });
 
+    // Use a collection-level placeholder (full-width)
     if (placeholder && placeholder.parentNode) {
         placeholder.parentNode.removeChild(placeholder);
     }
@@ -130,18 +226,13 @@ function dragOverCollection(e) {
 function dropCollection(e) {
     e.preventDefault();
 
-    if (!draggedItem || draggedItem.type !== 'collection') {
-        return;
-    }
+    if (!draggedItem || draggedItem.type !== 'collection') return;
 
     const droppedCollectionId = draggedItem.collectionId;
     const collections = bookmarkManagerData.collections;
     const droppedIndex = collections.findIndex(c => c.id === droppedCollectionId);
 
-    if (droppedIndex === -1) {
-        console.warn('Invalid collection index:', droppedIndex);
-        return;
-    }
+    if (droppedIndex === -1) return;
 
     const [movedCollection] = collections.splice(droppedIndex, 1);
 
@@ -159,10 +250,7 @@ function dropCollection(e) {
         movedCollection.lastModified = Date.now();
     }
 
-    if (placeholder && placeholder.parentNode) {
-        placeholder.parentNode.removeChild(placeholder);
-    }
-    placeholder = null;
+    removePlaceholder();
     draggedItem = null;
 
     bookmarkManagerData.collections.forEach((collection, index) => {
@@ -191,31 +279,46 @@ function addEmptyMessageListeners(emptyMessage) {
         if (draggedItem && draggedItem.type === 'collection') {
             e.preventDefault();
             e.stopPropagation();
-            console.warn('Prevented drop of collection on empty message');
             return;
         }
     });
 }
 
-// Handle dragover on bookmark container
+// Handle dragover on bookmark container — computes insertion point in flex-wrap grid
 function dragOverBookmarkContainer(e) {
+    if (!draggedItem) return;
+
+    // Allow Chrome tab/window/group drops
+    if (draggedItem.type === 'chromeTab' ||
+        draggedItem.type === 'chromeWindow' ||
+        draggedItem.type === 'chromeTabGroup') {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        this.classList.add('drag-over');
+        return;
+    }
+
+    if (draggedItem.type !== 'bookmark') return;
+
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    if (draggedItem &&
-        (draggedItem.type === 'bookmark' ||
-         draggedItem.type === 'chromeTab' ||
-         draggedItem.type === 'chromeWindow' ||
-         draggedItem.type === 'chromeTabGroup')) {
-        this.classList.add('drag-over');
-    }
+
+    const container = this;
+    const excludeEl = draggedItem.element;
+    const index = findInsertionIndex(container, e.clientX, e.clientY, excludeEl);
+    insertPlaceholderAt(container, index, excludeEl);
 }
 
 // Handle dragleave on bookmark container
 function dragLeaveBookmarkContainer(e) {
     this.classList.remove('drag-over');
+    // Only remove placeholder if we truly left the container
+    if (!this.contains(e.relatedTarget)) {
+        removePlaceholder();
+    }
 }
 
-// Handle dragover on individual bookmark
+// Handle dragover on individual bookmark — delegates to container logic
 function dragOverBookmark(e) {
     if (!draggedItem) return;
 
@@ -231,82 +334,26 @@ function dragOverBookmark(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    const targetBookmark = this;
-    const rect = targetBookmark.getBoundingClientRect();
-    const yOffset = e.clientY - rect.top;
-    const isBefore = yOffset < rect.height / 2;
-
-    const container = targetBookmark.parentElement;
-    const allBookmarks = Array.from(container.children).filter(el => el.classList.contains('bookmark'));
-    const targetIndex = allBookmarks.indexOf(targetBookmark);
-
-    if (placeholder && placeholder.parentNode === container) {
-        container.removeChild(placeholder);
+    // Delegate positioning to container-level logic
+    const container = this.parentElement;
+    if (container && container.classList.contains('bookmarks')) {
+        const excludeEl = draggedItem.element;
+        const index = findInsertionIndex(container, e.clientX, e.clientY, excludeEl);
+        insertPlaceholderAt(container, index, excludeEl);
     }
-
-    if (!placeholder) {
-        placeholder = document.createElement('div');
-        placeholder.className = 'placeholder';
-        placeholder.style.height = `${rect.height}px`;
-    }
-
-    const insertPosition = isBefore ? targetIndex : targetIndex + 1;
-
-    if (allBookmarks[insertPosition] === draggedItem.element) return;
-
-    container.insertBefore(placeholder, allBookmarks[insertPosition] || null);
 }
 
-// Drop a bookmark
+// Drop a bookmark (on another bookmark)
 function dropBookmark(e) {
     e.preventDefault();
+    e.stopPropagation();
 
     if (!draggedItem || draggedItem.type !== 'bookmark') return;
 
     const targetCollection = this.closest('.collection');
     if (!targetCollection) return;
-    const fromCollectionId = draggedItem.collectionId;
-    const toCollectionId = targetCollection.dataset.collectionId;
 
-    const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
-    const toCollection = bookmarkManagerData.collections.find(c => c.id === toCollectionId);
-
-    if (!fromCollection || !toCollection) return;
-
-    const bookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === draggedItem.bookmarkId);
-    if (bookmarkIndex === -1) return;
-
-    const [movedBookmark] = fromCollection.bookmarks.splice(bookmarkIndex, 1);
-    const container = this.parentElement;
-
-    let dropIndex = Array.from(container.children).indexOf(placeholder);
-
-    if (dropIndex === -1) {
-        const containerRect = container.getBoundingClientRect();
-        const yPos = e.clientY - containerRect.top;
-        dropIndex = Math.floor((yPos / containerRect.height) * toCollection.bookmarks.length);
-    }
-
-    dropIndex = Math.max(0, Math.min(dropIndex, toCollection.bookmarks.length));
-
-    movedBookmark.parentCollection = toCollectionId;
-    movedBookmark.lastModified = Date.now();
-
-    toCollection.bookmarks.splice(dropIndex, 0, movedBookmark);
-    toCollection.lastModified = Date.now();
-
-    toCollection.bookmarks.forEach((bookmark, index) => {
-        bookmark.position = index;
-    });
-
-    if (placeholder && placeholder.parentNode) {
-        placeholder.parentNode.removeChild(placeholder);
-        placeholder = null;
-    }
-
-    renderCollections();
-    saveToLocalStorage();
-    draggedItem = null;
+    performBookmarkDrop(targetCollection, this.closest('.bookmarks'));
 }
 
 // Drop on bookmark container (handles Chrome tabs, windows, tab groups, and bookmarks)
@@ -315,111 +362,159 @@ function dropBookmarkContainer(e) {
     this.classList.remove('drag-over');
     const selfUrl = chrome.runtime.getURL("bm.html");
 
-    if (draggedItem) {
-        const collectionElement = this.closest('.collection');
-        if (!collectionElement) return;
-        const collectionId = collectionElement.dataset.collectionId;
-        const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-        if (!collection) return;
+    if (!draggedItem) return;
 
-        if (draggedItem.type === 'chromeTabGroup') {
-            let tabsArray = draggedItem.data.tabs || [];
-            tabsArray.forEach(tab => {
-                if (tab.url === selfUrl) return;
-                const newBookmark = {
-                    id: generateUUID(),
-                    title: tab.title,
-                    url: tab.url,
-                    description: "",
-                    icon: tab.favIconUrl || 'assets/icons/default-icon.png',
-                    lastModified: Date.now(),
-                    deleted: false,
-                    position: collection.bookmarks.length
-                };
-                collection.bookmarks.push(newBookmark);
-            });
-            collection.lastModified = Date.now();
-            if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
-                tabsArray.forEach(tab => {
-                    if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
-                        chrome.tabs.remove(tab.tabId || tab.id);
-                    }
-                });
-            }
-            renderCollections();
-            saveToLocalStorage();
-            draggedItem = null;
-            return;
-        } else if (draggedItem.type === 'chromeWindow') {
-            let tabsArray = draggedItem.data.tabs || [];
-            tabsArray.forEach(tab => {
-                if (tab.url === selfUrl) return;
-                const newBookmark = {
-                    id: generateUUID(),
-                    title: tab.title,
-                    url: tab.url,
-                    description: "",
-                    icon: tab.favIconUrl || 'assets/icons/default-icon.png',
-                    lastModified: Date.now(),
-                    deleted: false,
-                    position: collection.bookmarks.length
-                };
-                collection.bookmarks.push(newBookmark);
-            });
-            collection.lastModified = Date.now();
-            if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
-                tabsArray.forEach(tab => {
-                    if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
-                        chrome.tabs.remove(tab.tabId || tab.id);
-                    }
-                });
-            }
-            renderCollections();
-            saveToLocalStorage();
-            draggedItem = null;
-            return;
-        }
+    const collectionElement = this.closest('.collection');
+    if (!collectionElement) return;
+    const collectionId = collectionElement.dataset.collectionId;
+    const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+    if (!collection) return;
 
-        if (draggedItem.type === 'chromeTab') {
-            if (draggedItem.data.url === selfUrl) {
-                draggedItem = null;
-                return;
-            }
+    if (draggedItem.type === 'chromeTabGroup') {
+        let tabsArray = draggedItem.data.tabs || [];
+        tabsArray.forEach(tab => {
+            if (tab.url === selfUrl) return;
             const newBookmark = {
                 id: generateUUID(),
-                title: draggedItem.data.title,
-                url: draggedItem.data.url,
-                description: '',
-                icon: draggedItem.data.icon || 'assets/icons/default-icon.png',
+                title: tab.title,
+                url: tab.url,
+                description: "",
+                icon: tab.favIconUrl || 'assets/icons/default-icon.png',
                 lastModified: Date.now(),
                 deleted: false,
                 position: collection.bookmarks.length
             };
             collection.bookmarks.push(newBookmark);
-            collection.lastModified = Date.now();
-            if (bookmarkManagerData.closeWhenSaveTab &&
-                (draggedItem.data.tabId || draggedItem.data.id) &&
-                draggedItem.data.url !== selfUrl) {
-                chrome.tabs.remove(draggedItem.data.tabId || draggedItem.data.id);
-            }
-        } else if (draggedItem.type === 'bookmark') {
-            const fromCollectionId = draggedItem.collectionId;
-            const fromBookmarkId = draggedItem.bookmarkId;
-            const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
-            if (fromCollection) {
-                const movedBookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === fromBookmarkId);
-                if (movedBookmarkIndex !== -1) {
-                    const movedBookmark = fromCollection.bookmarks.splice(movedBookmarkIndex, 1)[0];
-                    collection.bookmarks.push(movedBookmark);
-                    fromCollection.lastModified = Date.now();
-                    collection.lastModified = Date.now();
+        });
+        collection.lastModified = Date.now();
+        if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
+            tabsArray.forEach(tab => {
+                if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
+                    chrome.tabs.remove(tab.tabId || tab.id);
                 }
-            }
+            });
+        }
+        renderCollections();
+        saveToLocalStorage();
+        draggedItem = null;
+        return;
+    } else if (draggedItem.type === 'chromeWindow') {
+        let tabsArray = draggedItem.data.tabs || [];
+        tabsArray.forEach(tab => {
+            if (tab.url === selfUrl) return;
+            const newBookmark = {
+                id: generateUUID(),
+                title: tab.title,
+                url: tab.url,
+                description: "",
+                icon: tab.favIconUrl || 'assets/icons/default-icon.png',
+                lastModified: Date.now(),
+                deleted: false,
+                position: collection.bookmarks.length
+            };
+            collection.bookmarks.push(newBookmark);
+        });
+        collection.lastModified = Date.now();
+        if (bookmarkManagerData.closeWhenSaveTab && tabsArray) {
+            tabsArray.forEach(tab => {
+                if ((tab.tabId || tab.id) && tab.url !== selfUrl) {
+                    chrome.tabs.remove(tab.tabId || tab.id);
+                }
+            });
+        }
+        renderCollections();
+        saveToLocalStorage();
+        draggedItem = null;
+        return;
+    }
+
+    if (draggedItem.type === 'chromeTab') {
+        if (draggedItem.data.url === selfUrl) {
+            draggedItem = null;
+            return;
+        }
+        const newBookmark = {
+            id: generateUUID(),
+            title: draggedItem.data.title,
+            url: draggedItem.data.url,
+            description: '',
+            icon: draggedItem.data.icon || 'assets/icons/default-icon.png',
+            lastModified: Date.now(),
+            deleted: false,
+            position: collection.bookmarks.length
+        };
+        collection.bookmarks.push(newBookmark);
+        collection.lastModified = Date.now();
+        if (bookmarkManagerData.closeWhenSaveTab &&
+            (draggedItem.data.tabId || draggedItem.data.id) &&
+            draggedItem.data.url !== selfUrl) {
+            chrome.tabs.remove(draggedItem.data.tabId || draggedItem.data.id);
         }
         saveToLocalStorage();
         renderCollections();
+        draggedItem = null;
+        return;
     }
+
+    if (draggedItem.type === 'bookmark') {
+        performBookmarkDrop(collectionElement, this);
+        return;
+    }
+
     draggedItem = null;
+}
+
+// Shared logic for dropping a bookmark (used by both dropBookmark and dropBookmarkContainer)
+function performBookmarkDrop(collectionElement, container) {
+    if (!draggedItem || draggedItem.type !== 'bookmark') return;
+
+    const toCollectionId = collectionElement.dataset.collectionId;
+    const fromCollectionId = draggedItem.collectionId;
+
+    const fromCollection = bookmarkManagerData.collections.find(c => c.id === fromCollectionId);
+    const toCollection = bookmarkManagerData.collections.find(c => c.id === toCollectionId);
+    if (!fromCollection || !toCollection) return;
+
+    const bookmarkIndex = fromCollection.bookmarks.findIndex(b => b.id === draggedItem.bookmarkId);
+    if (bookmarkIndex === -1) return;
+
+    const [movedBookmark] = fromCollection.bookmarks.splice(bookmarkIndex, 1);
+
+    // Determine drop index from placeholder position
+    let dropIndex = -1;
+    if (placeholder && placeholder.parentNode && container) {
+        const children = Array.from(container.children).filter(
+            el => el.classList.contains('bookmark') || el === placeholder
+        );
+        dropIndex = children.indexOf(placeholder);
+    }
+
+    if (dropIndex === -1) {
+        dropIndex = toCollection.bookmarks.filter(b => !b.deleted).length;
+    }
+
+    // Clamp
+    const activeBookmarks = toCollection.bookmarks.filter(b => !b.deleted).length;
+    dropIndex = Math.max(0, Math.min(dropIndex, activeBookmarks));
+
+    movedBookmark.parentCollection = toCollectionId;
+    movedBookmark.lastModified = Date.now();
+
+    toCollection.bookmarks.splice(dropIndex, 0, movedBookmark);
+    toCollection.lastModified = Date.now();
+    if (fromCollectionId !== toCollectionId) {
+        fromCollection.lastModified = Date.now();
+    }
+
+    toCollection.bookmarks.forEach((bookmark, index) => {
+        bookmark.position = index;
+    });
+
+    removePlaceholder();
+    draggedItem = null;
+
+    renderCollections();
+    saveToLocalStorage();
 }
 
 // Add drag listeners to a bookmark element

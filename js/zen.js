@@ -166,8 +166,7 @@ function updateZenDateTime() {
     if (timeElement && dateElement) {
         const timeOptions = {
             hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
+            minute: '2-digit'
         };
         const dateOptions = {
             weekday: 'long',
@@ -176,8 +175,8 @@ function updateZenDateTime() {
             day: 'numeric'
         };
 
-        timeElement.textContent = currentDate.toLocaleTimeString('sv-SE', timeOptions);
-        dateElement.textContent = currentDate.toLocaleDateString('sv-SE', dateOptions);
+        timeElement.textContent = currentDate.toLocaleTimeString(undefined, timeOptions);
+        dateElement.textContent = currentDate.toLocaleDateString(undefined, dateOptions);
     } else if (zenDateTimeInterval) {
         // Clean up interval if DOM elements are gone
         clearInterval(zenDateTimeInterval);

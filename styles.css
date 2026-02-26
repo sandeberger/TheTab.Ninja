@@ -1213,6 +1213,296 @@ body.dark-mode #githubSettings input {
     color: white;
 }
 
+/* Google Drive Sync Styles */
+.gdrive-connect-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: #fff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    justify-content: center;
+}
+
+.gdrive-connect-btn:hover {
+    background: #f8f9fa;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    border-color: #c6c9cc;
+}
+
+.gdrive-connect-btn:active {
+    background: #f1f3f4;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.gdrive-connect-btn svg {
+    flex-shrink: 0;
+}
+
+body.dark-mode .gdrive-connect-btn {
+    background: #2d2d2d;
+    color: #e8eaed;
+    border-color: #5f6368;
+}
+
+body.dark-mode .gdrive-connect-btn:hover {
+    background: #3c3c3c;
+    border-color: #8ab4f8;
+}
+
+.gdrive-disconnect-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.gdrive-disconnect-btn:hover {
+    background: #dc3545;
+    color: #fff;
+}
+
+body.dark-mode .gdrive-disconnect-btn {
+    color: #f87171;
+    border-color: #f87171;
+}
+
+body.dark-mode .gdrive-disconnect-btn:hover {
+    background: #f87171;
+    color: #1a1a1a;
+}
+
+.gdrive-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(52, 168, 83, 0.08);
+    border: 1px solid rgba(52, 168, 83, 0.2);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+body.dark-mode .gdrive-status {
+    background: rgba(52, 168, 83, 0.12);
+    border-color: rgba(52, 168, 83, 0.3);
+}
+
+.gdrive-status-icon {
+    flex-shrink: 0;
+}
+
+.gdrive-status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gdrive-email {
+    font-weight: 500;
+    font-size: 13px;
+    color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .gdrive-email {
+    color: #e8eaed;
+}
+
+.gdrive-file-info {
+    font-size: 12px;
+    color: #7f8c8d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .gdrive-file-info {
+    color: #9aa0a6;
+}
+
+/* Local Drive Sync Styles */
+.localdrive-select-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+    width: 100%;
+    justify-content: center;
+}
+
+.localdrive-select-btn:hover {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.localdrive-select-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+body.dark-mode .localdrive-select-btn {
+    background: linear-gradient(135deg, #818cf8, #6366f1);
+    box-shadow: 0 2px 6px rgba(129, 140, 248, 0.3);
+}
+
+body.dark-mode .localdrive-select-btn:hover {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.localdrive-change-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    color: #6366f1;
+    border: 1px solid #6366f1;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.localdrive-change-btn:hover {
+    background: #6366f1;
+    color: #fff;
+}
+
+body.dark-mode .localdrive-change-btn {
+    color: #818cf8;
+    border-color: #818cf8;
+}
+
+body.dark-mode .localdrive-change-btn:hover {
+    background: #818cf8;
+    color: #1a1a1a;
+}
+
+.localdrive-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+body.dark-mode .localdrive-status {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.localdrive-status-icon {
+    flex-shrink: 0;
+    color: #6366f1;
+}
+
+body.dark-mode .localdrive-status-icon {
+    color: #818cf8;
+}
+
+.localdrive-status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.localdrive-folder {
+    font-weight: 500;
+    font-size: 13px;
+    color: #2c3e50;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .localdrive-folder {
+    color: #e8eaed;
+}
+
+.localdrive-file-info {
+    font-size: 12px;
+    color: #7f8c8d;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+body.dark-mode .localdrive-file-info {
+    color: #9aa0a6;
+}
+
+/* Sync section divider */
+.sync-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 12px 0;
+}
+
+body.dark-mode .sync-divider {
+    background: #444;
+}
+
+/* Auto-sync pending indicator on sync button */
+#syncButton.auto-sync-pending {
+    position: relative;
+}
+
+#syncButton.auto-sync-pending::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background: #f59e0b;
+    border-radius: 50%;
+    animation: autoSyncPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes autoSyncPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 /* Collection sort dropdown styling */
 #collectionSortOrder {
     width: 100%;

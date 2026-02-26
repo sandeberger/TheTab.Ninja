@@ -8,7 +8,11 @@
 </head>
 <body>    
     <div id="leftPane">
-        <div class="pane-toggle" id="toggleLeftPane" title="Open/Close settings">☰</div>
+        <div class="pane-toggle" id="toggleLeftPane" title="Pin/Unpin settings panel">
+            <svg class="pin-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+        </div>
         <div class="pane-content">
             <div class="left-pane-tabs">
                 <div class="tab-nav">
@@ -28,196 +32,344 @@
                     </div>
                     <div id="settings-tab" class="tab-pane">
                         <div id="settings">
-                            <!-- Basic Settings Section -->
-                            <div class="settings-section">
-                                <h3>
+                            <!-- Preferences Section -->
+                            <div class="settings-section collapsible">
+                                <h3 class="settings-section-header">
                                     <span class="settings-section-icon">⚙️</span>
-                                    Basic Settings
+                                    Preferences
+                                    <span class="settings-section-arrow">›</span>
                                 </h3>
-                                <div class="setting-item">
-                                    <div class="setting-label">
-                                        <label for="openInNewTab">Open bookmarks in a new tab</label>
-                                        <div class="setting-description">Prevent navigation away from your new tab page</div>
+                                <div class="settings-section-body">
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="openInNewTab">Open bookmarks in a new tab</label>
+                                            <div class="setting-description">Prevent navigation away from your new tab page</div>
+                                        </div>
+                                        <input type="checkbox" id="openInNewTab" class="setting-checkbox">
                                     </div>
-                                    <input type="checkbox" id="openInNewTab" class="setting-checkbox">
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-label">
-                                        <label for="closeWhenSaveTab">Close Chrome tabs when saved</label>
-                                        <div class="setting-description">Automatically close tabs after saving to collection</div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="closeWhenSaveTab">Close Chrome tabs when saved</label>
+                                            <div class="setting-description">Automatically close tabs after saving to collection</div>
+                                        </div>
+                                        <input type="checkbox" id="closeWhenSaveTab" class="setting-checkbox">
                                     </div>
-                                    <input type="checkbox" id="closeWhenSaveTab" class="setting-checkbox">
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-label">
-                                        <label for="darkMode">Dark mode</label>
-                                        <div class="setting-description">Switch to dark theme for comfortable night browsing</div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="darkMode">Dark mode</label>
+                                            <div class="setting-description">Switch to dark theme for comfortable night browsing</div>
+                                        </div>
+                                        <input type="checkbox" id="darkMode" class="setting-checkbox">
                                     </div>
-                                    <input type="checkbox" id="darkMode" class="setting-checkbox">
-                                </div>
-                                <div class="setting-item">
-                                    <div class="setting-label">
-                                        <label for="zenMode">Zen mode</label>
-                                        <div class="setting-description">Minimalist interface showing only clock until you scroll</div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="zenMode">Zen mode</label>
+                                            <div class="setting-description">Minimalist interface showing only clock until you scroll</div>
+                                        </div>
+                                        <input type="checkbox" id="zenMode" class="setting-checkbox">
                                     </div>
-                                    <input type="checkbox" id="zenMode" class="setting-checkbox">
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label for="collectionSortOrder">Collection sort order</label>
-                                    <select id="collectionSortOrder" class="setting-select">
-                                        <option value="userdefined">User defined (position)</option>
-                                        <option value="name-az">Name (A-Z)</option>
-                                        <option value="name-za">Name (Z-A)</option>
-                                        <option value="modified-new">Last modified (newest first)</option>
-                                        <option value="modified-old">Last modified (oldest first)</option>
-                                    </select>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="hideCoffeeButton">Hide "Buy Me a Coffee" button</label>
+                                            <div class="setting-description">Hide the donation button from the top bar</div>
+                                        </div>
+                                        <input type="checkbox" id="hideCoffeeButton" class="setting-checkbox">
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="autoShowLeftPane">Auto-show left panel on hover</label>
+                                            <div class="setting-description">Automatically show left panel when hovering near the left edge</div>
+                                        </div>
+                                        <input type="checkbox" id="autoShowLeftPane" class="setting-checkbox">
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <label for="autoShowRightPane">Auto-show right panel on hover</label>
+                                            <div class="setting-description">Automatically show right panel when hovering near the right edge</div>
+                                        </div>
+                                        <input type="checkbox" id="autoShowRightPane" class="setting-checkbox">
+                                    </div>
+                                    <div class="setting-item-vertical">
+                                        <label for="collectionSortOrder">Collection sort order</label>
+                                        <select id="collectionSortOrder" class="setting-select">
+                                            <option value="userdefined">User defined (position)</option>
+                                            <option value="name-az">Name (A-Z)</option>
+                                            <option value="name-za">Name (Z-A)</option>
+                                            <option value="modified-new">Last modified (newest first)</option>
+                                            <option value="modified-old">Last modified (oldest first)</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Sync & Backup Section -->
-                            <div class="settings-section">
-                                <h3>
+                            <!-- Sync Section -->
+                            <div class="settings-section collapsible">
+                                <h3 class="settings-section-header">
                                     <span class="settings-section-icon">🔄</span>
-                                    Sync & Backup
+                                    Sync
+                                    <span class="settings-section-arrow">›</span>
                                 </h3>
-                                <div class="setting-item-vertical">
-                                    <label for="githubUsername">GitHub Username</label>
-                                    <input type="text" id="githubUsername" class="setting-input" placeholder="Enter your GitHub username">
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label for="githubRepo">Repository Name</label>
-                                    <input type="text" id="githubRepo" class="setting-input" placeholder="Enter repository name">
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label for="githubPat">Personal Access Token</label>
-                                    <input type="password" id="githubPat" class="setting-input" placeholder="Enter your GitHub PAT">
-                                </div>
-                                <div class="help-link-container">
-                                    <a href="/github-setup-guide.html" target="_blank" class="help-link">
-                                        ❓ How do I create a GitHub Personal Access Token?
-                                    </a>
+                                <div class="settings-section-body">
+                                    <div class="setting-item-vertical">
+                                        <label for="syncProvider">Sync Provider</label>
+                                        <select id="syncProvider" class="setting-select">
+                                            <option value="none">No sync</option>
+                                            <option value="github">GitHub</option>
+                                            <option value="googledrive">Google Drive</option>
+                                            <option value="localdrive">Local Drive</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- GitHub Settings -->
+                                    <div id="githubSyncSettings" style="display: none;">
+                                        <div class="setting-item-vertical">
+                                            <label for="githubUsername">GitHub Username</label>
+                                            <input type="text" id="githubUsername" class="setting-input" placeholder="Enter your GitHub username">
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="githubRepo">Repository Name</label>
+                                            <input type="text" id="githubRepo" class="setting-input" placeholder="Enter repository name">
+                                        </div>
+                                        <div class="setting-item-vertical">
+                                            <label for="githubPat">Personal Access Token</label>
+                                            <input type="password" id="githubPat" class="setting-input" placeholder="Enter your GitHub PAT">
+                                        </div>
+                                        <div class="help-link-container">
+                                            <a href="/github-setup-guide.html" target="_blank" class="help-link">
+                                                ❓ How do I create a GitHub Personal Access Token?
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Local Drive Settings -->
+                                    <div id="localDriveSyncSettings" style="display: none;">
+                                        <div id="localDriveDisconnected" class="setting-item-vertical">
+                                            <label>Select Sync Folder</label>
+                                            <div class="setting-description" style="margin-bottom: 8px;">
+                                                Choose a local folder to store your sync file. Use a cloud-synced folder
+                                                (OneDrive, Dropbox, etc.) to sync across devices.
+                                            </div>
+                                            <button id="localDriveSelectFolderBtn" class="localdrive-select-btn">
+                                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                                </svg>
+                                                Select Folder
+                                            </button>
+                                        </div>
+                                        <div id="localDriveConnected" class="setting-item-vertical" style="display: none;">
+                                            <label>Local Drive Connected</label>
+                                            <div class="localdrive-status">
+                                                <div class="localdrive-status-icon">
+                                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="localdrive-status-info">
+                                                    <span class="localdrive-folder" id="localDriveFolderName"></span>
+                                                    <span class="localdrive-file-info" id="localDriveFileInfo"></span>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button id="localDriveChangeFolderBtn" class="localdrive-change-btn">
+                                                    Change Folder
+                                                </button>
+                                                <button id="localDriveDisconnectBtn" class="gdrive-disconnect-btn">
+                                                    Disconnect
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Google Drive Settings -->
+                                    <div id="googleDriveSyncSettings" style="display: none;">
+                                        <div id="googleDriveDisconnected" class="setting-item-vertical">
+                                            <label>Connect to Google Drive</label>
+                                            <div class="setting-description" style="margin-bottom: 8px;">
+                                                Sign in with your Google account to sync bookmarks via Google Drive.
+                                                Only files created by this extension will be accessible.
+                                            </div>
+                                            <button id="googleDriveConnectBtn" class="gdrive-connect-btn">
+                                                <svg viewBox="0 0 24 24" width="18" height="18">
+                                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                                </svg>
+                                                Connect Google Drive
+                                            </button>
+                                        </div>
+                                        <div id="googleDriveConnected" class="setting-item-vertical" style="display: none;">
+                                            <label>Google Drive Connected</label>
+                                            <div class="gdrive-status">
+                                                <div class="gdrive-status-icon">
+                                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#34A853" stroke-width="2">
+                                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                                    </svg>
+                                                </div>
+                                                <div class="gdrive-status-info">
+                                                    <span class="gdrive-email" id="googleDriveEmail"></span>
+                                                    <span class="gdrive-file-info" id="googleDriveFileInfo"></span>
+                                                </div>
+                                            </div>
+                                            <button id="googleDriveDisconnectBtn" class="gdrive-disconnect-btn">
+                                                Disconnect Google Drive
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Auto-Sync Settings -->
+                                    <div id="autoSyncSettings" style="display: none;">
+                                        <div class="sync-divider"></div>
+                                        <div class="setting-item">
+                                            <div class="setting-label">
+                                                <label for="autoSyncEnabled">Auto-Sync</label>
+                                                <div class="setting-description">Automatically sync after changes</div>
+                                            </div>
+                                            <input type="checkbox" id="autoSyncEnabled" class="setting-checkbox">
+                                        </div>
+                                        <div class="setting-item-vertical" id="autoSyncDelaySection" style="display: none;">
+                                            <label for="autoSyncDelay">Sync delay</label>
+                                            <select id="autoSyncDelay" class="setting-select">
+                                                <option value="5">5 seconds</option>
+                                                <option value="10">10 seconds</option>
+                                                <option value="15">15 seconds</option>
+                                                <option value="30">30 seconds</option>
+                                                <option value="60">1 minute</option>
+                                                <option value="120">2 minutes</option>
+                                                <option value="300">5 minutes</option>
+                                            </select>
+                                            <div class="setting-description">Timer resets with each new change</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Appearance Section -->
-                            <div class="settings-section">
-                                <h3>
+                            <div class="settings-section collapsible">
+                                <h3 class="settings-section-header">
                                     <span class="settings-section-icon">🎨</span>
                                     Appearance
+                                    <span class="settings-section-arrow">›</span>
                                 </h3>
-                                <div id="mysettings">
-                                    <div class="wallpaper-section">
-                                        <h4>Custom background images</h4>
-                                        <div id="customBackgroundThumbnails">
-                                            <!-- Anpassade miniatyrer kommer att genereras här med JavaScript -->
+                                <div class="settings-section-body">
+                                    <div id="mysettings">
+                                        <div class="wallpaper-section">
+                                            <h4>Custom background images</h4>
+                                            <div id="customBackgroundThumbnails"></div>
                                         </div>
-                                    </div>
-                                    <div class="wallpaper-section">
-                                        <h4>Predefined background images</h4>
-                                        <div id="backgroundThumbnails">                    
-                                            <!-- Miniatyrer kommer att genereras här med JavaScript -->
+                                        <div class="wallpaper-section">
+                                            <h4>Predefined background images</h4>
+                                            <div id="backgroundThumbnails"></div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Data Management Section -->
-                            <div class="settings-section">
-                                <h3>
+                            <!-- Backup & Data Section -->
+                            <div class="settings-section collapsible">
+                                <h3 class="settings-section-header">
                                     <span class="settings-section-icon">📁</span>
-                                    Data Management
+                                    Backup & Data
+                                    <span class="settings-section-arrow">›</span>
                                 </h3>
-                                <div class="setting-item-vertical">
-                                    <label>Auto Backup</label>
-                                    <div class="setting-item-horizontal">
-                                        <label class="switch">
-                                            <input type="checkbox" id="autoBackupEnabled">
-                                            <span class="slider"></span>
+                                <div class="settings-section-body">
+                                    <div class="setting-item-vertical">
+                                        <label>Auto Backup</label>
+                                        <div class="setting-item-horizontal">
+                                            <label class="switch">
+                                                <input type="checkbox" id="autoBackupEnabled">
+                                                <span class="slider"></span>
+                                            </label>
+                                            <span>Enable automatic daily backups</span>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item-vertical" id="backupFrequencySection">
+                                        <label>Backup Frequency</label>
+                                        <select id="backupFrequency">
+                                            <option value="daily">Daily</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="disabled">Disabled</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item-vertical" id="backupRetentionSection">
+                                        <label>Keep Backups</label>
+                                        <select id="backupRetention">
+                                            <option value="3">3 days</option>
+                                            <option value="7">7 days</option>
+                                            <option value="14">14 days</option>
+                                            <option value="30">30 days</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item-vertical" id="backupFolderSection">
+                                        <label>Backup Folder</label>
+                                        <div class="setting-item-horizontal">
+                                            <span id="backupFolderPath">Downloads</span>
+                                            <button id="selectBackupFolder" class="import-button">Change Folder</button>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item-vertical">
+                                        <label>Manual Backup</label>
+                                        <button id="manualBackupButton" class="import-button">Create Backup Now</button>
+                                    </div>
+                                    <div class="setting-item-vertical">
+                                        <label>Export Data</label>
+                                        <button id="exportButton" class="import-button">Export Tab Collections</button>
+                                    </div>
+                                    <div class="setting-item-vertical">
+                                        <label>Import Data</label>
+                                        <label for="importFile" class="import-button">
+                                            <input type="file" id="importFile" accept=".json" style="display:none;">
+                                            Import Tab Collections
                                         </label>
-                                        <span>Enable automatic daily backups</span>
                                     </div>
-                                </div>
-                                <div class="setting-item-vertical" id="backupFrequencySection">
-                                    <label>Backup Frequency</label>
-                                    <select id="backupFrequency">
-                                        <option value="daily">Daily</option>
-                                        <option value="weekly">Weekly</option>
-                                        <option value="disabled">Disabled</option>
-                                    </select>
-                                </div>
-                                <div class="setting-item-vertical" id="backupRetentionSection">
-                                    <label>Keep Backups</label>
-                                    <select id="backupRetention">
-                                        <option value="3">3 days</option>
-                                        <option value="7">7 days</option>
-                                        <option value="14">14 days</option>
-                                        <option value="30">30 days</option>
-                                    </select>
-                                </div>
-                                <div class="setting-item-vertical" id="backupFolderSection">
-                                    <label>Backup Folder</label>
-                                    <div class="setting-item-horizontal">
-                                        <span id="backupFolderPath">Downloads</span>
-                                        <button id="selectBackupFolder" class="import-button">Change Folder</button>
+                                    <div class="setting-item-vertical">
+                                        <label>Import from Toby</label>
+                                        <label for="importTobyFile" class="import-button">
+                                            <input type="file" id="importTobyFile" accept=".json" style="display:none;">
+                                            Import Toby data (JSON)
+                                        </label>
                                     </div>
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label>Manual Backup</label>
-                                    <button id="manualBackupButton" class="import-button">Create Backup Now</button>
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label>Export Data</label>
-                                    <button id="exportButton" class="import-button">Export Tab Collections</button>
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label>Import Data</label>
-                                    <label for="importFile" class="import-button">
-                                        <input type="file" id="importFile" accept=".json" style="display:none;">
-                                        Import Tab Collections
-                                    </label>
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label>Import from Toby</label>
-                                    <label for="importTobyFile" class="import-button">
-                                        <input type="file" id="importTobyFile" accept=".json" style="display:none;">
-                                        Import Toby data (JSON)
-                                    </label>
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label>Fix Favicon URLs</label>
-                                    <button id="cleanupFaviconsButton" class="import-button">Fix Favicon URLs</button>
+                                    <div class="setting-item-vertical">
+                                        <label>Fix Favicon URLs</label>
+                                        <button id="cleanupFaviconsButton" class="import-button">Fix Favicon URLs</button>
+                                    </div>
+                                    <!-- Danger Zone -->
+                                    <div class="danger-zone-inline">
+                                        <div class="setting-item-vertical">
+                                            <label>Delete All Collections</label>
+                                            <button id="deleteAllButton" class="delete-button">Delete All</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Danger Zone Section -->
-                            <div class="danger-zone">
-                                <h3>
-                                    <span class="settings-section-icon">⚠️</span>
-                                    Danger Zone
-                                </h3>
-                                <div class="setting-item-vertical">
-                                    <label>Delete All Collections</label>
-                                    <button id="deleteAllButton" class="delete-button">Delete All</button>
-                                </div>
-                            </div>
-
-                            <!-- Help & Support Section -->
-                            <div class="settings-section">
-                                <h3>
+                            <!-- About Section -->
+                            <div class="settings-section collapsible">
+                                <h3 class="settings-section-header">
                                     <span class="settings-section-icon">❓</span>
-                                    Help & Support
+                                    About
+                                    <span class="settings-section-arrow">›</span>
                                 </h3>
-                                <div class="setting-item-vertical">
-                                    <label>User Guide</label>
-                                    <button id="helpButton" class="help-button">
-                                        ❓ How to use TheTab.Ninja
-                                    </button>
-                                </div>
-                                <div class="setting-item-vertical">
-                                    <label>About</label>
-                                    <div>
-                                        <div id="versionDisplay"></div>
-                                        <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
+                                <div class="settings-section-body">
+                                    <div class="setting-item-vertical">
+                                        <label>User Guide</label>
+                                        <button id="helpButton" class="help-button">
+                                            ❓ How to use TheTab.Ninja
+                                        </button>
+                                    </div>
+                                    <div class="setting-item-vertical">
+                                        <label>About</label>
+                                        <div>
+                                            <div id="versionDisplay"></div>
+                                            <a href="https://kodar.ninja" target="_blank">Created by Kodar.Ninja</a>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item-vertical">
+                                        <label>Support</label>
+                                        <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" class="about-coffee-btn">
+                                            ☕ Buy Me a Coffee
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -231,15 +383,23 @@
     <div id="bookmarkManager">
         <div id="topBar">            
             <div style="display: flex; align-items: center;padding-left: 10px;">
-                <button class="mobile-pane-toggle" id="mobileLeftPaneToggle" title="Open Settings">⚙️</button>
-                <button id="syncButton" style="display: none;" title="Sync your collections with GitHub">
+                <button class="mobile-pane-toggle" id="mobileLeftPaneToggle" title="Pin/Unpin Settings">
+                    <svg class="pin-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                    </svg>
+                </button>
+                <button id="syncButton" style="display: none;" title="Sync your collections">
                     <svg fill="currentColor" width="800px" height="800px" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" transform="matrix(1,0,0,1,0,0)"><path d="M19.91,15.51H15.38a1,1,0,0,0,0,2h2.4A8,8,0,0,1,4,12a1,1,0,0,0-2,0,10,10,0,0,0,16.88,7.23V21a1,1,0,0,0,2,0V16.5A1,1,0,0,0,19.91,15.51ZM12,2A10,10,0,0,0,5.12,4.77V3a1,1,0,0,0-2,0V7.5a1,1,0,0,0,1,1h4.5a1,1,0,0,0,0-2H6.22A8,8,0,0,1,20,12a1,1,0,0,0,2,0A10,10,0,0,0,12,2Z"></path></svg>
                  </button>
                 <button id="addCollection" title="Create a new collection for your bookmarks">Add Collection</button>
             </div>       
             <input type="text" id="searchBox"  placeholder="Search Collections/Bookmarks (#collections, %all, |or) #blue|red. ?google, !chatgpt" >
             <div style="display: flex; align-items: center;padding-right: 10px;">
-                <button class="mobile-pane-toggle" id="mobileRightPaneToggle" title="Open Tabs">📋</button>
+                <button class="mobile-pane-toggle" id="mobileRightPaneToggle" title="Pin/Unpin Tabs">
+                    <svg class="pin-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+                    </svg>
+                </button>
                 <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="supportButton" title="Fuel my code with caffeine – every cup helps me keep developing awesome features!">
                     <svg class="donation-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 12H4v4a4 4 0 004 4h5a4 4 0 004-4v-4zm0 0h2a2 2 0 012 2v1a2 2 0 01-2 2h-2m-4-8s1-1 .5-2l-1-2C12 4 13 3 13 3M8.64 9s1-1 .5-2l-1-2c-.5-1 .5-2 .5-2"/>
@@ -258,13 +418,17 @@
         <div id="collections"></div>
     </div>
     <div id="rightPane">
-        <div class="pane-toggle" id="toggleRightPane" title="Open/Close Chrome Tabs-list">☰</div>        
+        <div class="pane-toggle" id="toggleRightPane" title="Pin/Unpin Chrome Tabs panel">
+            <svg class="pin-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+        </div>        
         <div class="pane-content">
             <div id="content"></div>
         </div>
     </div>    
-    <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>    
-    
+    <div id="tabPreview" style="display:none; position:absolute; z-index:1000; background:#fff; border:1px solid #ccc; padding:5px;"></div>
+
     <!-- First Sync Success Notification -->
     <div id="firstSyncNotification">
         <div class="notification-icon">🎉</div>

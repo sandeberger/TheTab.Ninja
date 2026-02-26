@@ -7,7 +7,7 @@ let bookmarkManagerData = {
     collections: [],
     openInNewTab: false,
     chromeWindowStates: {},
-    darkMode: false,
+    darkMode: true,
     leftPaneOpen: true,
     rightPaneOpen: true,
     closeWhenSaveTab: false,
@@ -16,20 +16,39 @@ let bookmarkManagerData = {
     spaces: ['Everything'], // Default space that cannot be removed
     currentSpace: 'Everything',
     collectionSortOrder: 'userdefined', // New setting for collection sorting
+    hideCoffeeButton: false, // Hide the "Buy Me a Coffee" button
+    autoShowLeftPane: false, // Auto-show left pane on hover
+    autoShowRightPane: false, // Auto-show right pane on hover
     autoBackup: {
-        enabled: true, // Default enabled
-        frequency: 'daily', // daily, weekly, disabled
+        enabled: false, // Default disabled
+        frequency: 'disabled', // daily, weekly, disabled
         keepDays: 7, // Keep backups for 7 days
         lastBackup: null, // Timestamp of last backup
         customFolder: null, // File system directory handle
         folderPath: 'Downloads', // Display path for user
         useCustomFolder: false // Whether to use custom folder
     },
+    autoSync: {
+        enabled: false,
+        delaySeconds: 30
+    },
+    syncProvider: 'none', // 'none', 'github', 'googledrive', 'localdrive'
     githubConfig: {
         username: '',
         repo: '',
         pat: '',
         filepath: 'bookmarks.json'
+    },
+    googleDriveConfig: {
+        connected: false,
+        fileId: null,        // Google Drive file ID for bookmarks.json
+        userEmail: '',       // Connected Google account email
+        fileName: 'tabninja-bookmarks.json'
+    },
+    localDriveConfig: {
+        connected: false,
+        folderName: '',      // Display name of selected folder
+        fileName: 'tabninja-bookmarks.json'
     }
 };
 
@@ -43,6 +62,9 @@ const FALLBACK_ICON_DARK = 'assets/icons/fallback-icon-dark.svg';
 
 // Sync state tracking
 let isSyncing = false;
+
+// Auto-sync debounce timer
+let autoSyncTimer = null;
 
 // SVG icons for collection buttons
 const svgInbox = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 309.197 309.197" xml:space="preserve" style="width:1em;height:1em" fill="currentColor"><path d="M120.808 10.036h67.581v100.671h54.559l-88.351 100.88-88.351-100.882h54.562z"/><path d="M260.002 176.673v73.289H49.195v-73.289H0v122.488h309.197V176.673z"/></svg>`;

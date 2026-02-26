@@ -37,13 +37,23 @@
     "tabGroups",
     "downloads",
     "alarms",
-    "storage"
+    "storage",
+    "identity"
   ],
+  "oauth2": {
+    "client_id": "442085333687-kt690qjh48p5fkg0d620c3qhl2ea21nq.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  },
   "host_permissions": [
     "https://www.google.com/*",
     "https://*.gstatic.com/*",
     "https://api.github.com/*",
-    "https://raw.githubusercontent.com/*"
+    "https://raw.githubusercontent.com/*",
+    "https://www.googleapis.com/*",
+    "https://accounts.google.com/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"

@@ -312,6 +312,10 @@ function _saveToLocalStorageImmediate() {
     } catch (e) {
         // Silently ignore - chrome.storage may not be available in all contexts
     }
+    // Trigger auto-sync debounce (skipped during active sync via isSyncing check)
+    if (typeof markSyncDirty === 'function') {
+        markSyncDirty();
+    }
 }
 
 // Debounced save: batches rapid calls within a 250ms window
@@ -338,6 +342,7 @@ function loadFromLocalStorage() {
             }
 
             const existingPat = bookmarkManagerData.githubConfig?.pat;
+            const existingGDriveConfig = bookmarkManagerData.googleDriveConfig;
 
             bookmarkManagerData = {
                 ...bookmarkManagerData,
@@ -346,8 +351,25 @@ function loadFromLocalStorage() {
                     ...bookmarkManagerData.githubConfig,
                     ...(parsedData.githubConfig || {}),
                     pat: existingPat || parsedData.githubConfig?.pat || ''
-                }
+                },
+                googleDriveConfig: {
+                    ...existingGDriveConfig,
+                    ...(parsedData.googleDriveConfig || {})
+                },
+                localDriveConfig: {
+                    ...bookmarkManagerData.localDriveConfig,
+                    ...(parsedData.localDriveConfig || {})
+                },
+                syncProvider: parsedData.syncProvider || bookmarkManagerData.syncProvider || 'none'
             };
+
+            // Backward compatibility: auto-detect GitHub if configured but no syncProvider set
+            if (!parsedData.syncProvider && bookmarkManagerData.syncProvider === 'none') {
+                const gc = bookmarkManagerData.githubConfig;
+                if (gc && gc.username && gc.repo && gc.pat) {
+                    bookmarkManagerData.syncProvider = 'github';
+                }
+            }
 
             bookmarkManagerData.leftPaneOpen = parsedData.leftPaneOpen !== undefined ? parsedData.leftPaneOpen : true;
             bookmarkManagerData.rightPaneOpen = parsedData.rightPaneOpen !== undefined ? parsedData.rightPaneOpen : true;
@@ -365,6 +387,11 @@ function loadFromLocalStorage() {
         if (darkModeEl) darkModeEl.checked = bookmarkManagerData.darkMode;
         const sortOrderEl = document.getElementById('collectionSortOrder');
         if (sortOrderEl) sortOrderEl.value = bookmarkManagerData.collectionSortOrder || 'userdefined';
+
+        const autoShowLeftEl = document.getElementById('autoShowLeftPane');
+        if (autoShowLeftEl) autoShowLeftEl.checked = !!bookmarkManagerData.autoShowLeftPane;
+        const autoShowRightEl = document.getElementById('autoShowRightPane');
+        if (autoShowRightEl) autoShowRightEl.checked = !!bookmarkManagerData.autoShowRightPane;
 
         if (bookmarkManagerData.darkMode) {
             document.body.classList.add('dark-mode');

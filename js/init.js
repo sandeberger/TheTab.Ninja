@@ -1,7 +1,6 @@
 /**
  * init.js - Initialization and event listener registration
- * Merges all DOMContentLoaded handlers into a single entry point.
- * Removes duplicate event registrations and dead code.
+ * Single DOMContentLoaded entry point. Event-driven Chrome tab updates.
  */
 
 // Ensure activeLeftTab exists
@@ -39,8 +38,103 @@ function switchLeftTab(tabName) {
     if (tabPane) tabPane.classList.add('active');
 }
 
-// First DOMContentLoaded: Background thumbnails, pane toggles, mobile
+// Helper: Update sync button visibility
+function updateSyncButtonVisibility() {
+    const syncButton = document.getElementById('syncButton');
+    syncButton.style.display = isSyncConfigValid() ? 'flex' : 'none';
+}
+
+// Helper: Show/hide sync provider settings panels
+function updateSyncProviderUI() {
+    const provider = bookmarkManagerData.syncProvider || 'none';
+    const githubSettings = document.getElementById('githubSyncSettings');
+    const gdriveSettings = document.getElementById('googleDriveSyncSettings');
+    const providerSelect = document.getElementById('syncProvider');
+
+    if (providerSelect) providerSelect.value = provider;
+    const localdriveSettings = document.getElementById('localDriveSyncSettings');
+
+    if (githubSettings) githubSettings.style.display = provider === 'github' ? 'block' : 'none';
+    if (gdriveSettings) gdriveSettings.style.display = provider === 'googledrive' ? 'block' : 'none';
+    if (localdriveSettings) localdriveSettings.style.display = provider === 'localdrive' ? 'block' : 'none';
+
+    if (provider === 'googledrive' && typeof updateGoogleDriveUI === 'function') {
+        updateGoogleDriveUI();
+    }
+    if (provider === 'localdrive' && typeof updateLocalDriveUI === 'function') {
+        updateLocalDriveUI();
+    }
+
+    // Show auto-sync settings only when a provider is configured
+    const autoSyncSettings = document.getElementById('autoSyncSettings');
+    if (autoSyncSettings) {
+        autoSyncSettings.style.display = provider !== 'none' ? 'block' : 'none';
+    }
+}
+
+// Helper: Show/hide auto-sync delay dropdown
+function updateAutoSyncDelayVisibility() {
+    const delaySection = document.getElementById('autoSyncDelaySection');
+    if (delaySection) {
+        delaySection.style.display = bookmarkManagerData.autoSync?.enabled ? 'block' : 'none';
+    }
+}
+
+// Helper: Update backup settings visibility
+function updateBackupSettingsVisibility() {
+    const enabled = bookmarkManagerData.autoBackup.enabled;
+    const frequencySection = document.getElementById('backupFrequencySection');
+    const retentionSection = document.getElementById('backupRetentionSection');
+    const folderSection = document.getElementById('backupFolderSection');
+
+    if (frequencySection) {
+        frequencySection.style.display = enabled ? 'block' : 'none';
+    }
+    if (retentionSection) {
+        retentionSection.style.display = enabled ? 'block' : 'none';
+    }
+    if (folderSection) {
+        folderSection.style.display = enabled ? 'block' : 'none';
+    }
+}
+
+// Helper: Sync to chrome storage
+async function syncToStorage() {
+    try {
+        await chrome.storage.local.set({ bookmarkManagerData: bookmarkManagerData });
+    } catch (error) {
+        console.error('Error syncing to storage:', error);
+    }
+}
+
+// Helper: Load backup settings
+function loadBackupSettings() {
+    const autoBackupEnabled = document.getElementById('autoBackupEnabled');
+    const backupFrequency = document.getElementById('backupFrequency');
+    const backupRetention = document.getElementById('backupRetention');
+    const backupFolderPath = document.getElementById('backupFolderPath');
+
+    if (autoBackupEnabled) {
+        autoBackupEnabled.checked = bookmarkManagerData.autoBackup.enabled;
+    }
+    if (backupFrequency) {
+        backupFrequency.value = bookmarkManagerData.autoBackup.frequency;
+    }
+    if (backupRetention) {
+        backupRetention.value = bookmarkManagerData.autoBackup.keepDays.toString();
+    }
+    if (backupFolderPath) {
+        backupFolderPath.textContent = bookmarkManagerData.autoBackup.folderPath || 'Downloads';
+    }
+
+    updateBackupSettingsVisibility();
+}
+
+// Single DOMContentLoaded handler
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- Section 1: Background thumbnails, pane toggles, mobile ---
+
     // Version display
     const manifestData = chrome.runtime.getManifest();
     const version = manifestData.version;
@@ -80,21 +174,35 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePane('rightPane');
     });
 
-    // Mobile pane toggle functionality
+    // Mobile pane toggle buttons (positioned at bottom via CSS on mobile)
     const mobileLeftToggle = document.getElementById('mobileLeftPaneToggle');
     const mobileRightToggle = document.getElementById('mobileRightPaneToggle');
 
     if (mobileLeftToggle) {
         mobileLeftToggle.addEventListener('click', function () {
             const leftPane = document.getElementById('leftPane');
+            const rightPane = document.getElementById('rightPane');
+            // Close right pane if open
+            if (rightPane.classList.contains('open')) {
+                rightPane.classList.remove('open');
+                if (mobileRightToggle) mobileRightToggle.classList.remove('active');
+            }
             leftPane.classList.toggle('open');
+            mobileLeftToggle.classList.toggle('active', leftPane.classList.contains('open'));
         });
     }
 
     if (mobileRightToggle) {
         mobileRightToggle.addEventListener('click', function () {
             const rightPane = document.getElementById('rightPane');
+            const leftPane = document.getElementById('leftPane');
+            // Close left pane if open
+            if (leftPane.classList.contains('open')) {
+                leftPane.classList.remove('open');
+                if (mobileLeftToggle) mobileLeftToggle.classList.remove('active');
+            }
             rightPane.classList.toggle('open');
+            mobileRightToggle.classList.toggle('active', rightPane.classList.contains('open'));
         });
     }
 
@@ -108,13 +216,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 !leftPane.contains(e.target) &&
                 (!mobileLeftToggle || !mobileLeftToggle.contains(e.target))) {
                 leftPane.classList.remove('open');
+                if (mobileLeftToggle) mobileLeftToggle.classList.remove('active');
             }
 
             if (rightPane.classList.contains('open') &&
                 !rightPane.contains(e.target) &&
                 (!mobileRightToggle || !mobileRightToggle.contains(e.target))) {
                 rightPane.classList.remove('open');
+                if (mobileRightToggle) mobileRightToggle.classList.remove('active');
             }
+        }
+
+        // Close collection dropdown menus when clicking outside
+        if (!e.target.closest('.collection-more-wrapper')) {
+            document.querySelectorAll('.collection-dropdown.show').forEach(d => {
+                d.classList.remove('show');
+                d.closest('.collection').classList.remove('dropdown-open');
+            });
         }
     });
 
@@ -167,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Default background if none saved
     if (!savedBackground && backgroundImages.length > 0) {
-        const defaultImageName = backgroundImages[0];
+        const defaultImageName = 'wp_img16.png';
         const defaultThumbnail = backgroundThumbnailsContainer.querySelector(`.background-thumbnail[data-image-name="${defaultImageName}"]`);
         if (defaultThumbnail) {
             selectThumbnail(defaultThumbnail);
@@ -183,10 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize custom backgrounds
     initCustomBackgrounds();
-});
 
-// Second DOMContentLoaded: Main initialization with all event listeners
-document.addEventListener('DOMContentLoaded', () => {
+    // --- Section 2: Main initialization with all event listeners ---
+
     loadFromLocalStorage();
 
     // Migrate spaces to object format after loading
@@ -199,19 +316,18 @@ document.addEventListener('DOMContentLoaded', () => {
     saveToLocalStorage();
 
     renderCollections();
+
+    // Event-driven Chrome tab updates (replaces 5s polling)
     fetchChromeTabs();
-    let fetchTabsInterval = setInterval(fetchChromeTabs, 5000);
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            if (fetchTabsInterval) {
-                clearInterval(fetchTabsInterval);
-                fetchTabsInterval = null;
-            }
-        } else {
-            // Clear any existing interval before creating a new one
-            if (fetchTabsInterval) clearInterval(fetchTabsInterval);
+    chrome.runtime.onMessage.addListener((message) => {
+        if (message.action === 'tabsChanged' && !document.hidden) {
             fetchChromeTabs();
-            fetchTabsInterval = setInterval(fetchChromeTabs, 5000);
+        }
+    });
+    // Refresh once when tab becomes visible again
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            fetchChromeTabs();
         }
     });
 
@@ -224,11 +340,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Settings event listeners
     document.getElementById('openInNewTab').addEventListener('change', (e) => {
         bookmarkManagerData.openInNewTab = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    document.getElementById('closeWhenSaveTab').addEventListener('change', (e) => {
+        bookmarkManagerData.closeWhenSaveTab = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
         saveToLocalStorage();
     });
 
     document.getElementById('darkMode').addEventListener('change', (e) => {
         bookmarkManagerData.darkMode = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
         if (e.target.checked) {
             document.body.classList.add('dark-mode');
         } else {
@@ -246,6 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         bookmarkManagerData.zenMode = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
         if (e.target.checked) {
             document.body.classList.add('zen-mode');
             startZenMode();
@@ -272,11 +397,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.innerWidth <= 768 && bookmarkManagerData.zenMode) {
             document.getElementById('zenMode').checked = false;
             bookmarkManagerData.zenMode = false;
+            bookmarkManagerData.settingsLastModified = Date.now();
             document.body.classList.remove('zen-mode');
             stopZenMode();
             saveToLocalStorage();
         }
     });
+
+    // Auto-show pane settings
+    document.getElementById('autoShowLeftPane').addEventListener('change', (e) => {
+        bookmarkManagerData.autoShowLeftPane = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+    document.getElementById('autoShowRightPane').addEventListener('change', (e) => {
+        bookmarkManagerData.autoShowRightPane = e.target.checked;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        saveToLocalStorage();
+    });
+
+    // Collapsible settings sections (accordion - only one open at a time)
+    const allCollapsibleSections = document.querySelectorAll('.settings-section.collapsible');
+    allCollapsibleSections.forEach(section => {
+        section.querySelector('.settings-section-header').addEventListener('click', () => {
+            const isOpen = section.classList.contains('open');
+            allCollapsibleSections.forEach(s => s.classList.remove('open'));
+            if (!isOpen) section.classList.add('open');
+        });
+    });
+    // Open the first section (Preferences) by default
+    const firstSection = document.querySelector('.settings-section.collapsible');
+    if (firstSection) firstSection.classList.add('open');
+
+    // Hide "Buy Me a Coffee" button toggle
+    const hideCoffeeCheckbox = document.getElementById('hideCoffeeButton');
+    if (hideCoffeeCheckbox) {
+        hideCoffeeCheckbox.checked = !!bookmarkManagerData.hideCoffeeButton;
+        if (bookmarkManagerData.hideCoffeeButton) {
+            const btn = document.getElementById('supportButton');
+            if (btn) btn.style.display = 'none';
+        }
+
+        hideCoffeeCheckbox.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                // Show guilt-trip dialog before hiding
+                e.target.checked = false; // Reset until confirmed
+                showHideCoffeeDialog();
+            } else {
+                bookmarkManagerData.hideCoffeeButton = false;
+                bookmarkManagerData.settingsLastModified = Date.now();
+                const btn = document.getElementById('supportButton');
+                if (btn) btn.style.display = '';
+                saveToLocalStorage();
+            }
+        });
+    }
 
     // Import/Export event listeners
     document.getElementById('importFile').addEventListener('change', (e) => {
@@ -337,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
         button.disabled = true;
 
         try {
-            const response = await chrome.runtime.sendMessage({
+            const response = await sendMessageAsync({
                 action: 'createManualBackup',
                 data: bookmarkManagerData
             });
@@ -401,6 +576,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Sync provider selector
+    document.getElementById('syncProvider').addEventListener('change', (e) => {
+        bookmarkManagerData.syncProvider = e.target.value;
+        saveToLocalStorage();
+        updateSyncProviderUI();
+        updateSyncButtonVisibility();
+    });
+
     // GitHub settings event listeners
     document.getElementById('githubUsername').addEventListener('change', (e) => {
         bookmarkManagerData.githubConfig.username = e.target.value;
@@ -420,7 +603,42 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSyncButtonVisibility();
     });
 
-    document.getElementById('syncButton').addEventListener('click', synchronizeWithGitHub);
+    // Google Drive event listeners
+    document.getElementById('googleDriveConnectBtn').addEventListener('click', connectGoogleDrive);
+    document.getElementById('googleDriveDisconnectBtn').addEventListener('click', () => {
+        if (confirm('Disconnect from Google Drive? Your data will remain on Drive but will no longer sync.')) {
+            disconnectGoogleDrive();
+        }
+    });
+
+    // Auto-sync event listeners
+    document.getElementById('autoSyncEnabled').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.autoSync) bookmarkManagerData.autoSync = {};
+        bookmarkManagerData.autoSync.enabled = e.target.checked;
+        updateAutoSyncDelayVisibility();
+        saveToLocalStorage();
+        if (!e.target.checked) {
+            cancelAutoSync();
+        }
+    });
+
+    document.getElementById('autoSyncDelay').addEventListener('change', (e) => {
+        if (!bookmarkManagerData.autoSync) bookmarkManagerData.autoSync = {};
+        bookmarkManagerData.autoSync.delaySeconds = parseInt(e.target.value, 10);
+        saveToLocalStorage();
+    });
+
+    // Local Drive event listeners
+    document.getElementById('localDriveSelectFolderBtn').addEventListener('click', connectLocalDrive);
+    document.getElementById('localDriveChangeFolderBtn').addEventListener('click', changeLocalDriveFolder);
+    document.getElementById('localDriveDisconnectBtn').addEventListener('click', () => {
+        if (confirm('Disconnect from local folder? Your sync file will remain in the folder.')) {
+            disconnectLocalDrive();
+        }
+    });
+
+    // Sync button uses the unified dispatcher
+    document.getElementById('syncButton').addEventListener('click', synchronize);
 
     // Help button event listener
     document.getElementById('helpButton').addEventListener('click', function() {
@@ -434,6 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Collection sort order event listener
     document.getElementById('collectionSortOrder').addEventListener('change', (e) => {
         bookmarkManagerData.collectionSortOrder = e.target.value;
+        bookmarkManagerData.settingsLastModified = Date.now();
         saveToLocalStorage();
         renderCollections();
     });
@@ -470,61 +689,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Left pane tabs functionality
     initializeLeftPaneTabs();
 
-    // Helper: Update sync button visibility
-    function updateSyncButtonVisibility() {
-        const syncButton = document.getElementById('syncButton');
-        syncButton.style.display = isGitHubConfigValid() ? 'flex' : 'none';
-    }
+    // Initialize pane auto-show on hover
+    initPaneAutoShow();
 
-    // Helper: Update backup settings visibility
-    function updateBackupSettingsVisibility() {
-        const enabled = bookmarkManagerData.autoBackup.enabled;
-        const frequencySection = document.getElementById('backupFrequencySection');
-        const retentionSection = document.getElementById('backupRetentionSection');
-        const folderSection = document.getElementById('backupFolderSection');
+    // Initialize sync provider UI
+    updateSyncProviderUI();
 
-        if (frequencySection) {
-            frequencySection.style.display = enabled ? 'block' : 'none';
-        }
-        if (retentionSection) {
-            retentionSection.style.display = enabled ? 'block' : 'none';
-        }
-        if (folderSection) {
-            folderSection.style.display = enabled ? 'block' : 'none';
-        }
-    }
-
-    // Helper: Sync to chrome storage
-    async function syncToStorage() {
-        try {
-            await chrome.storage.local.set({ bookmarkManagerData: bookmarkManagerData });
-        } catch (error) {
-            console.error('Error syncing to storage:', error);
-        }
-    }
-
-    // Helper: Load backup settings
-    function loadBackupSettings() {
-        const autoBackupEnabled = document.getElementById('autoBackupEnabled');
-        const backupFrequency = document.getElementById('backupFrequency');
-        const backupRetention = document.getElementById('backupRetention');
-        const backupFolderPath = document.getElementById('backupFolderPath');
-
-        if (autoBackupEnabled) {
-            autoBackupEnabled.checked = bookmarkManagerData.autoBackup.enabled;
-        }
-        if (backupFrequency) {
-            backupFrequency.value = bookmarkManagerData.autoBackup.frequency;
-        }
-        if (backupRetention) {
-            backupRetention.value = bookmarkManagerData.autoBackup.keepDays.toString();
-        }
-        if (backupFolderPath) {
-            backupFolderPath.textContent = bookmarkManagerData.autoBackup.folderPath || 'Downloads';
-        }
-
-        updateBackupSettingsVisibility();
-    }
+    // Initialize auto-sync settings
+    if (!bookmarkManagerData.autoSync) bookmarkManagerData.autoSync = { enabled: false, delaySeconds: 30 };
+    const autoSyncEnabledEl = document.getElementById('autoSyncEnabled');
+    if (autoSyncEnabledEl) autoSyncEnabledEl.checked = !!bookmarkManagerData.autoSync.enabled;
+    const autoSyncDelayEl = document.getElementById('autoSyncDelay');
+    if (autoSyncDelayEl) autoSyncDelayEl.value = (bookmarkManagerData.autoSync.delaySeconds || 30).toString();
+    updateAutoSyncDelayVisibility();
 
     // Initialize GitHub fields and sync button visibility
     document.getElementById('githubUsername').value = bookmarkManagerData.githubConfig.username || '';
@@ -584,10 +761,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Global drop handler for creating new Collections from Tab Groups
-    document.addEventListener('dragover', (e) => {
-        const creatableTypes = ['chromeTabGroup', 'chromeWindow'];
+    // Global drop handler for creating new Collections from Chrome tabs/groups/windows
+    const creatableTypes = ['chromeTab', 'chromeTabGroup', 'chromeWindow'];
 
+    document.addEventListener('dragover', (e) => {
         if (draggedItem && creatableTypes.includes(draggedItem.type)) {
             const closestCollection = e.target.closest('.collection');
 
@@ -599,44 +776,111 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('drop', (e) => {
-        if (draggedItem && (draggedItem.type === 'chromeTabGroup' || draggedItem.type === 'chromeWindow')) {
+        if (draggedItem && creatableTypes.includes(draggedItem.type)) {
             const closestCollection = e.target.closest('.collection');
             const closestBookmarksContainer = e.target.closest('.bookmarks');
 
             if (!closestCollection && !closestBookmarksContainer) {
                 e.preventDefault();
 
+                // Build a default name from the dragged item
+                const data = draggedItem.data;
+                let defaultName;
+                if (draggedItem.type === 'chromeTab') {
+                    defaultName = data.title || 'New Collection';
+                } else if (data.title && data.title.trim() !== '') {
+                    defaultName = data.title;
+                } else if (data.windowId) {
+                    defaultName = generateWindowName(data.windowId);
+                } else {
+                    defaultName = formatDate(new Date());
+                }
+
+                // Capture dragged data before clearing
+                const capturedItem = { ...draggedItem };
+                draggedItem = null;
+
+                // Show the same prompt as "Add Collection"
+                const name = prompt('Enter collection name:', defaultName);
+                if (!name) return;
+
                 try {
-                    const newCollection = createCollectionFromTabGroup(draggedItem.data);
+                    const selfUrl = chrome.runtime.getURL('bm.html');
+                    const currentSpace = bookmarkManagerData.currentSpace || 'Everything';
+
+                    // Bump existing positions
+                    bookmarkManagerData.collections.forEach(c => { c.position++; });
+
+                    // Build bookmarks from dragged tabs
+                    const bookmarks = [];
+                    let tabs = [];
+                    if (capturedItem.type === 'chromeTab') {
+                        tabs = [capturedItem.data];
+                    } else {
+                        tabs = capturedItem.data.tabs || [];
+                    }
+
+                    let position = 0;
+                    tabs.forEach(tab => {
+                        if (!tab.url || tab.url === selfUrl || tab.url.startsWith('chrome://')) return;
+                        bookmarks.push({
+                            id: generateUUID(),
+                            title: tab.title || 'Untitled',
+                            url: tab.url,
+                            description: '',
+                            icon: tab.favIconUrl || 'assets/icons/default-icon.png',
+                            lastModified: Date.now(),
+                            deleted: false,
+                            position: position++
+                        });
+                    });
+
+                    const newCollection = {
+                        id: generateUUID(),
+                        name: name,
+                        isOpen: true,
+                        lastModified: Date.now(),
+                        deleted: false,
+                        position: 0,
+                        spaces: currentSpace === 'Everything' ? ['Everything'] : ['Everything', currentSpace],
+                        bookmarks: bookmarks
+                    };
+
+                    bookmarkManagerData.collections.push(newCollection);
+
+                    // Close tabs if setting is enabled
+                    if (bookmarkManagerData.closeWhenSaveTab) {
+                        tabs.forEach(tab => {
+                            const tabId = tab.tabId || tab.id;
+                            if (tabId && tab.url !== selfUrl && tab.url && !tab.url.startsWith('chrome://')) {
+                                chrome.tabs.remove(tabId).catch(() => {});
+                            }
+                        });
+                    }
 
                     renderCollections();
                     saveToLocalStorage();
 
-                    console.log('Created new collection from tab group:', newCollection.name);
+                    console.log('Created new collection from drop:', newCollection.name);
 
                     setTimeout(() => {
-                        const newCollectionElement = document.querySelector(`[data-collection-id="${newCollection.id}"]`);
-                        if (newCollectionElement) {
-                            newCollectionElement.style.transition = 'background-color 0.3s ease';
-                            newCollectionElement.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
-                            setTimeout(() => {
-                                newCollectionElement.style.backgroundColor = '';
-                            }, 1000);
+                        const el = document.querySelector(`[data-collection-id="${newCollection.id}"]`);
+                        if (el) {
+                            el.style.transition = 'background-color 0.3s ease';
+                            el.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+                            setTimeout(() => { el.style.backgroundColor = ''; }, 1000);
                         }
                     }, 100);
 
                 } catch (error) {
-                    console.error('Error creating collection from tab group:', error);
+                    console.error('Error creating collection from drop:', error);
                 }
-
-                draggedItem = null;
             }
         }
     });
-});
 
-// Support button confetti listeners (run after DOM is ready)
-document.addEventListener('DOMContentLoaded', () => {
+    // --- Section 3: Support button confetti ---
+
     const supportButton = document.getElementById('supportButton');
     if (supportButton) {
         supportButton.addEventListener('mouseenter', function(e) {

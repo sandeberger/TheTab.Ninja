@@ -822,3 +822,120 @@ function showDeleteConfirmation(title, message, subtitle, onConfirm) {
         }
     });
 }
+
+// "Hide Buy Me a Coffee" guilt-trip dialog
+function showHideCoffeeDialog() {
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const dialogBg = isDarkMode ? '#2a2a2a' : 'white';
+    const textColor = isDarkMode ? '#e0e0e0' : '#333';
+    const subtitleColor = isDarkMode ? '#999' : '#666';
+    const cancelBg = isDarkMode ? '#444' : '#f0f0f0';
+    const cancelTextColor = isDarkMode ? '#e0e0e0' : '#333';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.5); z-index: 9999; display: flex;
+        align-items: center; justify-content: center;
+    `;
+
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-label', 'Hide Buy Me a Coffee');
+    dialog.style.cssText = `
+        background: ${dialogBg}; color: ${textColor}; padding: 30px; border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3); min-width: 350px; max-width: 440px;
+        border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
+        backdrop-filter: blur(10px); animation: fadeIn 0.2s ease;
+        text-align: center;
+    `;
+
+    dialog.innerHTML = `
+        <div style="margin-bottom: 20px;">
+            <div style="font-size: 48px; margin-bottom: 12px;">&#9749;</div>
+            <h3 style="color: ${textColor}; margin: 0 0 12px 0; font-size: 18px;">Are you sure?</h3>
+            <p style="color: ${textColor}; margin: 0 0 10px 0; font-size: 14px; line-height: 1.6;">
+                TheTab.Ninja is built with love and lots of coffee.<br>
+                Before you hide the button, maybe consider fueling the developer?
+            </p>
+            <p style="color: ${subtitleColor}; margin: 0; font-size: 12px; font-style: italic;">
+                Every cup helps keep the code flowing!
+            </p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+            <a href="https://buymeacoffee.com/kodar.ninja" target="_blank" id="coffeeDialogBuyBtn" style="
+                display: inline-flex; align-items: center; gap: 8px;
+                padding: 12px 24px; background: linear-gradient(45deg, #FF8C00, #FFA500);
+                color: white; border: none; border-radius: 8px; cursor: pointer;
+                font-size: 15px; font-weight: 600; text-decoration: none;
+                transition: all 0.2s ease; width: fit-content;
+                box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
+            ">&#9749; Buy Me a Coffee</a>
+            <div style="display: flex; gap: 10px; margin-top: 6px;">
+                <button id="coffeeDialogCancel" style="
+                    padding: 8px 20px; background: ${cancelBg};
+                    color: ${cancelTextColor}; border: 1px solid ${isDarkMode ? '#666' : '#ccc'};
+                    border-radius: 6px; cursor: pointer; font-size: 13px;
+                    transition: all 0.2s ease;
+                ">Keep showing</button>
+                <button id="coffeeDialogHide" style="
+                    padding: 8px 20px; background: transparent;
+                    color: ${subtitleColor}; border: 1px solid ${isDarkMode ? '#555' : '#ddd'};
+                    border-radius: 6px; cursor: pointer; font-size: 13px;
+                    transition: all 0.2s ease;
+                ">Hide anyway</button>
+            </div>
+        </div>
+    `;
+
+    if (!document.querySelector('style[data-dialog-animation]')) {
+        const style = document.createElement('style');
+        style.setAttribute('data-dialog-animation', 'true');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: scale(0.9); }
+                to { opacity: 1; transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    const cancelBtn = dialog.querySelector('#coffeeDialogCancel');
+    const hideBtn = dialog.querySelector('#coffeeDialogHide');
+    const buyBtn = dialog.querySelector('#coffeeDialogBuyBtn');
+
+    function closeDialog() {
+        if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }
+
+    cancelBtn.addEventListener('click', closeDialog);
+
+    buyBtn.addEventListener('click', () => {
+        closeDialog();
+    });
+
+    hideBtn.addEventListener('click', () => {
+        closeDialog();
+        bookmarkManagerData.hideCoffeeButton = true;
+        bookmarkManagerData.settingsLastModified = Date.now();
+        const checkbox = document.getElementById('hideCoffeeButton');
+        if (checkbox) checkbox.checked = true;
+        const btn = document.getElementById('supportButton');
+        if (btn) btn.style.display = 'none';
+        saveToLocalStorage();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeDialog();
+    });
+
+    dialog.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDialog();
+    });
+
+    setTimeout(() => cancelBtn.focus(), 100);
+}
