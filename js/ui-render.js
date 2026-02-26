@@ -3,6 +3,17 @@
  * Handles rendering collections, bookmarks, Chrome tabs, pane management, and search filtering.
  */
 
+function formatTimeAgo(timestamp) {
+    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+    if (seconds < 60) return 'just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + ' min ago';
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + 'h ago';
+    const days = Math.floor(hours / 24);
+    return days + 'd ago';
+}
+
 // Global applyFilter function for use by both search box and zen search
 function applyFilter(searchTerm) {
     const collections = document.querySelectorAll('.collection');
@@ -208,36 +219,89 @@ function renderCollections() {
         const actions = document.createElement('div');
         actions.className = 'collection-actions';
 
-        const buttons = [
-            { className: 'launch-collection', text: '\uD83D\uDE80', title: 'Open bookmarks in a Chrome group', action: () => launchCollection(collection.id) },
-            { className: 'openall-collection', icon: 'outbox', title: 'Open bookmarks in this collection', action: () => launchAllTabs(collection.id) },
-            { className: 'fetch-alltabs', icon: 'inbox', title: 'Get all Chrome tabs', action: () => fetchAllTabs(collection.id) },
-            { className: 'add-bookmark', text: '+', title: 'Create bookmark', action: () => addBookmark(collection.id) },
-            { className: 'edit-collection', text: '\u270F\uFE0F', title: 'Edit collection', action: () => editCollection(collection.id) },
-            { className: 'edit-spaces', text: '\uD83C\uDFF7\uFE0F', title: 'Manage spaces for this collection', action: () => editCollectionSpaces(collection.id) },
+        // Add bookmark button (+)
+        const addBtn = document.createElement('button');
+        addBtn.className = 'collection-button add-bookmark';
+        addBtn.title = 'Create bookmark';
+        addBtn.textContent = '+';
+        addBtn.addEventListener('click', () => addBookmark(collection.id));
+        actions.appendChild(addBtn);
+
+        // More actions button (...)
+        const moreWrapper = document.createElement('div');
+        moreWrapper.className = 'collection-more-wrapper';
+
+        const moreBtn = document.createElement('button');
+        moreBtn.className = 'collection-button more-actions';
+        moreBtn.title = 'More actions';
+        moreBtn.innerHTML = '&#x2026;';
+        moreWrapper.appendChild(moreBtn);
+
+        // Dropdown menu
+        const dropdown = document.createElement('div');
+        dropdown.className = 'collection-dropdown';
+
+        const menuItems = [
+            { icon: '\uD83D\uDE80', label: 'Open as Chrome group', action: () => launchCollection(collection.id) },
+            { icon: 'outbox', label: 'Open all bookmarks', action: () => launchAllTabs(collection.id) },
+            { icon: 'inbox', label: 'Import Chrome tabs', action: () => fetchAllTabs(collection.id) },
+            { separator: true },
+            { icon: '\u270F\uFE0F', label: 'Edit collection', action: () => editCollection(collection.id) },
+            { icon: '\uD83C\uDFF7\uFE0F', label: 'Manage spaces', action: () => editCollectionSpaces(collection.id) },
             ...(bookmarkManagerData.collectionSortOrder === 'userdefined' ? [
-                { className: 'move-collection', text: '\u25B2', title: 'Move collection up', action: () => moveCollection(collection.id, -1) },
-                { className: 'move-collection', text: '\u25BC', title: 'Move collection down', action: () => moveCollection(collection.id, 1) }
+                { icon: '\u25B2', label: 'Move up', action: () => moveCollection(collection.id, -1) },
+                { icon: '\u25BC', label: 'Move down', action: () => moveCollection(collection.id, 1) }
             ] : []),
-            { className: 'delete-collection', text: '\uD83D\uDDD1\uFE0F', title: 'Delete collection', action: () => deleteCollection(collection.id) }
+            { separator: true },
+            { icon: '\uD83D\uDDD1\uFE0F', label: 'Delete collection', action: () => deleteCollection(collection.id), danger: true }
         ];
 
-        buttons.forEach(btnConfig => {
-            const btn = document.createElement('button');
-            btn.className = `collection-button ${btnConfig.className}`;
-            btn.title = btnConfig.title;
-            btn.addEventListener('click', btnConfig.action);
-
-            if (btnConfig.icon === 'inbox') {
-                btn.innerHTML = svgInbox;
-            } else if (btnConfig.icon === 'outbox') {
-                btn.innerHTML = svgOutbox;
-            } else {
-                btn.textContent = btnConfig.text;
+        menuItems.forEach(item => {
+            if (item.separator) {
+                const sep = document.createElement('div');
+                sep.className = 'collection-dropdown-separator';
+                dropdown.appendChild(sep);
+                return;
             }
-
-            actions.appendChild(btn);
+            const menuItem = document.createElement('button');
+            menuItem.className = 'collection-dropdown-item' + (item.danger ? ' danger' : '');
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'collection-dropdown-icon';
+            if (item.icon === 'inbox') {
+                iconSpan.innerHTML = svgInbox;
+            } else if (item.icon === 'outbox') {
+                iconSpan.innerHTML = svgOutbox;
+            } else {
+                iconSpan.textContent = item.icon;
+            }
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = item.label;
+            menuItem.appendChild(iconSpan);
+            menuItem.appendChild(labelSpan);
+            menuItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.remove('show');
+                collectionElement.classList.remove('dropdown-open');
+                item.action();
+            });
+            dropdown.appendChild(menuItem);
         });
+
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Close any other open dropdowns and remove elevated class
+            document.querySelectorAll('.collection-dropdown.show').forEach(d => {
+                if (d !== dropdown) {
+                    d.classList.remove('show');
+                    d.closest('.collection').classList.remove('dropdown-open');
+                }
+            });
+            dropdown.classList.toggle('show');
+            collectionElement.classList.toggle('dropdown-open', dropdown.classList.contains('show'));
+        });
+
+        moreWrapper.appendChild(dropdown);
+        actions.appendChild(moreWrapper);
 
         titleArea.appendChild(dragHandle);
         titleArea.appendChild(title);
@@ -324,50 +388,45 @@ function createButton(className, text, tooltipText) {
 }
 
 // Fetch all Chrome tabs into a collection
-function fetchAllTabs(collectionId) {
+async function fetchAllTabs(collectionId) {
     const selfUrl = chrome.runtime.getURL("bm.html");
-    chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
-        try {
-            if (chrome.runtime.lastError) {
-                console.error("Error fetching tabs:", chrome.runtime.lastError);
+    try {
+        const response = await sendMessageAsync({ action: "getTabs" });
+        if (response && response.length > 0) {
+            let allTabs = [];
+            response.forEach(windowData => {
+                allTabs = allTabs.concat(windowData.tabs);
+            });
+            const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+            if (!collection) {
+                console.error("Collection not found:", collectionId);
                 return;
             }
-            if (response && response.length > 0) {
-                let allTabs = [];
-                response.forEach(windowData => {
-                    allTabs = allTabs.concat(windowData.tabs);
-                });
-                const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
-                if (!collection) {
-                    console.error("Collection not found:", collectionId);
-                    return;
-                }
-                allTabs.forEach(tab => {
-                    if (tab.url === selfUrl) return;
+            allTabs.forEach(tab => {
+                if (tab.url === selfUrl) return;
 
-                    const newBookmark = {
-                        id: generateUUID(),
-                        title: tab.title,
-                        url: tab.url,
-                        description: "",
-                        icon: tab.favIconUrl || "assets/icons/default-icon.png",
-                        lastModified: Date.now(),
-                        deleted: false,
-                        position: collection.bookmarks.length
-                    };
-                    collection.bookmarks.push(newBookmark);
-                    if (bookmarkManagerData.closeWhenSaveTab && (tab.tabId || tab.id)) {
-                        chrome.tabs.remove(tab.tabId || tab.id);
-                    }
-                });
-                collection.lastModified = Date.now();
-                renderCollections();
-                saveToLocalStorage();
-            }
-        } catch (error) {
-            console.error("Error in fetchAllTabs:", error);
+                const newBookmark = {
+                    id: generateUUID(),
+                    title: tab.title,
+                    url: tab.url,
+                    description: "",
+                    icon: tab.favIconUrl || "assets/icons/default-icon.png",
+                    lastModified: Date.now(),
+                    deleted: false,
+                    position: collection.bookmarks.length
+                };
+                collection.bookmarks.push(newBookmark);
+                if (bookmarkManagerData.closeWhenSaveTab && (tab.tabId || tab.id)) {
+                    chrome.tabs.remove(tab.tabId || tab.id);
+                }
+            });
+            collection.lastModified = Date.now();
+            renderCollections();
+            saveToLocalStorage();
         }
-    });
+    } catch (error) {
+        console.error("Error in fetchAllTabs:", error);
+    }
 }
 
 // Create a bookmark DOM element
@@ -414,23 +473,12 @@ function createBookmarkElement(bookmark, collectionId) {
 
     bookmarkElement.addEventListener('dragstart', function(e) {
         dragStartBookmark.call(this, e);
-        this.style.opacity = '0.5';
-        this.style.transform = 'scale(0.95)';
     });
     bookmarkElement.addEventListener('dragend', function(e) {
         dragEnd.call(this, e);
-        this.style.opacity = '1';
-        this.style.transform = 'scale(1)';
-        this.style.zIndex = 'auto';
     });
     bookmarkElement.addEventListener('dragover', function(e) {
         dragOverBookmark.call(this, e);
-        this.style.transform = 'scale(1.02)';
-        this.style.zIndex = '1000';
-    });
-    bookmarkElement.addEventListener('dragleave', function(e) {
-        this.style.transform = 'scale(1)';
-        this.style.zIndex = 'auto';
     });
     bookmarkElement.addEventListener('drop', dropBookmark);
 
@@ -529,24 +577,22 @@ function openBookmark(collectionId, bookmarkId) {
 }
 
 // Launch collection as Chrome tab group
-function launchCollection(collectionId) {
+async function launchCollection(collectionId) {
     const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
     if (collection) {
         const urls = collection.bookmarks.filter(b => !b.deleted && isSafeUrl(b.url)).map(bookmark => bookmark.url);
-        const extensionId = extId;
-
-        chrome.runtime.sendMessage({ action: 'launchCollection', urls: urls, collectionName: collection.name },
-        (response) => {
-            if (chrome.runtime.lastError) {
-                console.error('Error launching collection:', chrome.runtime.lastError);
-                alert('Error launching collection. Make sure the extension is installed and active.');
-            } else if (response && response.success) {
+        try {
+            const response = await sendMessageAsync({ action: 'launchCollection', urls: urls, collectionName: collection.name });
+            if (response && response.success) {
                 console.log('Collection launched successfully');
             } else {
                 console.error('Failed to launch collection');
                 alert('Failed to launch collection. Please try again.');
             }
-        });
+        } catch (error) {
+            console.error('Error launching collection:', error);
+            alert('Error launching collection. Make sure the extension is installed and active.');
+        }
     }
 }
 
@@ -598,8 +644,35 @@ function createChromeTabElement(tab, windowId) {
     const tabTitle = document.createElement('span');
     tabTitle.className = 'tab-title';
     tabTitle.textContent = tab.title;
-    tabTitle.title = tab.url;
     tabDiv.appendChild(tabTitle);
+
+    // Status indicators (inline, always visible)
+    const statusIcons = document.createElement('span');
+    statusIcons.className = 'tab-status-icons';
+    if (tab.pinned) statusIcons.innerHTML += '<span class="tab-status-icon" title="Pinned">📌</span>';
+    if (tab.audible && !(tab.mutedInfo && tab.mutedInfo.muted)) {
+        statusIcons.innerHTML += '<span class="tab-status-icon" title="Playing audio">🔊</span>';
+    }
+    if (tab.mutedInfo && tab.mutedInfo.muted) {
+        statusIcons.innerHTML += '<span class="tab-status-icon" title="Muted">🔇</span>';
+    }
+    if (tab.discarded) statusIcons.innerHTML += '<span class="tab-status-icon" title="Sleeping (memory saved)">💤</span>';
+    if (tab.active) statusIcons.innerHTML += '<span class="tab-status-icon" title="Active tab">⭐</span>';
+    tabDiv.appendChild(statusIcons);
+
+    // Build rich tooltip on the whole tab row
+    let tooltipLines = [tab.title, tab.url];
+    const statuses = [];
+    if (tab.pinned) statuses.push('📌 Pinned');
+    if (tab.audible) statuses.push('🔊 Playing audio');
+    if (tab.mutedInfo && tab.mutedInfo.muted) statuses.push('🔇 Muted');
+    if (tab.discarded) statuses.push('💤 Sleeping');
+    if (tab.active) statuses.push('⭐ Active');
+    if (statuses.length > 0) tooltipLines.push(statuses.join(' · '));
+    if (tab.lastAccessed) {
+        tooltipLines.push('🕐 Last used: ' + formatTimeAgo(tab.lastAccessed));
+    }
+    tabDiv.title = tooltipLines.join('\n');
 
     tabDiv.addEventListener('dragstart', (e) => {
         e.stopPropagation();
@@ -617,11 +690,11 @@ function createChromeTabElement(tab, windowId) {
     });
 
     tabDiv.addEventListener('click', () => {
-        chrome.runtime.sendMessage({
+        sendMessageAsync({
             action: 'switchToTab',
             tabId: tab.id,
             windowId: windowId
-        });
+        }).catch(err => console.error('Error switching tab:', err));
     });
 
     return tabDiv;
@@ -657,21 +730,25 @@ function displayFallbackContent(contentDiv) {
 }
 
 // Fetch and display Chrome tabs in the right pane
-function fetchChromeTabs() {
+async function fetchChromeTabs() {
     try {
-        chrome.runtime.sendMessage({ action: "getTabs" }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error('Error fetching tabs:', chrome.runtime.lastError);
-                return;
-            }
-            const contentDiv = document.getElementById('content');
-            if (!contentDiv) return;
-            contentDiv.innerHTML = '';
+        const [response, currentWinResponse] = await Promise.all([
+            sendMessageAsync({ action: "getTabs" }),
+            sendMessageAsync({ action: "getCurrentWindowId" })
+        ]);
+        const currentWindowId = currentWinResponse && currentWinResponse.windowId;
+        const contentDiv = document.getElementById('content');
+        if (!contentDiv) return;
+        contentDiv.innerHTML = '';
 
-            if (response && response.length > 0) {
-                response.forEach((windowData) => {
+        if (response && response.length > 0) {
+            response.forEach((windowData) => {
                     const windowDiv = document.createElement('div');
                     windowDiv.className = 'window';
+                    const isCurrentWindow = windowData.windowId === currentWindowId;
+                    if (isCurrentWindow) {
+                        windowDiv.classList.add('current-window');
+                    }
 
                     windowDiv.setAttribute('draggable', true);
                     windowDiv.addEventListener('dragstart', function(e) {
@@ -682,9 +759,34 @@ function fetchChromeTabs() {
                         e.dataTransfer.setData('text/plain', 'chromeWindow');
                     });
 
+                    const windowName = generateWindowName(windowData.windowId);
                     const windowTitle = document.createElement('div');
                     windowTitle.className = 'window-title';
-                    windowTitle.textContent = `Chrome Window ID: ${windowData.windowId} (${windowData.tabs.length} tabs)`;
+                    if (isCurrentWindow) {
+                        windowTitle.classList.add('current-window-title');
+                    }
+                    windowTitle.innerHTML = '';
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'window-name';
+                    nameSpan.textContent = windowName;
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'window-tab-count';
+                    countSpan.textContent = `${windowData.tabs.length} tabs`;
+                    windowTitle.appendChild(nameSpan);
+                    windowTitle.appendChild(countSpan);
+                    if (isCurrentWindow) {
+                        const badge = document.createElement('span');
+                        badge.className = 'current-window-badge';
+                        badge.textContent = '● this window';
+                        windowTitle.appendChild(badge);
+                    }
+
+                    // Build window tooltip
+                    const windowTooltipLines = [windowName + ' · ' + windowData.tabs.length + ' tabs'];
+                    if (windowData.state) windowTooltipLines.push('State: ' + windowData.state);
+                    if (windowData.focused) windowTooltipLines.push('Focused');
+                    if (windowData.incognito) windowTooltipLines.push('🔒 Incognito');
+                    windowTitle.title = windowTooltipLines.join('\n');
 
                     const tabsList = document.createElement('div');
                     tabsList.className = 'tabs-list';
@@ -738,6 +840,13 @@ function fetchChromeTabs() {
 
                         groupContainer.addEventListener('dragend', dragEnd);
 
+                        // Build group tooltip
+                        const groupTabCount = groupTabs.length + ' tab' + (groupTabs.length !== 1 ? 's' : '');
+                        const groupTooltipLines = [(groupInfo?.title || 'Tab Group') + ' · ' + groupTabCount];
+                        if (groupInfo?.color) groupTooltipLines.push('Color: ' + groupInfo.color);
+                        if (groupInfo?.collapsed) groupTooltipLines.push('Collapsed in Chrome');
+                        groupContainer.title = groupTooltipLines.join('\n');
+
                         const groupHeader = document.createElement('div');
                         groupHeader.className = 'group-header';
                         groupHeader.appendChild(groupDragHandle);
@@ -772,7 +881,14 @@ function fetchChromeTabs() {
                                 id: tabData.tabId,
                                 title: tabData.title,
                                 url: tabData.url,
-                                favIconUrl: tabData.favIconUrl
+                                favIconUrl: tabData.favIconUrl,
+                                pinned: tabData.pinned,
+                                audible: tabData.audible,
+                                mutedInfo: tabData.mutedInfo,
+                                status: tabData.status,
+                                discarded: tabData.discarded,
+                                active: tabData.active,
+                                lastAccessed: tabData.lastAccessed
                             }, windowData.windowId);
                             groupTabsContainer.appendChild(tabDiv);
                         });
@@ -796,7 +912,14 @@ function fetchChromeTabs() {
                             id: tabData.tabId,
                             title: tabData.title,
                             url: tabData.url,
-                            favIconUrl: tabData.favIconUrl
+                            favIconUrl: tabData.favIconUrl,
+                            pinned: tabData.pinned,
+                            audible: tabData.audible,
+                            mutedInfo: tabData.mutedInfo,
+                            status: tabData.status,
+                            discarded: tabData.discarded,
+                            active: tabData.active,
+                            lastAccessed: tabData.lastAccessed
                         }, windowData.windowId);
                         ungroupedTabsContainer.appendChild(tabDiv);
                     });
@@ -813,10 +936,9 @@ function fetchChromeTabs() {
                         saveToLocalStorage();
                     });
                 });
-            } else {
-                displayFallbackContent(contentDiv);
-            }
-        });
+        } else {
+            displayFallbackContent(contentDiv);
+        }
     } catch (error) {
         console.error('Error:', error);
     }
@@ -825,6 +947,27 @@ function fetchChromeTabs() {
 // Toggle left/right pane open/closed
 function togglePane(paneId) {
     const pane = document.getElementById(paneId);
+
+    // On mobile, close the overlay instead of toggling the desktop closed class
+    if (window.innerWidth <= 768 && pane.classList.contains('open')) {
+        pane.classList.remove('open');
+        const mobileBtn = document.getElementById(
+            paneId === 'leftPane' ? 'mobileLeftPaneToggle' : 'mobileRightPaneToggle'
+        );
+        if (mobileBtn) mobileBtn.classList.remove('active');
+        return;
+    }
+
+    // If pane is auto-shown, pin it open permanently
+    if (pane.classList.contains('auto-shown')) {
+        pane.classList.remove('auto-shown');
+        // Pane is already visually open (closed class was removed by auto-show)
+        if (paneId === 'leftPane') bookmarkManagerData.leftPaneOpen = true;
+        else if (paneId === 'rightPane') bookmarkManagerData.rightPaneOpen = true;
+        saveToLocalStorage();
+        return;
+    }
+
     const isOpen = !pane.classList.contains('closed');
 
     pane.classList.toggle('closed');
@@ -850,4 +993,63 @@ function applyPaneStates() {
     if (!bookmarkManagerData.rightPaneOpen) {
         rightPane.classList.add('closed');
     }
+}
+
+// Auto-show panes on mouse hover when closed
+function initPaneAutoShow() {
+    const leftPane = document.getElementById('leftPane');
+    const rightPane = document.getElementById('rightPane');
+    let leftShowTimeout = null;
+    let leftHideTimeout = null;
+    let rightShowTimeout = null;
+    let rightHideTimeout = null;
+
+    function autoShowPane(pane, side) {
+        if (window.innerWidth <= 768) return;
+        const setting = side === 'left' ? bookmarkManagerData.autoShowLeftPane : bookmarkManagerData.autoShowRightPane;
+        if (!setting) return;
+        if (!pane.classList.contains('closed')) return;
+
+        pane.classList.remove('closed');
+        pane.classList.add('auto-shown');
+    }
+
+    function autoHidePane(pane, side) {
+        if (!pane.classList.contains('auto-shown')) return;
+
+        pane.classList.add('closed');
+        pane.classList.remove('auto-shown');
+    }
+
+    // Left pane hover
+    leftPane.addEventListener('mouseenter', () => {
+        clearTimeout(leftHideTimeout);
+        leftHideTimeout = null;
+        leftShowTimeout = setTimeout(() => {
+            autoShowPane(leftPane, 'left');
+        }, 200);
+    });
+    leftPane.addEventListener('mouseleave', () => {
+        clearTimeout(leftShowTimeout);
+        leftShowTimeout = null;
+        leftHideTimeout = setTimeout(() => {
+            autoHidePane(leftPane, 'left');
+        }, 300);
+    });
+
+    // Right pane hover
+    rightPane.addEventListener('mouseenter', () => {
+        clearTimeout(rightHideTimeout);
+        rightHideTimeout = null;
+        rightShowTimeout = setTimeout(() => {
+            autoShowPane(rightPane, 'right');
+        }, 200);
+    });
+    rightPane.addEventListener('mouseleave', () => {
+        clearTimeout(rightShowTimeout);
+        rightShowTimeout = null;
+        rightHideTimeout = setTimeout(() => {
+            autoHidePane(rightPane, 'right');
+        }, 300);
+    });
 }

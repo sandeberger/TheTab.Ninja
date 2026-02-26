@@ -14,7 +14,7 @@ body {
     background-repeat: no-repeat;
     background-position: center center;
     background-attachment: fixed;
-    background-size: cover; /* Välj 'cover' eller 'contain' */
+    background-size: cover; /* Vï¿½lj 'cover' eller 'contain' */
     margin: 0;
     padding: 0;
     display: flex;
@@ -74,21 +74,47 @@ body {
     #leftPane, #rightPane {
         display: none !important;
     }
-    
-    /* When panes are opened on mobile, show as overlay */
-    #leftPane.open, #rightPane.open {
+
+    /* When panes are opened on mobile, show as overlay (~90% width) */
+    #leftPane.open {
         display: flex !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        height: -webkit-fill-available;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        z-index: 9999;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 90vw !important;
+        min-width: 90vw !important;
+        max-width: 90vw !important;
+        height: 100vh !important;
+        background: #ffffff !important;
+        z-index: 9999 !important;
     }
-    
+
+    /* Right pane opens from right side, 75% width for drag-and-drop */
+    #rightPane.open {
+        display: flex !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        left: auto !important;
+        width: 75vw !important;
+        min-width: 75vw !important;
+        max-width: 75vw !important;
+        height: 100vh !important;
+        background: #ffffff !important;
+        z-index: 9999 !important;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Dark mode for mobile pane overlays */
+    body.dark-mode #leftPane.open {
+        background: #2a2a2a !important;
+    }
+
+    body.dark-mode #rightPane.open {
+        background: #2a2a2a !important;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+    }
+
     /* Mobile bookmark manager takes full space */
     #bookmarkManager {
         flex: 1;
@@ -148,74 +174,99 @@ body {
         min-width: 0;
     }
     
-    /* Show mobile pane toggles only on mobile */
+    /* Mobile pane toggle buttons - fixed at bottom of screen */
     .mobile-pane-toggle {
         display: flex !important;
+        position: fixed;
+        bottom: 16px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        z-index: 10000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
-    
-    /* Icon-only buttons on mobile */
+
+    #mobileLeftPaneToggle {
+        left: 16px;
+    }
+
+    #mobileRightPaneToggle {
+        right: 16px;
+    }
+
+    .mobile-pane-toggle .pin-icon {
+        transform: rotate(45deg);
+        transition: transform 0.3s ease;
+    }
+
+    .mobile-pane-toggle.active .pin-icon {
+        transform: rotate(0deg);
+    }
+
+    .mobile-pane-toggle:active {
+        transform: scale(0.95);
+    }
+
+    body.dark-mode .mobile-pane-toggle {
+        background: rgba(60, 60, 60, 0.85);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Minimal plus-only button on mobile */
     #addCollection {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
         padding: 0;
         border-radius: 50%;
-        font-size: 20px;
+        font-size: 18px;
         font-weight: bold;
         display: flex;
         align-items: center;
         justify-content: center;
         margin: 0;
+        opacity: 0.5;
+        box-shadow: none;
+        background-color: rgba(76, 175, 80, 0.4);
+        transition: opacity 0.3s, background-color 0.3s;
     }
-    
+
+    #addCollection:hover,
+    #addCollection:active {
+        opacity: 1;
+        background-color: rgba(76, 175, 80, 0.8);
+    }
+
+    /* Hide coffee/support button on mobile */
     #supportButton {
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        border-radius: 50%;
-        margin: 0;
-        text-decoration: none;
+        display: none !important;
     }
-    
-    #supportButton .donation-text {
-        display: none;
+
+    /* Hide the internal pane-toggle pin when pane is open on mobile (avoid double pin) */
+    #leftPane.open .pane-toggle,
+    #rightPane.open .pane-toggle {
+        display: none !important;
     }
-    
-    #supportButton .donation-icon {
-        width: 20px;
-        height: 20px;
-        margin: 0;
+
+    /* Override .closed styles when .open on mobile - ensure content is visible */
+    #leftPane.open .pane-content,
+    #rightPane.open .pane-content {
+        opacity: 1 !important;
+        pointer-events: auto !important;
     }
-    
-    /* Mobile pane toggle buttons */
-    .mobile-pane-toggle {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: rgba(240, 240, 240, 0.8);
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        margin: 0 4px;
-        backdrop-filter: blur(8px);
-        transition: all 0.3s ease;
-    }
-    
-    .mobile-pane-toggle:hover {
-        background: rgba(240, 240, 240, 1);
-        transform: scale(1.1);
-    }
-    
-    /* Dark mode for mobile toggle buttons */
-    body.dark-mode .mobile-pane-toggle {
-        background: rgba(60, 60, 60, 0.8);
-        color: #e0e0e0;
-    }
-    
-    body.dark-mode .mobile-pane-toggle:hover {
-        background: rgba(80, 80, 80, 1);
+
+    #leftPane.open,
+    #rightPane.open {
+        opacity: 1 !important;
     }
     
     /* Hide zen mode option on mobile */
@@ -229,31 +280,24 @@ body {
     }
 }
 
-/* Add '+' content to the existing small mobile button */
+/* Hide text and show '+' icon on mobile */
 @media only screen and (max-width: 768px) {
     #addCollection {
-        text-indent: -9999px;
-        overflow: visible; /* Changed from hidden to visible */
+        font-size: 0 !important;
+        color: transparent !important;
+        overflow: hidden;
         position: relative;
-        line-height: 1; /* Ensure proper line height */
     }
-    
-    #addCollection::after {
+
+    #addCollection::before {
         content: "+";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
+        font-size: 20px !important;
         font-weight: bold;
-        color: white;
-        line-height: 1;
-        z-index: 1;
-        pointer-events: none; /* Ensure clicks go through to button */
+        color: white !important;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
     }
 }
 
@@ -263,7 +307,7 @@ body {
         height: 100vh;
         height: -webkit-fill-available;
     }
-    
+
     #bookmarkManager {
         height: 100vh;
         height: -webkit-fill-available;
@@ -275,7 +319,8 @@ body {
     display: none;
 }
 
-/* I zen mode behöver vi kunna scrolla */
+
+/* I zen mode behï¿½ver vi kunna scrolla */
 body.zen-mode {
     overflow-y: auto;
 }
@@ -289,7 +334,7 @@ body.zen-mode {
     position: relative;
     display: flex;
     flex-direction: column;
-    z-index: 1010; /* Högre än zenSearchContainer (500) för att alltid ligga överst */
+    z-index: 1010; /* Hï¿½gre ï¿½n zenSearchContainer (500) fï¿½r att alltid ligga ï¿½verst */
 }
 #leftPane.closed, #rightPane.closed {
     width: 30px;
@@ -307,7 +352,7 @@ body.zen-mode {
     min-height: 0;
 }
 
-/* För WebKit-baserade webbläsare (Chrome, Safari, Edge) */
+/* Fï¿½r WebKit-baserade webblï¿½sare (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -322,27 +367,27 @@ body.zen-mode {
     border-radius: 4px;
 }
 
-/* Globala inställningar för Firefox (Anv ej nu) */
+/* Globala instï¿½llningar fï¿½r Firefox (Anv ej nu) */
 * {
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
 }
 
 #addCollection {
-    background-color: rgba(76, 297, 80, 0.6);          
+    background-color: rgba(76, 175, 80, 0.6);
     border: none;
     color: white;
-    padding: 10px 20px;
+    padding: 0 16px;
+    height: 36px;
+    line-height: 36px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
+    font-size: 14px;
     cursor: pointer;
-    border-radius: 16px;
-    transition: background-color 0.3s;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    border-radius: 8px;
     transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     position: relative;
     z-index: 1002;
 }
@@ -430,12 +475,12 @@ body.zen-mode {
     margin-right: 10px;
     background-color: #e0e0e0;
     border-radius: 4px;
-    color: #333; /* Mörk färg för ljust läge */
+    color: #333; /* Mï¿½rk fï¿½rg fï¿½r ljust lï¿½ge */
 }
 
 body.dark-mode .drag-handle {
-    background-color: #444; /* Mörkare bakgrund för mörkt läge */
-    color: #ddd; /* Ljusare text för mörkt läge */
+    background-color: #444; /* Mï¿½rkare bakgrund fï¿½r mï¿½rkt lï¿½ge */
+    color: #ddd; /* Ljusare text fï¿½r mï¿½rkt lï¿½ge */
 }
 .dragging {
     opacity: 0.3;
@@ -444,7 +489,8 @@ body.dark-mode .drag-handle {
 .collection-actions {
     display: flex;
     gap: 5px;
-    opacity: 0;
+    align-items: center;
+    opacity: 0.25;
     transition: opacity 0.3s;
 }
 .collection:hover .collection-actions {
@@ -457,6 +503,103 @@ body.dark-mode .drag-handle {
     border-radius: 4px;
     font-size: 14px;
     transition: background-color 0.3s, color 0.3s;
+}
+.more-actions {
+    background: transparent;
+    color: #666;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    line-height: 1;
+}
+.more-actions:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #333;
+}
+body.dark-mode .more-actions {
+    color: #aaa;
+}
+body.dark-mode .more-actions:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Collection dropdown menu */
+.collection-more-wrapper {
+    position: relative;
+}
+.collection.dropdown-open {
+    position: relative;
+    z-index: 100;
+}
+.collection-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 220px;
+    background-color: #2a2a2e;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 6px 0;
+    z-index: 1000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.collection-dropdown.show {
+    display: block;
+}
+.collection-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+}
+.collection-dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+.collection-dropdown-item.danger {
+    color: #f44336;
+}
+.collection-dropdown-item.danger:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+.collection-dropdown-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    font-size: 14px;
+}
+.collection-dropdown-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: #e0e0e0;
+}
+.collection-dropdown-separator {
+    height: 1px;
+    background-color: #444;
+    margin: 4px 0;
+}
+
+/* Light mode dropdown overrides */
+body:not(.dark-mode) .collection-dropdown {
+    background-color: #2a2a2e;
+    border-color: #444;
+}
+body:not(.dark-mode) .collection-dropdown-item {
+    color: #e0e0e0;
+}
+body:not(.dark-mode) .collection-dropdown-icon svg {
+    fill: #e0e0e0;
 }
 .toggle-collection {
     color: #333;
@@ -482,7 +625,7 @@ body.dark-mode .toggle-collection {
     font-size: 18px;
     cursor: pointer;
     padding: 0 10px;
-    color: #fff; /* Ljus färg för mörkt läge */
+    color: #fff; /* Ljus fï¿½rg fï¿½r mï¿½rkt lï¿½ge */
 }
 .add-bookmark {
     background-color: #4CAF50;
@@ -490,27 +633,6 @@ body.dark-mode .toggle-collection {
 }
 .add-bookmark:hover {
     background-color: #45a049;
-}
-.edit-collection {
-    background-color: #555555;
-    color: white;
-}
-.edit-collection:hover {
-    background-color: #444444;
-}
-.move-collection {
-    background-color: #f0f0f0;
-    color: #333;
-}
-.move-collection:hover {
-    background-color: #e0e0e0;
-}
-.delete-collection {
-    background-color: #f44336;
-    color: white;
-}
-.delete-collection:hover {
-    background-color: #da190b;
 }
 .empty-collection-message {
     padding: 20px;
@@ -528,6 +650,9 @@ body.dark-mode .toggle-collection {
 .window-title {
     cursor: pointer;
     padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: linear-gradient(135deg, rgba(240, 240, 240, 0.9), rgba(230, 230, 230, 0.9));
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -540,6 +665,21 @@ body.dark-mode .toggle-collection {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     position: relative;
 }
+.window-name {
+    flex-shrink: 0;
+}
+.window-tab-count {
+    font-size: 12px;
+    font-weight: 400;
+    opacity: 0.7;
+}
+.current-window-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #4CAF50;
+    margin-left: auto;
+    white-space: nowrap;
+}
 
 .window-title:hover {
     background: linear-gradient(135deg, rgba(240, 240, 240, 1), rgba(220, 220, 220, 1));
@@ -551,6 +691,16 @@ body.dark-mode .toggle-collection {
 .window-title:active {
     transform: translateY(0px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Current window highlight */
+.current-window-title {
+    border-color: rgba(76, 175, 80, 0.5);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+}
+.current-window-title:hover {
+    border-color: rgba(76, 175, 80, 0.6);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
 }
 .tabs-list {
     display: flex;
@@ -600,6 +750,23 @@ body.dark-mode .toggle-collection {
     color: #333;
     font-weight: 500;
 }
+/* Tab status indicators */
+.tab-status-icons {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    padding-left: 8px;
+    flex-shrink: 0;
+}
+.tab-status-icon {
+    font-size: 12px;
+    line-height: 1;
+    opacity: 0.8;
+}
+.tab-status-icon:hover {
+    opacity: 1;
+}
 #settings {
     margin-bottom: 20px;
     padding: 10px;
@@ -609,27 +776,43 @@ body.dark-mode .toggle-collection {
 }
 .pane-toggle {
     cursor: pointer;
-    padding: 8px;
-    background-color: rgba(240, 240, 240, 0.3);
-    border-radius: 4px;
-    margin-bottom: 10px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
-    position: relative;
-    z-index: 1002;
-}
-#leftPane.closed .pane-toggle, #rightPane.closed .pane-toggle {
-    background-color: transparent !important;
-    backdrop-filter: none !important;
+    background-color: transparent;
+    border-radius: 50%;
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1012;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    opacity: 0.5;
 }
 .pane-toggle:hover {
-    background-color: rgba(240, 240, 240, 0.5);
+    background-color: rgba(240, 240, 240, 0.3);
+    opacity: 1;
+}
+.pin-icon {
+    transition: transform 0.3s ease;
+}
+/* Pinned state (panel open): pin points down */
+#leftPane:not(.closed) .pin-icon,
+#rightPane:not(.closed) .pin-icon {
+    transform: rotate(0deg);
+}
+/* Unpinned state (panel closed): pin rotated 45deg */
+#leftPane.closed .pin-icon,
+#rightPane.closed .pin-icon {
+    transform: rotate(45deg);
+}
+#leftPane.closed .pane-toggle, #rightPane.closed .pane-toggle {
+    opacity: 0.4;
 }
 #leftPane.closed .pane-toggle:hover, #rightPane.closed .pane-toggle:hover {
-    background-color: transparent !important;
+    opacity: 1;
 }
 .pane-content {
     transition: opacity 0.3s ease;
@@ -638,20 +821,26 @@ body.dark-mode .toggle-collection {
     flex: 1;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
+    padding-top: 36px;
 }
 #leftPane.closed .pane-content,
 #rightPane.closed .pane-content {
     opacity: 0;
     pointer-events: none;
 }
-.bookmark.drag-over {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
+/* Auto-shown pane: pin icon stays rotated (unpinned look) to indicate temporary state */
+#leftPane.auto-shown .pin-icon,
+#rightPane.auto-shown .pin-icon {
+    transform: rotate(45deg);
 }
 .bookmark.dragging {
-    opacity: 0.5;
-    transform: scale(0.98);
+    opacity: 0.3;
+    transform: scale(0.95);
+}
+
+.bookmarks.drag-over {
+    background: rgba(76, 175, 80, 0.05);
+    border-radius: 4px;
 }
 body.dark-mode {
     /*background-color: rgba(26, 26, 26, 0.3);*/
@@ -667,19 +856,14 @@ body.dark-mode .bookmark {
     border-color: rgba(5, 5, 5, 0.3);
 }
 body.dark-mode .window-title,
-body.dark-mode #settings,
-body.dark-mode .pane-toggle {
+body.dark-mode #settings {
     background-color: rgba(42, 42, 42, 0.6);
 }
+body.dark-mode .pane-toggle {
+    color: #e0e0e0;
+}
 body.dark-mode .pane-toggle:hover {
-    background-color: rgba(42, 42, 42, 0.8);
-}
-body.dark-mode #leftPane.closed .pane-toggle, body.dark-mode #rightPane.closed .pane-toggle {
-    background-color: transparent !important;
-    backdrop-filter: none !important;
-}
-body.dark-mode #leftPane.closed .pane-toggle:hover, body.dark-mode #rightPane.closed .pane-toggle:hover {
-    background-color: transparent !important;
+    background-color: rgba(80, 80, 80, 0.4);
 }
 body.dark-mode .pane-content {
     scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
@@ -696,6 +880,17 @@ body.dark-mode .window-title:hover {
     background: linear-gradient(135deg, rgba(70, 70, 70, 1), rgba(60, 60, 60, 1));
     border-color: rgba(66, 133, 244, 0.4);
 }
+body.dark-mode .current-window-badge {
+    color: #66BB6A;
+}
+body.dark-mode .current-window-title {
+    border-color: rgba(76, 175, 80, 0.4);
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
+}
+body.dark-mode .current-window-title:hover {
+    border-color: rgba(76, 175, 80, 0.5);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
 
 body.dark-mode .tab {
     background: rgba(60, 60, 60, 0.8);
@@ -710,6 +905,12 @@ body.dark-mode .tab:hover {
 
 body.dark-mode .tab-title {
     color: #e0e0e0;
+}
+body.dark-mode .tab-status-icon {
+    opacity: 0.7;
+}
+body.dark-mode .tab-status-icon:hover {
+    opacity: 1;
 }
 
 body.dark-mode .tab-group-container {
@@ -739,9 +940,6 @@ body.dark-mode .collection-button {
 body.dark-mode .add-bookmark {
     background-color: #2e7d32;
 }
-body.dark-mode .delete-collection {
-    background-color: #c62828;
-}
 .hidden {
     display: none !important;
 }
@@ -749,13 +947,13 @@ body.dark-mode .delete-collection {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    padding: 6px 0;
     position: relative;
     z-index: 1002;
 }        
 #collections {
-    margin: 10px; /* Lägg till margin runt om */
-    padding: 10px; /* Om du vill ha luft inuti också */
+    margin: 10px; /* Lï¿½gg till margin runt om */
+    padding: 10px; /* Om du vill ha luft inuti ocksï¿½ */
     box-sizing: border-box;
     flex: 1 1 auto;
     overflow-y: auto;
@@ -772,16 +970,18 @@ body.dark-mode .delete-collection {
 #supportButton {
     background: linear-gradient(45deg, #FF8C00, #FFA500);
     color: white;
-    padding: 10px 16px;
-    border-radius: 16px;
+    padding: 0 14px;
+    height: 36px;
+    border-radius: 8px;
     text-decoration: none;
     font-family: Arial, sans-serif;
     display: flex;
     align-items: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     transition: transform 0.2s, box-shadow 0.2s;
     position: relative;
     z-index: 1002;
+    white-space: nowrap;
 }
 
 #supportButton:hover {
@@ -798,11 +998,11 @@ body.dark-mode .delete-collection {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin: 5px; /* Lägg till marginaler */
+    margin: 5px; /* Lï¿½gg till marginaler */
 }
 
 .delete-button {
-    background-color: #f44336; /* Röd färg för delete-knappen */
+    background-color: #f44336; /* Rï¿½d fï¿½rg fï¿½r delete-knappen */
     display: inline-block;
     padding: 10px 15px;
     color: white;
@@ -810,19 +1010,19 @@ body.dark-mode .delete-collection {
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.3s;
-    margin: 5px; /* Lägg till marginaler */            
+    margin: 5px; /* Lï¿½gg till marginaler */            
 }
 
 .delete-button:hover {
-    background-color: #d32f2f; /* Mörkare röd vid hover */
+    background-color: #d32f2f; /* Mï¿½rkare rï¿½d vid hover */
 }
 
 body.dark-mode .delete-button {
-    background-color: #c62828; /* Mörkare röd i dark mode */
+    background-color: #c62828; /* Mï¿½rkare rï¿½d i dark mode */
 }
 
 body.dark-mode .delete-button:hover {
-    background-color: #b71c1c; /* Ännu mörkare röd vid hover i dark mode */
+    background-color: #b71c1c; /* ï¿½nnu mï¿½rkare rï¿½d vid hover i dark mode */
 }
 .import-button:hover {
     background-color: #45a049;
@@ -856,6 +1056,7 @@ body.dark-mode a[href="https://kodar.ninja"]:hover {
     color: #99ccff; /* Slightly lighter blue on hover in dark mode */
 }
 
+/* Collection-level placeholder (full-width, for reordering collections) */
 .placeholder {
     background: rgba(100, 100, 100, 0.2);
     border: 2px dashed #666;
@@ -869,14 +1070,30 @@ body.dark-mode .placeholder {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
+/* Bookmark-level placeholder (same size as a bookmark card, for grid reordering) */
+.bookmark-placeholder {
+    width: 133px;
+    height: 80px;
+    border: 2px dashed #4CAF50;
+    border-radius: 4px;
+    background: rgba(76, 175, 80, 0.1);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+body.dark-mode .bookmark-placeholder {
+    border-color: #66bb6a;
+    background: rgba(76, 175, 80, 0.15);
+}
+
 .collection {
     border: 1px solid #ccc;
     margin-bottom: 20px;
     padding: 10px;
     background: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(8px);
-    border-radius: 8px; /* Uppdaterat från 4px */
-    transition: all 0.3s ease; /* Uppdaterad från ingen transition */
+    border-radius: 8px; /* Uppdaterat frï¿½n 4px */
+    transition: all 0.3s ease; /* Uppdaterad frï¿½n ingen transition */
 }
 
 .collection.dragging {
@@ -925,7 +1142,7 @@ body.dark-mode .collection:hover {
     border-color: #666;            
 }
 
-/* GitHub sync styles - lägg till i style-taggen */
+/* GitHub sync styles - lï¿½gg till i style-taggen */
 #githubSettings {
     margin-top: 20px;
     padding-top: 20px;
@@ -941,21 +1158,21 @@ body.dark-mode .collection:hover {
 }
 
 #syncButton {
-    /*background-color: rgba(46, 164, 79, 0.35) ;*/
-    background-color: rgba(76, 297, 80, 0.6);
+    background-color: rgba(76, 175, 80, 0.6);
     backdrop-filter: blur(8px);
     color: white;
     border: none;
-    padding: 10px;
-    border-radius: 16px;            
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 10px;
-    transition: background-color 0.3s;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    margin-right: 8px;
     transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     position: relative;
     z-index: 1002;
 }
@@ -1073,20 +1290,47 @@ body.dark-mode .help-button:hover {
     background: linear-gradient(135deg, #1b5e20, #2e7d32);
 }
 
+.about-coffee-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(45deg, #FF8C00, #FFA500);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    justify-content: center;
+}
+.about-coffee-btn:hover {
+    background: linear-gradient(45deg, #FFA500, #FF8C00);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.about-coffee-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Modern Settings Section Styling */
 .settings-section {
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(10px);
     border-radius: 12px;
     padding: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
 }
 
 .settings-section:hover {
-    transform: translateY(-2px);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
 }
 
@@ -1097,6 +1341,44 @@ body.dark-mode .help-button:hover {
     margin: 0 0 15px 0;
     color: #2c3e50;
     font-size: 18px;
+    font-weight: 600;
+}
+
+/* Collapsible settings sections */
+.settings-section.collapsible {
+    padding: 0;
+}
+.settings-section.collapsible .settings-section-header {
+    cursor: pointer;
+    padding: 14px 18px;
+    margin: 0;
+    user-select: none;
+}
+.settings-section.collapsible .settings-section-body {
+    display: none;
+    padding: 0 18px 16px;
+}
+.settings-section.collapsible.open .settings-section-body {
+    display: block;
+}
+.settings-section-arrow {
+    margin-left: auto;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+    opacity: 0.5;
+}
+.settings-section.collapsible.open .settings-section-arrow {
+    transform: rotate(90deg);
+}
+
+/* Danger zone inside Backup & Data */
+.danger-zone-inline {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(220, 53, 69, 0.3);
+}
+.danger-zone-inline label {
+    color: #dc3545;
     font-weight: 600;
 }
 
@@ -1359,16 +1641,16 @@ body.dark-mode .danger-zone {
 }
 
 #searchBox {
-    padding: 8px;
-    height: 28px; 
-    background-color:rgba(255, 255, 255, 0.35);
+    padding: 0 10px;
+    height: 36px;
+    background-color: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(8px);
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     outline: none;
     font-size: 14px;
     flex: 1;
-    margin: 0 20px;
+    margin: 0 12px;
     max-width: 600px;
     min-width: 200px;
 }
@@ -1410,11 +1692,11 @@ body.dark-mode #searchBox {
 
 .background-thumbnail:hover,
 .background-thumbnail.selected {
-    border-color: #007bff; /* Exempel på färg för markerad/hover */
+    border-color: #007bff; /* Exempel pï¿½ fï¿½rg fï¿½r markerad/hover */
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Valfri skuggeffekt */
 }
 
-/* Stilar för anpassade bakgrundsbilder */
+/* Stilar fï¿½r anpassade bakgrundsbilder */
 .wallpaper-section {
     margin-bottom: 20px;
 }
@@ -1523,7 +1805,7 @@ body.dark-mode .wallpaper-section h4 {
     background: rgba(244, 67, 54, 1);
 }
 
-/* Dark mode för anpassade bakgrundsbilder */
+/* Dark mode fï¿½r anpassade bakgrundsbilder */
 body.dark-mode .custom-upload-button {
     border-color: #4fc3f7;
     background: rgba(79, 195, 247, 0.1);
@@ -1626,7 +1908,7 @@ body.light-theme .collection-button svg {
 }
 
 body.dark-theme .collection-button svg {
-    color: #fff; /* Ikoner blir vita i mörkt tema */
+    color: #fff; /* Ikoner blir vita i mï¿½rkt tema */
 }
 
 .donation-button {
@@ -1664,7 +1946,7 @@ body.dark-theme .collection-button svg {
     flex-direction: column;
     height: 100%;
     position: relative;
-    z-index: 1010; /* Högre än zenSearchContainer (500) för att alltid ligga överst */
+    z-index: 1010; /* Hï¿½gre ï¿½n zenSearchContainer (500) fï¿½r att alltid ligga ï¿½verst */
 }
 
 .tab-nav {
@@ -1863,13 +2145,13 @@ body.dark-mode .space-item.active {
     transform: scale(1.1);
 }
 
-/* Förhindra att child elements blockerar drop events */
+/* Fï¿½rhindra att child elements blockerar drop events */
 .space-item.drop-zone-active .delete-space-btn,
 .space-item.drop-zone-active .space-name {
     pointer-events: none;
 }
 
-/* Dark mode för spaces */
+/* Dark mode fï¿½r spaces */
 body.dark-mode #newSpaceName {
     background: rgba(60, 60, 60, 0.6);
     border-color: rgba(255, 255, 255, 0.1);
@@ -1889,7 +2171,7 @@ body.dark-mode .add-space-btn:disabled {
 .space-item.drop-zone-active {
     position: relative;
     transition: all 0.3s ease;
-    cursor: copy !important; /* Tvinga copy cursor för drop-zones */
+    cursor: copy !important; /* Tvinga copy cursor fï¿½r drop-zones */
 }
 
 .space-item.drop-zone-active:before {
@@ -1916,7 +2198,7 @@ body.dark-mode .add-space-btn:disabled {
     border-style: solid;
 }
 
-/* Dark mode för drag and drop */
+/* Dark mode fï¿½r drag and drop */
 body.dark-mode .space-item.drag-over {
     background: rgba(76, 175, 80, 0.3) !important;
     box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
@@ -1963,7 +2245,7 @@ body.zen-mode.searching .zen-datetime-display {
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Dark mode för Zen */
+/* Dark mode fï¿½r Zen */
 body.dark-mode .zen-time {
     color: rgba(255, 255, 255, 0.7);
 }
@@ -1972,7 +2254,7 @@ body.dark-mode .zen-date {
     color: rgba(255, 255, 255, 0.5);
 }
 
-/* Zen mode offset för collections */
+/* Zen mode offset fï¿½r collections */
 body.zen-mode #collections {
     margin-top: 100vh;
     transition: margin-top 0.8s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1980,16 +2262,16 @@ body.zen-mode #collections {
 
 body.zen-mode.scrolled #collections,
 body.zen-mode.searching #collections {
-    margin-top: 20px; /* Återgå till normal margin */
+    margin-top: 20px; /* ï¿½tergï¿½ till normal margin */
     padding-top: 74px; /* 20px (searchBox top) + 28px (searchBox height) + 16px (padding 8px*2) + 10px (space below) = 74px */
 }
 
-/* Zen mode för topBar */
+/* Zen mode fï¿½r topBar */
 body.zen-mode #topBar {
     opacity: 0;
     transform: translateY(-20px);
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    /* pointer-events: none; REMOVED - så knappar fungerar i zen initial state */
+    /* pointer-events: none; REMOVED - sï¿½ knappar fungerar i zen initial state */
 }
 
 body.zen-mode.scrolled #topBar,
@@ -1999,7 +2281,7 @@ body.zen-mode.searching #topBar {
     pointer-events: auto;
 }
 
-/* Zen mode för searchBox - alltid synlig */
+/* Zen mode fï¿½r searchBox - alltid synlig */
 body.zen-mode #searchBox {
     opacity: 0.8;
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2012,7 +2294,7 @@ body.zen-mode #searchBox:hover {
     opacity: 1;
 }
 
-/* Smooth scroll behavior för bättre Zen upplevelse - disabled för att förhindra auto-hopp */
+/* Smooth scroll behavior fï¿½r bï¿½ttre Zen upplevelse - disabled fï¿½r att fï¿½rhindra auto-hopp */
 html.zen-smooth-scroll {
     scroll-behavior: smooth;
 }
@@ -2029,7 +2311,7 @@ body.zen-mode {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 500; /* Lägre än UI-element för att inte blockera interaktion */
+    z-index: 500; /* Lï¿½gre ï¿½n UI-element fï¿½r att inte blockera interaktion */
     width: 100%;
     text-align: center;
 }
@@ -2080,7 +2362,7 @@ body.zen-mode #zenSearchBox {
                 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* Dark mode för zen search box */
+/* Dark mode fï¿½r zen search box */
 body.dark-mode #zenSearchBox {
     background-color: rgba(0, 0, 0, 0.2);
     border-color: rgba(255, 255, 255, 0.2);

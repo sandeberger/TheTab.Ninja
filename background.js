@@ -84,19 +84,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const mappedGroups = (groups || []).map(g => ({
           groupId: g.id,
           title: g.title,
-          color: g.color
+          color: g.color,
+          collapsed: g.collapsed
         }));
         const tabs = window.tabs.map(tab => ({
           tabId: tab.id,
           title: tab.title,
           url: tab.url,
           favIconUrl: tab.favIconUrl,
-          groupId: tab.groupId
+          groupId: tab.groupId,
+          pinned: tab.pinned,
+          audible: tab.audible,
+          mutedInfo: tab.mutedInfo,
+          status: tab.status,
+          discarded: tab.discarded,
+          active: tab.active,
+          lastAccessed: tab.lastAccessed
         }));
         result.push({
           windowId: window.id,
           tabs: tabs,
-          groups: mappedGroups
+          groups: mappedGroups,
+          state: window.state,
+          focused: window.focused,
+          incognito: window.incognito
         });
       }
       sendResponse(result);
