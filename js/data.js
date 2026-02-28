@@ -183,6 +183,32 @@ function importBookmarksFromFile(file) {
 
             bookmarkManagerData.collections = enrichedCollections;
 
+            // Import spaces if present in the file
+            if (Array.isArray(importedData.spaces) && importedData.spaces.length > 0) {
+                bookmarkManagerData.spaces = importedData.spaces.map(enrichSpace);
+            }
+
+            // Ensure all spaces referenced by collections exist
+            const existingSpaceNames = new Set(
+                bookmarkManagerData.spaces.map(s => typeof s === 'string' ? s : s.name)
+            );
+            for (const col of enrichedCollections) {
+                if (Array.isArray(col.spaces)) {
+                    for (const spaceName of col.spaces) {
+                        if (!existingSpaceNames.has(spaceName)) {
+                            bookmarkManagerData.spaces.push({
+                                name: spaceName,
+                                deleted: false,
+                                lastModified: Date.now()
+                            });
+                            existingSpaceNames.add(spaceName);
+                        }
+                    }
+                }
+            }
+
+            migrateSpacesToObjectFormat();
+            initializeSpaces();
             renderCollections();
             saveToLocalStorage();
             alert('Bookmarks imported successfully!');

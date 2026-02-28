@@ -6,7 +6,18 @@
       "Bash(node:*)",
       "Bash(sed:*)",
       "Bash(ls:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(du:*)",
+      "Bash(sort -k2)",
+      "Bash(cd:*)",
+      "Bash(wc:*)",
+      "Bash(done)",
+      "Bash(for f in js/*.js)",
+      "Bash(do grep -oE '^\\\\s*function\\\\s+\\\\w+' \"$f\")",
+      "Bash(while read fn)",
+      "Bash(do echo \"$fn $f\")",
+      "WebSearch",
+      "Bash(xxd:*)"
     ],
     "deny": []
   }
