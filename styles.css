@@ -2912,3 +2912,131 @@ body.dark-mode #firstSyncNotification {
     background: linear-gradient(135deg, #2E7D32, #2E7D32);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
+
+/* Custom CSS Section */
+.custom-css-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.custom-css-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+#customCSSCode {
+    width: 100%;
+    min-height: 140px;
+    max-height: 400px;
+    padding: 10px;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    background: #fafafa;
+    color: #2c3e50;
+    resize: vertical;
+    tab-size: 2;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+#customCSSCode:focus {
+    outline: none;
+    border-color: #4a90d9;
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+}
+
+#customCSSCode::placeholder {
+    color: #aaa;
+}
+
+.custom-css-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.custom-css-btn {
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.custom-css-btn-apply {
+    background: #4a90d9;
+    color: #fff;
+}
+
+.custom-css-btn-apply:hover {
+    background: #3a7bc8;
+}
+
+.custom-css-btn-reset {
+    background: rgba(0, 0, 0, 0.08);
+    color: #555;
+}
+
+.custom-css-btn-reset:hover {
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.custom-css-section code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+/* Dark mode - Custom CSS Section */
+body.dark-mode .custom-css-section {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .custom-css-section h4 {
+    color: #e0e0e0;
+}
+
+body.dark-mode #customCSSCode {
+    background: #1e1e2e;
+    color: #e0e0e0;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode #customCSSCode:focus {
+    border-color: #5a9fe6;
+    box-shadow: 0 0 0 2px rgba(90, 159, 230, 0.25);
+}
+
+body.dark-mode #customCSSCode::placeholder {
+    color: #666;
+}
+
+body.dark-mode .custom-css-btn-apply {
+    background: #5a9fe6;
+}
+
+body.dark-mode .custom-css-btn-apply:hover {
+    background: #4a8fd6;
+}
+
+body.dark-mode .custom-css-btn-reset {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+}
+
+body.dark-mode .custom-css-btn-reset:hover {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+body.dark-mode .custom-css-section code {
+    background: rgba(255, 255, 255, 0.1);
+}

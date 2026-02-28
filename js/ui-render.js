@@ -3,6 +3,24 @@
  * Handles rendering collections, bookmarks, Chrome tabs, pane management, and search filtering.
  */
 
+// Inject or remove the user's custom CSS stylesheet
+function applyCustomCSS() {
+    const id = 'custom-user-css';
+    let styleEl = document.getElementById(id);
+    const cfg = bookmarkManagerData.customCSS;
+
+    if (cfg && cfg.enabled && cfg.code) {
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = id;
+            document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = cfg.code;
+    } else {
+        if (styleEl) styleEl.remove();
+    }
+}
+
 function formatTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     if (seconds < 60) return 'just now';

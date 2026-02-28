@@ -58,6 +58,10 @@ let bookmarkManagerData = {
         connected: false,
         folderName: '',      // Display name of selected folder
         fileName: 'tabninja-bookmarks.json'
+    },
+    customCSS: {
+        enabled: false,
+        code: ''
     }
 };
 

@@ -362,6 +362,26 @@
                                             <h4>Predefined background images</h4>
                                             <div id="backgroundThumbnails"></div>
                                         </div>
+
+                                        <!-- Custom CSS Section -->
+                                        <div class="custom-css-section">
+                                            <h4>Custom CSS</h4>
+                                            <div class="setting-item">
+                                                <div class="setting-label">
+                                                    <label for="customCSSEnabled">Enable custom stylesheet</label>
+                                                    <div class="setting-description">Inject your own CSS to customize colors, fonts, spacing, and more</div>
+                                                </div>
+                                                <input type="checkbox" id="customCSSEnabled" class="setting-checkbox">
+                                            </div>
+                                            <div id="customCSSSettings" style="display: none;">
+                                                <textarea id="customCSSCode" placeholder="/* Enter your custom CSS here */&#10;body { background: #1a1a2e !important; }&#10;.collection { border-radius: 12px; }" spellcheck="false"></textarea>
+                                                <div class="custom-css-actions">
+                                                    <button id="customCSSApply" class="custom-css-btn custom-css-btn-apply">Apply</button>
+                                                    <button id="customCSSReset" class="custom-css-btn custom-css-btn-reset">Reset</button>
+                                                </div>
+                                                <div class="setting-description" style="margin-top: 6px;">Changes are saved locally and not synced. Use <code>!important</code> to override built-in styles.</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -801,6 +801,64 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load backup settings
     loadBackupSettings();
 
+    // --- Custom CSS initialization ---
+    // Ensure customCSS exists (backward compatibility)
+    if (!bookmarkManagerData.customCSS) {
+        bookmarkManagerData.customCSS = { enabled: false, code: '' };
+    }
+
+    const customCSSEnabledEl = document.getElementById('customCSSEnabled');
+    const customCSSSettingsEl = document.getElementById('customCSSSettings');
+    const customCSSCodeEl = document.getElementById('customCSSCode');
+
+    // Restore saved state into UI
+    if (customCSSEnabledEl) {
+        customCSSEnabledEl.checked = !!bookmarkManagerData.customCSS.enabled;
+    }
+    if (customCSSCodeEl) {
+        customCSSCodeEl.value = bookmarkManagerData.customCSS.code || '';
+    }
+    if (customCSSSettingsEl) {
+        customCSSSettingsEl.style.display = bookmarkManagerData.customCSS.enabled ? 'block' : 'none';
+    }
+
+    // Apply custom CSS on page load
+    applyCustomCSS();
+
+    // Toggle handler
+    if (customCSSEnabledEl) {
+        customCSSEnabledEl.addEventListener('change', (e) => {
+            bookmarkManagerData.customCSS.enabled = e.target.checked;
+            if (customCSSSettingsEl) {
+                customCSSSettingsEl.style.display = e.target.checked ? 'block' : 'none';
+            }
+            saveToLocalStorage();
+            applyCustomCSS();
+        });
+    }
+
+    // Apply button
+    document.getElementById('customCSSApply').addEventListener('click', () => {
+        bookmarkManagerData.customCSS.code = customCSSCodeEl.value;
+        bookmarkManagerData.customCSS.enabled = true;
+        if (customCSSEnabledEl) customCSSEnabledEl.checked = true;
+        if (customCSSSettingsEl) customCSSSettingsEl.style.display = 'block';
+        saveToLocalStorage();
+        applyCustomCSS();
+    });
+
+    // Reset button
+    document.getElementById('customCSSReset').addEventListener('click', () => {
+        if (!confirm('Clear all custom CSS?')) return;
+        bookmarkManagerData.customCSS.code = '';
+        bookmarkManagerData.customCSS.enabled = false;
+        if (customCSSEnabledEl) customCSSEnabledEl.checked = false;
+        if (customCSSCodeEl) customCSSCodeEl.value = '';
+        if (customCSSSettingsEl) customCSSSettingsEl.style.display = 'none';
+        saveToLocalStorage();
+        applyCustomCSS();
+    });
+
     // Focus search box
     const searchBox = document.getElementById('searchBox');
     if (searchBox) {
