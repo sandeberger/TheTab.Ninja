@@ -18,6 +18,7 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 - Enjoy responsive mobile design with touch-optimized interface
 - Robust favicon error handling with automatic cleanup and fallback systems
 - Modern settings UI with card-based design and improved user experience
+- Automatic backup system with customizable folder locations and retention policies
 
 ## Architecture
 
@@ -58,6 +59,15 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 - Background service worker communicates with content scripts
 - Tab management through Chrome APIs (tabs, windows, tabGroups)
 - Favicon fetching via Google's favicon service
+
+#### Automatic Backup System
+- Scheduled daily/weekly backup creation with Chrome alarms API
+- Customizable backup retention policies (3-30 days)
+- Downloads API-based file creation with data URLs (service worker compatible)
+- Subfolder support in Downloads directory for organization
+- Manual and automatic backups use unified backup functions
+- Automatic cleanup of old backups based on retention settings
+- Cross-session backup scheduling with persistent alarms
 
 #### Zen Mode
 - Distraction-free browsing experience with minimalist interface
@@ -105,6 +115,14 @@ bookmarkManagerData = {
     currentSpace: 'Everything', // Currently selected space
     collectionSortOrder: 'userdefined', // Collection sorting preference
     activeLeftTab: 'spaces',  // Left pane active tab
+    autoBackup: {            // Automatic backup configuration
+        enabled: true,       // Default enabled
+        frequency: 'daily',  // daily, weekly, disabled
+        keepDays: 7,        // Retention period in days
+        lastBackup: null,   // Timestamp of last backup
+        customFolderName: null, // Subfolder name in Downloads
+        useCustomFolder: false  // Whether to use custom subfolder
+    },
     githubConfig: {           // Sync configuration
         username: '',
         repo: '',
@@ -231,6 +249,15 @@ This is a pure client-side Chrome extension with no build process or external de
 - Data integrity checks and validation
 - Backup and restore capabilities with proper error handling
 
+#### Automatic Backup System (`background.js` + `bm.js`)
+- `createAutomaticBackup()` - Creates backup files using Downloads API with data URLs
+- `createManualBackup()` - Manual backup creation (uses same logic as automatic)
+- `cleanupOldBackups()` - Removes old backup files based on retention policy
+- `shouldCreateBackup()` - Determines if backup is needed based on frequency
+- Chrome alarms API for scheduled backups (daily/weekly)
+- Subfolder support in Downloads directory via `customFolderName` parameter
+- Backup settings UI with folder selection and retention controls
+
 ## Search Functionality
 
 The extension includes powerful search with special operators:
@@ -252,6 +279,10 @@ Required Chrome permissions:
 - `tabs` - Tab management and reading tab information
 - `windows` - Window management for tab grouping
 - `tabGroups` - Creating and managing tab groups
+- `downloads` - Creating backup files in Downloads directory
+- `alarms` - Scheduling automatic backups
+- `storage` - Chrome storage API for backup data sync
+- `scripting` - Executing scripts in tabs for backup data retrieval
 - Host permissions for favicon fetching and GitHub API
 
 ## Mobile Development Considerations
@@ -321,8 +352,20 @@ When modifying data structures, ensure backward compatibility in:
 - External CSS architecture improves maintainability and performance
 - Modern settings UI with card-based design and improved user experience
 - Comprehensive error handling and console log suppression for cleaner debugging
+- Automatic backup system creates daily/weekly backups with customizable retention
+- Backup files stored in Downloads directory with optional subfolder organization
 
 ## Recent Major Updates
+
+### Automatic Backup System (Latest)
+- Scheduled daily/weekly backup creation using Chrome alarms API
+- Customizable backup retention policies (3-30 days) with automatic cleanup
+- Downloads API-based file creation with data URLs (service worker compatible)
+- Subfolder support in Downloads directory for better organization
+- Unified backup functions for both manual and automatic operations
+- Settings UI with backup location selection and "Open Folder" functionality
+- Cross-session backup scheduling with persistent alarms
+- Fallback mechanisms for data retrieval from both localStorage and chrome.storage
 
 ### Favicon Error Handling System (Latest)
 - Comprehensive URL validation and cleanup for problematic favicon URLs
