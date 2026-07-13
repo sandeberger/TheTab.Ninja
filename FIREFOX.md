@@ -146,6 +146,7 @@ Good candidates for future Firefox-only enhancements:
 ```
 manifest.json            Chrome manifest (MV3 service worker)
 manifest.firefox.json    Firefox manifest (MV3 event page)
-build.sh                 builds dist/chrome and dist/firefox + zips
-background.js, js/, ...  shared source used by both builds
+manifest.edge.json       Edge manifest (MV3 service worker + side_panel, see EDGE.md)
+build.sh                 builds dist/chrome, dist/firefox and dist/edge + zips
+background.js, js/, ...  shared source used by all builds
 ```

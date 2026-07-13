@@ -551,13 +551,16 @@ function hideFirstSyncNotification() {
 const GOOGLE_TOKEN_CACHE_KEY = 'googleDriveWebAuthToken';
 
 // True when the browser supports chrome.identity.getAuthToken (Chrome).
-// Firefox only implements launchWebAuthFlow.
+// Firefox does not implement it at all, and Edge exposes the function but it
+// always fails (Edge has no Google account integration), so Edge is detected
+// via its user agent and routed to launchWebAuthFlow like Firefox.
 function hasNativeGetAuthToken() {
+    if (navigator.userAgent.includes('Edg/')) return false;
     return !!(chrome.identity && typeof chrome.identity.getAuthToken === 'function');
 }
 
 // Get OAuth token. Uses chrome.identity.getAuthToken on Chrome and falls back
-// to an implicit-grant flow via identity.launchWebAuthFlow on Firefox.
+// to an implicit-grant flow via identity.launchWebAuthFlow on Firefox/Edge.
 function getGoogleAuthToken(interactive = true) {
     if (hasNativeGetAuthToken()) {
         return new Promise((resolve, reject) => {
@@ -573,11 +576,12 @@ function getGoogleAuthToken(interactive = true) {
     return getGoogleAuthTokenViaWebFlow(interactive);
 }
 
-// Firefox: OAuth implicit grant through identity.launchWebAuthFlow.
+// Firefox/Edge: OAuth implicit grant through identity.launchWebAuthFlow.
 // Requires a "Web application" OAuth client in Google Cloud Console with
 // the redirect URI from chrome.identity.getRedirectURL() registered
-// (https://<extension-hash>.extensions.allizom.org/). The client_id is read
-// from the oauth2 section of manifest.firefox.json.
+// (Firefox: https://<extension-hash>.extensions.allizom.org/,
+//  Edge: https://<extension-id>.chromiumapp.org/). The client_id is read
+// from the oauth2 section of the browser-specific manifest.
 async function getGoogleAuthTokenViaWebFlow(interactive) {
     // Reuse a cached, unexpired token first
     try {
@@ -594,9 +598,9 @@ async function getGoogleAuthTokenViaWebFlow(interactive) {
     const oauth2 = (chrome.runtime.getManifest().oauth2) || {};
     if (!oauth2.client_id) {
         throw new Error(
-            'Google Drive sync is not configured for this Firefox build. ' +
-            'Add a Web application OAuth client id to manifest.firefox.json (see FIREFOX.md), ' +
-            'or use GitHub sync which works out of the box.'
+            'Google Drive sync is not configured for this browser build. ' +
+            'Add a Web application OAuth client id to the browser manifest ' +
+            '(see FIREFOX.md or EDGE.md), or use GitHub sync which works out of the box.'
         );
     }
 

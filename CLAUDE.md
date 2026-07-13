@@ -26,7 +26,8 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 
 - `manifest.json` - Chrome extension manifest (v3, version 1.2)
 - `manifest.firefox.json` - Firefox manifest (MV3 event page, sidebar_action, gecko settings) — see `FIREFOX.md`
-- `build.sh` - Builds `dist/chrome` and `dist/firefox` packages from the shared source
+- `manifest.edge.json` - Edge manifest (MV3 service worker, side_panel) — see `EDGE.md`
+- `build.sh` - Builds `dist/chrome`, `dist/firefox` and `dist/edge` packages from the shared source
 - `bm.html` / `bm.js` - Main new tab page interface and logic
 - `popup.html` / `popup.js` - Extension popup for saving current tab
 - `background.js` - Background script (Chrome: MV3 service worker; Firefox: event page) handling GitHub sync, tab management, favicon fetching. Browser differences are feature-detected (tab groups, blob vs data URLs)

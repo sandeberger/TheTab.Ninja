@@ -1,9 +1,9 @@
 console.log('Background script starting...');
 
 // Cross-browser notes:
-// - Chrome runs this file as a MV3 service worker (no DOM, no URL.createObjectURL).
+// - Chrome and Edge run this file as a MV3 service worker (no DOM, no URL.createObjectURL).
 // - Firefox runs it as a MV3 event page (has DOM APIs, no service worker support).
-// Both expose the callback-based chrome.* namespace, which is what we use throughout.
+// All expose the callback-based chrome.* namespace, which is what we use throughout.
 
 // Feature detection: tab groups are supported in Chrome and in Firefox 139+.
 const supportsTabGroups = typeof chrome.tabs.group === 'function' && typeof chrome.tabGroups !== 'undefined';
@@ -274,8 +274,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+const NEWTAB_URLS = ["chrome://newtab/", "edge://newtab/"];
 chrome.tabs.onCreated.addListener((tab) => {
-  if (tab.pendingUrl === "chrome://newtab/" || tab.url === "chrome://newtab/") {
+  if (NEWTAB_URLS.includes(tab.pendingUrl) || NEWTAB_URLS.includes(tab.url)) {
     chrome.tabs.update(tab.id, { url: "bm.html" });
   }
 });

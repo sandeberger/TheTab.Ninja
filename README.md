@@ -94,6 +94,9 @@ Install [TheTab.Ninja](https://chromewebstore.google.com/detail/thetabninja/bnmj
 ### Firefox 🦊
 TheTab.Ninja also runs on Firefox (MV3), including a **sidebar mode** so you can keep your collections open next to any page. Build it yourself with `./build.sh firefox` and load it via `about:debugging`, or see **[FIREFOX.md](FIREFOX.md)** for full build, install and porting details (tab groups need Firefox 139+; GitHub sync works out of the box).
 
+### Microsoft Edge
+TheTab.Ninja runs fully on Edge too, including tab groups and an Edge **side panel** mode. Build with `./build.sh edge` and load via `edge://extensions` (Developer mode → Load unpacked). See **[EDGE.md](EDGE.md)** for details, including the one-time OAuth setup needed for Google Drive sync (GitHub sync works out of the box).
+
 ## 🚀 Getting Started
 
 1. **Install the Extension:** Download and install TheTab.Ninja from the Chrome Web Store.
