@@ -89,7 +89,7 @@ function createCollectionFromTabGroup(tabGroupData) {
     if (tabGroupData.tabs && Array.isArray(tabGroupData.tabs)) {
         let position = 0;
         tabGroupData.tabs.forEach((tab) => {
-            if (tab.url === selfUrl || !tab.url || tab.url.startsWith('chrome://')) return;
+            if (tab.url === selfUrl || !tab.url || isBrowserInternalUrl(tab.url)) return;
 
             const newBookmark = {
                 id: generateUUID(),
@@ -123,7 +123,7 @@ function createCollectionFromTabGroup(tabGroupData) {
 
     if (bookmarkManagerData.closeWhenSaveTab && tabGroupData.tabs) {
         tabGroupData.tabs.forEach(tab => {
-            if ((tab.tabId || tab.id) && tab.url !== selfUrl && tab.url && !tab.url.startsWith('chrome://')) {
+            if ((tab.tabId || tab.id) && tab.url !== selfUrl && tab.url && !isBrowserInternalUrl(tab.url)) {
                 chrome.tabs.remove(tab.tabId || tab.id).catch(error => {
                     console.warn('Could not close tab:', error);
                 });

@@ -99,6 +99,16 @@ function generateWindowName(windowId) {
     return `${adj} ${noun}`;
 }
 
+// True for browser-internal pages that cannot be bookmarked/reopened
+// (Chrome: chrome://, Firefox: about:, moz-extension://)
+function isBrowserInternalUrl(url) {
+    if (!url) return true;
+    return url.startsWith('chrome://') ||
+           url.startsWith('about:') ||
+           url.startsWith('moz-extension://') ||
+           url.startsWith('edge://');
+}
+
 // Promise-based wrapper for chrome.runtime.sendMessage
 function sendMessageAsync(message) {
     return new Promise((resolve, reject) => {

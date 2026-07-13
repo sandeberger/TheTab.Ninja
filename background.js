@@ -1,4 +1,12 @@
-console.log('Background service worker starting...');
+console.log('Background script starting...');
+
+// Cross-browser notes:
+// - Chrome runs this file as a MV3 service worker (no DOM, no URL.createObjectURL).
+// - Firefox runs it as a MV3 event page (has DOM APIs, no service worker support).
+// Both expose the callback-based chrome.* namespace, which is what we use throughout.
+
+// Feature detection: tab groups are supported in Chrome and in Firefox 139+.
+const supportsTabGroups = typeof chrome.tabs.group === 'function' && typeof chrome.tabGroups !== 'undefined';
 
 // Favicon domain cache: domain -> faviconUrl (persists for service worker lifetime)
 const _faviconCache = new Map();
@@ -73,6 +81,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       for (const window of windows) {
         let groups = [];
         try {
+          if (!supportsTabGroups) throw new Error('Tab groups not supported');
           groups = await new Promise((resolve, reject) => {
             chrome.tabGroups.query({ windowId: window.id }, (result) => {
               if (chrome.runtime.lastError) {
@@ -230,6 +239,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (tabsProcessed === urls.length) {
           if (tabIds.length === 0) {
             sendResponse({ success: false, error: firstError });
+            return;
+          }
+          if (!supportsTabGroups) {
+            // Firefox < 139 (or tab groups disabled): tabs are opened ungrouped
+            sendResponse({ success: true, grouped: false });
             return;
           }
           chrome.tabs.group({ tabIds }, (groupId) => {
@@ -543,9 +557,21 @@ async function createAutomaticBackup(data) {
     const timeString = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `tabninja-backup-${timestamp}-${timeString}.json`;
 
-    // Create data URL directly (works in service worker)
     const jsonString = JSON.stringify(data, null, 2);
-    const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
+    // Chrome MV3 service workers lack URL.createObjectURL, so a data URL is used there.
+    // Firefox event pages have full DOM APIs, and Firefox's downloads API is more
+    // reliable with blob URLs than with large data URLs.
+    let dataUrl;
+    let revokeUrl = null;
+    if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      dataUrl = URL.createObjectURL(blob);
+      revokeUrl = dataUrl;
+      // Revoke after the download has had time to start reading the blob
+      setTimeout(() => { try { URL.revokeObjectURL(revokeUrl); } catch (e) {} }, 60000);
+    } else {
+      dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
+    }
 
     // Try to use custom folder if available and supported
     if (data.autoBackup && data.autoBackup.useCustomFolder && data.autoBackup.customFolderName) {

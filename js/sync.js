@@ -197,12 +197,49 @@ function updateAutoSyncIndicator(pending) {
     }
 }
 
+// Host permissions needed per sync provider.
+// Chrome grants host_permissions at install time, but Firefox MV3 treats them as
+// opt-in, so we ask for them on the first user-initiated sync.
+const PROVIDER_ORIGINS = {
+    github: ['https://api.github.com/*', 'https://raw.githubusercontent.com/*'],
+    googledrive: ['https://www.googleapis.com/*', 'https://accounts.google.com/*']
+};
+
+// Ensure host permissions are granted for the given provider.
+// Returns true if granted (or not applicable). Never throws.
+async function ensureHostPermissions(provider) {
+    const origins = PROVIDER_ORIGINS[provider];
+    if (!origins || !chrome.permissions) return true;
+    try {
+        const has = await new Promise(resolve =>
+            chrome.permissions.contains({ origins }, granted => resolve(!!granted))
+        );
+        if (has) return true;
+        // Requesting only works from a user gesture; auto-sync calls will fail
+        // silently here and the user gets prompted on the next manual sync.
+        return await new Promise(resolve =>
+            chrome.permissions.request({ origins }, granted => {
+                if (chrome.runtime.lastError) {
+                    console.warn('Host permission request failed:', chrome.runtime.lastError.message);
+                    resolve(false);
+                } else {
+                    resolve(!!granted);
+                }
+            })
+        );
+    } catch (e) {
+        console.warn('Host permission check failed:', e);
+        return false;
+    }
+}
+
 // Unified sync dispatcher - routes to the correct provider
 async function synchronize(retryCount = 0) {
     // Cancel any pending auto-sync when sync starts
     cancelAutoSync();
 
     const provider = bookmarkManagerData.syncProvider || 'none';
+    await ensureHostPermissions(provider);
     if (provider === 'github') {
         return synchronizeWithGitHub(retryCount);
     } else if (provider === 'googledrive') {
@@ -510,26 +547,105 @@ function hideFirstSyncNotification() {
 // Google Drive Sync
 // ============================================================
 
-// Get OAuth token via chrome.identity
+// localStorage key for the web-auth-flow token cache (Firefox path)
+const GOOGLE_TOKEN_CACHE_KEY = 'googleDriveWebAuthToken';
+
+// True when the browser supports chrome.identity.getAuthToken (Chrome).
+// Firefox only implements launchWebAuthFlow.
+function hasNativeGetAuthToken() {
+    return !!(chrome.identity && typeof chrome.identity.getAuthToken === 'function');
+}
+
+// Get OAuth token. Uses chrome.identity.getAuthToken on Chrome and falls back
+// to an implicit-grant flow via identity.launchWebAuthFlow on Firefox.
 function getGoogleAuthToken(interactive = true) {
-    return new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive }, (token) => {
+    if (hasNativeGetAuthToken()) {
+        return new Promise((resolve, reject) => {
+            chrome.identity.getAuthToken({ interactive }, (token) => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(token);
+                }
+            });
+        });
+    }
+    return getGoogleAuthTokenViaWebFlow(interactive);
+}
+
+// Firefox: OAuth implicit grant through identity.launchWebAuthFlow.
+// Requires a "Web application" OAuth client in Google Cloud Console with
+// the redirect URI from chrome.identity.getRedirectURL() registered
+// (https://<extension-hash>.extensions.allizom.org/). The client_id is read
+// from the oauth2 section of manifest.firefox.json.
+async function getGoogleAuthTokenViaWebFlow(interactive) {
+    // Reuse a cached, unexpired token first
+    try {
+        const cached = JSON.parse(localStorage.getItem(GOOGLE_TOKEN_CACHE_KEY) || 'null');
+        if (cached && cached.token && cached.expiresAt > Date.now() + 60000) {
+            return cached.token;
+        }
+    } catch (e) { /* corrupt cache - ignore */ }
+
+    if (!interactive) {
+        throw new Error('Not signed in to Google Drive. Open Settings and connect Google Drive again.');
+    }
+
+    const oauth2 = (chrome.runtime.getManifest().oauth2) || {};
+    if (!oauth2.client_id) {
+        throw new Error(
+            'Google Drive sync is not configured for this Firefox build. ' +
+            'Add a Web application OAuth client id to manifest.firefox.json (see FIREFOX.md), ' +
+            'or use GitHub sync which works out of the box.'
+        );
+    }
+
+    const redirectUri = chrome.identity.getRedirectURL();
+    const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
+        '?client_id=' + encodeURIComponent(oauth2.client_id) +
+        '&response_type=token' +
+        '&redirect_uri=' + encodeURIComponent(redirectUri) +
+        '&scope=' + encodeURIComponent((oauth2.scopes || []).join(' ')) +
+        '&prompt=select_account';
+
+    const responseUrl = await new Promise((resolve, reject) => {
+        chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, (url) => {
             if (chrome.runtime.lastError) {
                 reject(new Error(chrome.runtime.lastError.message));
+            } else if (!url) {
+                reject(new Error('Google sign-in was cancelled'));
             } else {
-                resolve(token);
+                resolve(url);
             }
         });
     });
+
+    // Token arrives in the URL fragment: #access_token=...&expires_in=3599&...
+    const fragment = new URLSearchParams(new URL(responseUrl).hash.substring(1));
+    const token = fragment.get('access_token');
+    const expiresIn = parseInt(fragment.get('expires_in') || '3600', 10);
+    if (!token) {
+        throw new Error('Google sign-in did not return an access token');
+    }
+
+    localStorage.setItem(GOOGLE_TOKEN_CACHE_KEY, JSON.stringify({
+        token,
+        expiresAt: Date.now() + expiresIn * 1000
+    }));
+    return token;
 }
 
 // Remove cached OAuth token (for disconnect or token refresh)
 function removeCachedAuthToken(token) {
-    return new Promise((resolve) => {
-        chrome.identity.removeCachedAuthToken({ token }, () => {
-            resolve();
+    if (hasNativeGetAuthToken()) {
+        return new Promise((resolve) => {
+            chrome.identity.removeCachedAuthToken({ token }, () => {
+                resolve();
+            });
         });
-    });
+    }
+    localStorage.removeItem(GOOGLE_TOKEN_CACHE_KEY);
+    return Promise.resolve();
 }
 
 // Fetch data from Google Drive
@@ -666,6 +782,7 @@ async function pushToGoogleDrive(content) {
 // Connect to Google Drive
 async function connectGoogleDrive() {
     try {
+        await ensureHostPermissions('googledrive');
         const token = await getGoogleAuthToken(true);
 
         // Get user info for display

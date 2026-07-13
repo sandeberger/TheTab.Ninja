@@ -1,0 +1,78 @@
+{
+  "manifest_version": 3,
+  "name": "TheTab.Ninja - New tab bookmark manager",
+  "short_name": "TheTab.Ninja",
+  "version": "1.2",
+  "description": "Replace your new tab with a powerful bookmark manager. Organize tabs, collections & workspaces. Sync via GitHub or Google Drive. Import from Toby. Dark mode.",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "thetab-ninja@sandeberger.github.io",
+      "strict_min_version": "128.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+
+  "icons": {
+    "128": "assets/light-128.png"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+
+    "default_icon": {
+      "128": "assets/light-128.png"
+    },
+
+    "theme_icons": [
+      {
+        "light": "assets/light-128.png",
+        "dark":  "assets/dark-128.png",
+        "size": 128
+      }
+    ]
+  },
+
+  "sidebar_action": {
+    "default_title": "TheTab.Ninja",
+    "default_panel": "bm.html",
+    "default_icon": "assets/light-128.png",
+    "open_at_install": false
+  },
+
+  "chrome_url_overrides": {
+    "newtab": "bm.html"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "permissions": [
+    "tabs",
+    "tabGroups",
+    "downloads",
+    "alarms",
+    "storage",
+    "identity"
+  ],
+  "oauth2": {
+    "client_id": "",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  },
+  "host_permissions": [
+    "https://www.google.com/*",
+    "https://*.gstatic.com/*",
+    "https://api.github.com/*",
+    "https://raw.githubusercontent.com/*",
+    "https://www.googleapis.com/*",
+    "https://accounts.google.com/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}

@@ -969,7 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     let position = 0;
                     tabs.forEach(tab => {
-                        if (!tab.url || tab.url === selfUrl || tab.url.startsWith('chrome://')) return;
+                        if (!tab.url || tab.url === selfUrl || isBrowserInternalUrl(tab.url)) return;
                         bookmarks.push({
                             id: generateUUID(),
                             title: tab.title || 'Untitled',
@@ -999,7 +999,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bookmarkManagerData.closeWhenSaveTab) {
                         tabs.forEach(tab => {
                             const tabId = tab.tabId || tab.id;
-                            if (tabId && tab.url !== selfUrl && tab.url && !tab.url.startsWith('chrome://')) {
+                            if (tabId && tab.url !== selfUrl && tab.url && !isBrowserInternalUrl(tab.url)) {
                                 chrome.tabs.remove(tabId).catch(() => {});
                             }
                         });

@@ -88,7 +88,11 @@ These tools allow you to efficiently navigate through large amounts of data to f
 
 ## Installation
 
+### Chrome
 Install [TheTab.Ninja](https://chromewebstore.google.com/detail/thetabninja/bnmjmbmlfohkaghofdaadenippkgpmab) directly from the Chrome Web Store.
+
+### Firefox 🦊
+TheTab.Ninja also runs on Firefox (MV3), including a **sidebar mode** so you can keep your collections open next to any page. Build it yourself with `./build.sh firefox` and load it via `about:debugging`, or see **[FIREFOX.md](FIREFOX.md)** for full build, install and porting details (tab groups need Firefox 139+; GitHub sync works out of the box).
 
 ## 🚀 Getting Started
 
