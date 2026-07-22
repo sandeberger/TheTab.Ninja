@@ -145,6 +145,16 @@ function buildCollectionDeepLink(collection) {
     return buildDeepLinkUrl({ collection: collection.id, name: collection.name });
 }
 
+// FileNinja-family virtual path (tabninja:// scheme) understood by LaunchDeck/
+// FileNinja/CrossWIRE. Deliberately human-readable and name-based, matching
+// tag://work and collection://name in that ecosystem - so spaces stay as-is
+// and no percent-encoding is applied. Quotes and line breaks are stripped
+// because the receiving side passes the path on a quoted command line.
+function buildTabNinjaUri(kind, value) {
+    const clean = String(value || '').replace(/["\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return `tabninja://${kind}/${clean}`;
+}
+
 // Sanitize a name for use as a filename (also strips ':' which would break the
 // DownloadURL drag format "type:filename:url").
 function buildLauncherFilename(name) {
@@ -414,7 +424,8 @@ function initSearchExportChip() {
             e.dataTransfer.effectAllowed = 'copy';
             e.dataTransfer.setData('DownloadURL', `text/html:${filename}:${htmlToDataUrl(html)}`);
             e.dataTransfer.setData('text/uri-list', buildDeepLinkUrl({ q: query }));
-            e.dataTransfer.setData('text/plain', buildDeepLinkUrl({ q: query }));
+            // LaunchDeck/FileNinja read text/plain and expect a tabninja:// path
+            e.dataTransfer.setData('text/plain', buildTabNinjaUri('search', query));
         } catch (err) {
             console.warn('Could not start search export drag:', err);
         }

@@ -20,25 +20,24 @@ function dragStartCollection(e) {
         // structured token lives in application/json (not text/plain).
         e.dataTransfer.setData('application/json', JSON.stringify({type: 'collection', id: collectionId}));
 
-        // External drop targets (LaunchDeck, other apps, the desktop) read
-        // text/plain and text/uri-list. Give them a real deep-link URL - never
-        // the bare collection id, which apps reject as "not a web link". Also
-        // attach a DownloadURL so a drop onto the OS materializes a launcher file
+        // External drop targets read text/plain: LaunchDeck/FileNinja/CrossWIRE
+        // get a tabninja:// virtual path (their native format - resolved by
+        // FileNinja, like tag:// and crosswire://). Browser contexts (tab strip,
+        // other pages) read text/uri-list and get the extension deep link, and
+        // DownloadURL materializes a launcher file when dropped onto the OS
         // (Chrome/Edge; Firefox ignores it - use "Save desktop shortcut" there).
-        let externalText = collectionId; // last-resort fallback
         try {
             const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
             if (collection) {
-                externalText = buildCollectionDeepLink(collection);
                 const html = buildCollectionLauncherHTML(collection);
                 const filename = buildLauncherFilename(collection.name);
                 e.dataTransfer.setData('DownloadURL', `text/html:${filename}:${htmlToDataUrl(html)}`);
-                e.dataTransfer.setData('text/uri-list', externalText);
+                e.dataTransfer.setData('text/uri-list', buildCollectionDeepLink(collection));
+                e.dataTransfer.setData('text/plain', buildTabNinjaUri('collection', collection.name));
             }
         } catch (err) {
             console.warn('Could not attach desktop-drop data:', err);
         }
-        e.dataTransfer.setData('text/plain', externalText);
 
         showSpaceDropZones();
     }

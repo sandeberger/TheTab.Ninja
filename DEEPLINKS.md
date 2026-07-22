@@ -103,6 +103,32 @@ Notes for consumers:
 - `schemaVersion` increments on breaking changes; additive fields may appear
   without a version bump.
 
+## The `tabninja://` scheme (app-to-app drops)
+
+When a collection or the search chip is dragged, `text/plain` carries a
+FileNinja-family virtual path instead of a browser URL — this is what native
+apps (LaunchDeck, FileNinja, CrossWIRE) read from a drop:
+
+```
+tabninja://collection/<collection name>     a collection, dragged from its handle
+tabninja://search/<search term>             the current search results, dragged from the chip
+```
+
+Design notes:
+
+- **Name-based and human-readable**, matching the ecosystem's `tag://work` and
+  `collection://name` style. Spaces are kept as-is (no percent-encoding);
+  quotes and line breaks are stripped at the source because receivers pass the
+  path on a quoted command line.
+- LaunchDeck recognizes the scheme via `FileNinjaPaths` and stores the item as
+  a FileNinja path; launching routes through `FileNinja.exe --path "tabninja://..."`,
+  so **FileNinja is the resolver** (same model as `tag://` and `crosswire://`).
+- Browser drop targets are unaffected: they read `text/uri-list`, which still
+  carries the `link.html` deep link, and OS desktops receive the launcher file
+  via `DownloadURL`.
+- Single bookmarks still put their real `https://` URL in `text/plain` —
+  LaunchDeck turns those into plain URL items directly.
+
 ## Browser differences
 
 | | Chrome | Edge | Firefox |
