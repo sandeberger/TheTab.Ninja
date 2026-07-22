@@ -16,24 +16,29 @@ function dragStartCollection(e) {
         };
         setTimeout(() => collectionElement.classList.add('dragging'), 0);
         e.dataTransfer.effectAllowed = 'copyMove';
-        e.dataTransfer.setData('text/plain', collectionId);
+        // Internal reorder / space-move reads the draggedItem global, so the
+        // structured token lives in application/json (not text/plain).
         e.dataTransfer.setData('application/json', JSON.stringify({type: 'collection', id: collectionId}));
 
-        // Dropping outside the browser (desktop/file manager) creates a launcher
-        // file in Chrome/Edge via the DownloadURL type; Firefox ignores it
-        // (use the "Save desktop shortcut" menu item there). Internal drops are
-        // unaffected - they read draggedItem/application/json only.
+        // External drop targets (LaunchDeck, other apps, the desktop) read
+        // text/plain and text/uri-list. Give them a real deep-link URL - never
+        // the bare collection id, which apps reject as "not a web link". Also
+        // attach a DownloadURL so a drop onto the OS materializes a launcher file
+        // (Chrome/Edge; Firefox ignores it - use "Save desktop shortcut" there).
+        let externalText = collectionId; // last-resort fallback
         try {
             const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
             if (collection) {
+                externalText = buildCollectionDeepLink(collection);
                 const html = buildCollectionLauncherHTML(collection);
                 const filename = buildLauncherFilename(collection.name);
                 e.dataTransfer.setData('DownloadURL', `text/html:${filename}:${htmlToDataUrl(html)}`);
-                e.dataTransfer.setData('text/uri-list', buildCollectionDeepLink(collection));
+                e.dataTransfer.setData('text/uri-list', externalText);
             }
         } catch (err) {
             console.warn('Could not attach desktop-drop data:', err);
         }
+        e.dataTransfer.setData('text/plain', externalText);
 
         showSpaceDropZones();
     }
@@ -54,21 +59,29 @@ function dragStartBookmark(e) {
         bookmarkId: bookmarkId
     };
     setTimeout(() => bookmarkElement.classList.add('dragging'), 0);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', 'bookmark');
+    e.dataTransfer.effectAllowed = 'copyMove';
 
-    // Dropping outside the browser creates a regular web shortcut with the
-    // bookmark's real URL (text/uri-list for Chrome/Edge, text/x-moz-url for
-    // Firefox). Internal drops keep reading draggedItem/text-plain as before.
+    // External drop targets (LaunchDeck, other apps, the desktop) read text/plain.
+    // Give them the bookmark's real URL - never an internal token. Internal drops
+    // read the draggedItem global, not dataTransfer, so this is safe.
+    let url = null, title = null;
     try {
         const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
         const bookmarkData = collectionData && (collectionData.bookmarks || []).find(b => b.id === bookmarkId);
         if (bookmarkData && isSafeUrl(bookmarkData.url)) {
-            e.dataTransfer.setData('text/uri-list', bookmarkData.url);
-            e.dataTransfer.setData('text/x-moz-url', `${bookmarkData.url}\n${bookmarkData.title || bookmarkData.url}`);
+            url = bookmarkData.url;
+            title = bookmarkData.title || bookmarkData.url;
         }
     } catch (err) {
-        console.warn('Could not attach desktop-drop data:', err);
+        console.warn('Could not read bookmark for drag:', err);
+    }
+
+    if (url) {
+        e.dataTransfer.setData('text/plain', url);
+        e.dataTransfer.setData('text/uri-list', url);        // Chrome/Edge web shortcut
+        e.dataTransfer.setData('text/x-moz-url', `${url}\n${title}`); // Firefox
+    } else {
+        e.dataTransfer.setData('text/plain', '');
     }
 }
 
