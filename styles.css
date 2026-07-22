@@ -3040,3 +3040,173 @@ body.dark-mode .custom-css-btn-reset:hover {
 body.dark-mode .custom-css-section code {
     background: rgba(255, 255, 255, 0.1);
 }
+/* ============================================================
+   Deep-link solo view (?collection= / ?space= / ?tag=)
+   Ephemeral, URL-driven modes: hide chrome via body classes only -
+   never persist pane/space state changes. Modeled on zen-mode.
+   ============================================================ */
+
+/* Both modes: hide panes and their toggles */
+body.solo-mode #leftPane,
+body.solo-mode #rightPane,
+body.solo-mode .mobile-pane-toggle,
+body.solo-mode #zenSearchContainer,
+body.solo-mode #zenDateTime,
+body.solo-mode #zenAmbientCanvas,
+body.solo-mode #firstSyncNotification,
+body.solo-space-mode #leftPane,
+body.solo-space-mode #rightPane,
+body.solo-space-mode .mobile-pane-toggle,
+body.solo-space-mode #zenSearchContainer,
+body.solo-space-mode #zenDateTime,
+body.solo-space-mode #zenAmbientCanvas,
+body.solo-space-mode #firstSyncNotification {
+    display: none !important;
+}
+
+/* Solo view is launch-focused: hide all editing/management controls */
+body.solo-mode #topBar,
+body.solo-mode .drag-handle,
+body.solo-mode .add-bookmark,
+body.solo-mode .collection-more-wrapper,
+body.solo-mode .edit-icon,
+body.solo-mode .delete-icon,
+body.solo-space-mode #addCollection,
+body.solo-space-mode .drag-handle,
+body.solo-space-mode .add-bookmark,
+body.solo-space-mode .collection-more-wrapper,
+body.solo-space-mode .edit-icon,
+body.solo-space-mode .delete-icon {
+    display: none !important;
+}
+
+body.solo-mode #bookmarkManager {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-top: 40px;
+}
+
+.solo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 10px 18px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 2px 10px rgba(20, 40, 80, 0.08);
+}
+
+body.dark-mode .solo-header {
+    background: rgba(30, 36, 46, 0.9);
+}
+
+.solo-header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.solo-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.solo-open-all {
+    background: #456bf6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.solo-open-all:hover {
+    background: #3457d5;
+}
+
+.solo-full-link {
+    font-size: 13px;
+    color: #456bf6;
+    text-decoration: none;
+}
+
+.solo-full-link:hover {
+    text-decoration: underline;
+}
+
+body.dark-mode .solo-full-link {
+    color: #7ea2ff;
+}
+
+.solo-not-found {
+    margin: 60px auto;
+    max-width: 480px;
+    padding: 24px 28px;
+    border-radius: 12px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 2px 10px rgba(20, 40, 80, 0.08);
+}
+
+body.dark-mode .solo-not-found {
+    background: rgba(30, 36, 46, 0.9);
+}
+
+.solo-not-found p {
+    margin: 0 0 12px;
+}
+
+.solo-not-found a {
+    color: #456bf6;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+body.dark-mode .solo-not-found a {
+    color: #7ea2ff;
+}
+
+/* ============================================================
+   Search export chip - drag current search results to the desktop
+   ============================================================ */
+
+.search-export-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    background: #456bf6;
+    color: #fff;
+    font-size: 13px;
+    cursor: grab;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.search-export-chip:active {
+    cursor: grabbing;
+}
+
+.search-export-count::after {
+    content: ' hits';
+}
+
+.search-export-download {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+}
+
+.search-export-download:hover {
+    opacity: 0.8;
+}

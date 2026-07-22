@@ -68,6 +68,17 @@ let bookmarkManagerData = {
 let draggedItem = null;
 let placeholder = null;
 
+// Deep-link (solo view) state - ephemeral, driven by URL params only.
+// Never stored in bookmarkManagerData: must not be saved or synced.
+let soloCollectionId = null;
+let soloCollectionName = null;
+let soloBookmarkId = null;
+let soloSpace = null;
+let soloTag = null;
+let soloQuery = null;
+let soloLaunch = false;
+let soloNotFound = false;
+
 // Fallback icon paths (extracted from inline base64 SVGs)
 const FALLBACK_ICON = 'assets/icons/fallback-icon.svg';
 const FALLBACK_ICON_LIGHT = 'assets/icons/fallback-icon-light.svg';

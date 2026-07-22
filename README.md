@@ -59,6 +59,11 @@
 - **Smart Position Management:** Automatic position updates when collections are moved
 - **Enhanced Security:** Improved GitHub sync with better merge conflict resolution
 
+### 🔗 Deep Links & Desktop Shortcuts
+- **Deep links:** open a specific collection, space, tag or search via URL parameters (`?collection=`, `?space=`, `?tag=`, `?q=`, `&launch=1`)
+- **Drag to desktop:** drag a collection (or the search-results chip) to your desktop to create a self-contained launcher file — double-click it to open just that collection (Chrome/Edge drag-out; Firefox via the "Save desktop shortcut" menu item)
+- **Tool bridge:** launcher files embed machine-readable JSON so other tools can consume your collections — see **[DEEPLINKS.md](DEEPLINKS.md)**
+
 ## Search & Filter Function
 
 TheTab.Ninja comes with a powerful search feature designed to help you quickly locate the content you need:

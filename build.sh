@@ -23,6 +23,7 @@ TARGETS=("${1:-all}")
 # so it is intentionally excluded from packages.
 SHARED=(
   bm.html
+  link.html
   popup.html
   popup.js
   background.js

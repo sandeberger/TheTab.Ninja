@@ -58,5 +58,11 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["link.html", "assets/light-128.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

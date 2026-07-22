@@ -19,6 +19,22 @@ function dragStartCollection(e) {
         e.dataTransfer.setData('text/plain', collectionId);
         e.dataTransfer.setData('application/json', JSON.stringify({type: 'collection', id: collectionId}));
 
+        // Dropping outside the browser (desktop/file manager) creates a launcher
+        // file in Chrome/Edge via the DownloadURL type; Firefox ignores it
+        // (use the "Save desktop shortcut" menu item there). Internal drops are
+        // unaffected - they read draggedItem/application/json only.
+        try {
+            const collection = bookmarkManagerData.collections.find(c => c.id === collectionId);
+            if (collection) {
+                const html = buildCollectionLauncherHTML(collection);
+                const filename = buildLauncherFilename(collection.name);
+                e.dataTransfer.setData('DownloadURL', `text/html:${filename}:${htmlToDataUrl(html)}`);
+                e.dataTransfer.setData('text/uri-list', buildCollectionDeepLink(collection));
+            }
+        } catch (err) {
+            console.warn('Could not attach desktop-drop data:', err);
+        }
+
         showSpaceDropZones();
     }
 }
@@ -40,6 +56,20 @@ function dragStartBookmark(e) {
     setTimeout(() => bookmarkElement.classList.add('dragging'), 0);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', 'bookmark');
+
+    // Dropping outside the browser creates a regular web shortcut with the
+    // bookmark's real URL (text/uri-list for Chrome/Edge, text/x-moz-url for
+    // Firefox). Internal drops keep reading draggedItem/text-plain as before.
+    try {
+        const collectionData = bookmarkManagerData.collections.find(c => c.id === collectionId);
+        const bookmarkData = collectionData && (collectionData.bookmarks || []).find(b => b.id === bookmarkId);
+        if (bookmarkData && isSafeUrl(bookmarkData.url)) {
+            e.dataTransfer.setData('text/uri-list', bookmarkData.url);
+            e.dataTransfer.setData('text/x-moz-url', `${bookmarkData.url}\n${bookmarkData.title || bookmarkData.url}`);
+        }
+    } catch (err) {
+        console.warn('Could not attach desktop-drop data:', err);
+    }
 }
 
 // End drag operation

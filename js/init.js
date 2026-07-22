@@ -343,7 +343,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clean up and re-save
     saveToLocalStorage();
 
+    // Resolve deep-link params (?collection, ?bookmark, ...) against loaded data.
+    // A ?bookmark redirect leaves the page here, before any rendering.
+    if (hasDeepLink()) {
+        resolveSoloCollection();
+    }
+
     renderCollections();
+
+    // Deep-link follow-up: solo header/not-found panel, ?tag filter, ?q prefill, &launch=1
+    if (hasDeepLink()) {
+        applyDeepLinkAfterRender();
+    }
 
     // Event-driven Chrome tab updates (replaces 5s polling)
     fetchChromeTabs();
@@ -465,8 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initialize zen mode if enabled (but not on mobile)
-    if (bookmarkManagerData.zenMode && window.innerWidth > 768) {
+    // Initialize zen mode if enabled (but not on mobile, and never in solo view -
+    // zen hides collections until scroll, which would blank the deep-linked view)
+    if (bookmarkManagerData.zenMode && window.innerWidth > 768 &&
+        !document.body.classList.contains('solo-mode') &&
+        !document.body.classList.contains('solo-space-mode')) {
         document.getElementById('zenMode').checked = true;
         document.body.classList.add('zen-mode');
         startZenMode();
@@ -778,8 +792,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Left pane tabs functionality
     initializeLeftPaneTabs();
 
-    // Initialize pane auto-show on hover
-    initPaneAutoShow();
+    // Initialize pane auto-show on hover (not in solo view - panes stay hidden there)
+    if (!document.body.classList.contains('solo-mode') &&
+        !document.body.classList.contains('solo-space-mode')) {
+        initPaneAutoShow();
+    }
 
     // Initialize sync provider UI
     updateSyncProviderUI();
@@ -872,7 +889,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('searchBox').addEventListener('input', function() {
         const searchTerm = this.value.trim();
         applyFilter(searchTerm);
+        updateSearchExportChip();
     });
+
+    // Search export chip: drag current results to the desktop / download them
+    initSearchExportChip();
 
     // Search box keydown listener for Google/ChatGPT search
     document.getElementById('searchBox').addEventListener('keydown', function(event) {

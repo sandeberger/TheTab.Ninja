@@ -33,6 +33,8 @@ TheTab.Ninja is a Chrome browser extension that transforms the new tab page into
 - `background.js` - Background script (Chrome: MV3 service worker; Firefox: event page) handling GitHub sync, tab management, favicon fetching. Browser differences are feature-detected (tab groups, blob vs data URLs)
 - `styles.css` - External CSS file with modern UI styling, dark mode support, and responsive design
 - `tabninja_help.html` - Comprehensive user guide and help documentation
+- `js/deeplink.js` - URL deep links (`?collection`, `?space`, `?tag`, `?q`, `?bookmark`, `&launch=1`), solo view, and desktop launcher-file generation — see `DEEPLINKS.md`
+- `link.html` / `js/link.js` - The only web-accessible page; forwards whitelisted deep-link params to bm.html (solo state lives in globals.js and is never persisted)
 
 ### Key Components
 

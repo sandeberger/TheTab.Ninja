@@ -179,11 +179,18 @@ function renderCollections() {
     const collectionsContainer = document.getElementById('collections');
     collectionsContainer.innerHTML = '';
 
-    const currentSpace = bookmarkManagerData.currentSpace || 'Everything';
+    // Deep-link solo view overrides the saved space; soloSpace is ephemeral
+    // (URL-driven) and must never be written back to bookmarkManagerData.
+    const currentSpace = (typeof soloSpace === 'string' && soloSpace)
+        ? soloSpace
+        : (bookmarkManagerData.currentSpace || 'Everything');
 
     const sortedCollections = bookmarkManagerData.collections
         .filter(c => !c.deleted)
         .filter(c => {
+            if (typeof soloCollectionId === 'string' && soloCollectionId) {
+                return c.id === soloCollectionId;
+            }
             if (currentSpace === 'Everything') {
                 return true;
             }
@@ -192,8 +199,10 @@ function renderCollections() {
         .sort(getSortComparator());
 
     sortedCollections.forEach((collection) => {
+        // Solo view always shows the collection expanded (without mutating isOpen)
+        const isOpen = (typeof soloCollectionId === 'string' && soloCollectionId) ? true : collection.isOpen;
         const collectionElement = document.createElement('div');
-        collectionElement.className = `collection ${collection.isOpen ? 'is-open' : ''}`;
+        collectionElement.className = `collection ${isOpen ? 'is-open' : ''}`;
         collectionElement.setAttribute('draggable', bookmarkManagerData.collectionSortOrder === 'userdefined');
         collectionElement.dataset.collectionId = collection.id;
 
@@ -232,7 +241,7 @@ function renderCollections() {
 
         const toggleBtn = document.createElement('button');
         toggleBtn.className = 'toggle-collection';
-        toggleBtn.textContent = collection.isOpen ? '\u2228' : '\u2227';
+        toggleBtn.textContent = isOpen ? '\u2228' : '\u2227';
 
         const actions = document.createElement('div');
         actions.className = 'collection-actions';
@@ -263,6 +272,9 @@ function renderCollections() {
             { icon: '\uD83D\uDE80', label: 'Open as Chrome group', action: () => launchCollection(collection.id) },
             { icon: 'outbox', label: 'Open all bookmarks', action: () => launchAllTabs(collection.id) },
             { icon: 'inbox', label: 'Import Chrome tabs', action: () => fetchAllTabs(collection.id) },
+            { separator: true },
+            { icon: '🔗', label: 'Copy link', action: () => copyCollectionLink(collection.id) },
+            { icon: '💾', label: 'Save desktop shortcut', action: () => exportCollectionLauncher(collection.id) },
             { separator: true },
             { icon: '\u270F\uFE0F', label: 'Edit collection', action: () => editCollection(collection.id) },
             { icon: '\uD83C\uDFF7\uFE0F', label: 'Manage spaces', action: () => editCollectionSpaces(collection.id) },
@@ -329,7 +341,7 @@ function renderCollections() {
 
         const bookmarksContainer = document.createElement('div');
         bookmarksContainer.className = 'bookmarks';
-        bookmarksContainer.style.display = collection.isOpen ? 'flex' : 'none';
+        bookmarksContainer.style.display = isOpen ? 'flex' : 'none';
 
         collection.bookmarks
             .filter(b => !b.deleted)
