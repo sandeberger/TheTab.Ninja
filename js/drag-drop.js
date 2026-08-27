@@ -34,6 +34,22 @@ function dragStartCollection(e) {
                 e.dataTransfer.setData('DownloadURL', `text/html:${filename}:${htmlToDataUrl(html)}`);
                 e.dataTransfer.setData('text/uri-list', buildCollectionDeepLink(collection));
                 e.dataTransfer.setData('text/plain', buildTabNinjaUri('collection', collection.name));
+
+                // The collection itself, for native drop targets that want the links
+                // rather than a file (LaunchDeck expands a drop into a folder of icons).
+                //
+                // DownloadURL cannot serve them: Chromium offers a drop target exactly ONE
+                // virtual file, and because text/uri-list is set above that file is the .url
+                // shortcut - verified from a real drop, whose FileGroupDescriptorW held a
+                // single entry, 'link.html.url'. Explorer still materializes the launcher
+                // HTML from DownloadURL, so the desktop drop is unaffected; this simply
+                // gives everyone else the same data without a file in the way.
+                //
+                // Same payload the launcher HTML embeds (buildCollectionPayload), so the
+                // two can never disagree about what a collection is.
+                e.dataTransfer.setData(
+                    'application/x-tabninja-collection',
+                    JSON.stringify(buildCollectionPayload(collection)));
             }
         } catch (err) {
             console.warn('Could not attach desktop-drop data:', err);

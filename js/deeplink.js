@@ -254,30 +254,45 @@ ${jsonForEmbedding(payload)}
 </html>`;
 }
 
-// Launcher for one collection ("thetab.ninja/collection" schema)
-function buildCollectionLauncherHTML(collection) {
+// The machine-readable description of one collection ("thetab.ninja/collection"
+// schema) - the object embedded as <script id="tabninja-data"> in a launcher file.
+//
+// Built separately from the HTML because a drag needs the same data without the page
+// around it: dropping onto the OS materializes the launcher file through DownloadURL,
+// but a native drop target (LaunchDeck) is only ever offered ONE virtual file by
+// Chromium, and when text/uri-list is also set that file is the .url shortcut - the
+// generated HTML is unreachable. So the payload travels in its own drag type as well,
+// and this function is what keeps the two from drifting apart.
+function buildCollectionPayload(collection) {
     const bookmarks = (collection.bookmarks || []).filter(b => !b.deleted && isSafeUrl(b.url));
     const deepLink = buildCollectionDeepLink(collection);
     const manifest = chrome.runtime.getManifest();
 
+    return {
+        schema: 'thetab.ninja/collection',
+        schemaVersion: 1,
+        generator: `TheTab.Ninja/${manifest.version}`,
+        exportedAt: new Date().toISOString(),
+        extensionUrl: deepLink,
+        collection: {
+            id: collection.id,
+            name: collection.name,
+            spaces: collection.spaces || ['Everything'],
+            bookmarks: bookmarks.map(launcherBookmarkEntry)
+        }
+    };
+}
+
+// Launcher for one collection ("thetab.ninja/collection" schema)
+function buildCollectionLauncherHTML(collection) {
+    const bookmarks = (collection.bookmarks || []).filter(b => !b.deleted && isSafeUrl(b.url));
+
     return buildLauncherDocument({
         title: collection.name,
         subtitle: 'TheTab.Ninja collection',
-        deepLink: deepLink,
+        deepLink: buildCollectionDeepLink(collection),
         groups: [{ name: collection.name, bookmarks: bookmarks.map(launcherBookmarkEntry) }],
-        payload: {
-            schema: 'thetab.ninja/collection',
-            schemaVersion: 1,
-            generator: `TheTab.Ninja/${manifest.version}`,
-            exportedAt: new Date().toISOString(),
-            extensionUrl: deepLink,
-            collection: {
-                id: collection.id,
-                name: collection.name,
-                spaces: collection.spaces || ['Everything'],
-                bookmarks: bookmarks.map(launcherBookmarkEntry)
-            }
-        }
+        payload: buildCollectionPayload(collection)
     });
 }
 
